@@ -23,11 +23,17 @@ export function MetarSection({ ad }: { ad: Aerodrome }) {
 
     (async () => {
       try {
-        const apiUrl = `https://aviationweather.gov/api/data/metar?ids=${ad.metarStation}&format=json&taf=true&hours=2`;
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
-        const response = await fetch(proxyUrl);
+        const response = await fetch(
+          `/api/metar?station=${encodeURIComponent(ad.metarStation)}`
+        );
         const json = await response.json();
         if (cancelled) return;
+
+        if (json?.error) {
+          setErrored(json.error);
+          return;
+        }
+
         if (Array.isArray(json) && json.length > 0) {
           setData(json[0]);
         } else {
