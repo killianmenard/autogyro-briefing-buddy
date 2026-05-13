@@ -3,7 +3,6 @@ import { ExternalLink, Phone, Utensils, BedDouble, Fuel } from "lucide-react";
 import type { Aerodrome } from "@/lib/aerodromes";
 import { haversine } from "@/lib/aerodromes";
 import { ReliabilityBadge } from "./ReliabilityBadge";
-import { fetchServices } from "@/lib/server/services";
 
 interface OsmNode {
   id: number;
@@ -33,6 +32,12 @@ function classify(tags: Record<string, string>): Poi["type"] | null {
   return null;
 }
 
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.openstreetmap.ru/api/interpreter",
+];
+
 export function ServicesSection({ ad }: { ad: Aerodrome }) {
   const [pois, setPois] = useState<Poi[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,47 +50,55 @@ export function ServicesSection({ ad }: { ad: Aerodrome }) {
     setPois(null);
 
     (async () => {
-      try {
-        const d = await fetchServices({ data: { lat: ad.lat, lon: ad.lon } });
+      const query = `[out:json][timeout:25];(node["amenity"="restaurant"](around:2000,${ad.lat},${ad.lon});node["amenity"="fast_food"](around:2000,${ad.lat},${ad.lon});node["tourism"="hotel"](around:2000,${ad.lat},${ad.lon});node["tourism"="guest_house"](around:2000,${ad.lat},${ad.lon});node["amenity"="fuel"](around:2000,${ad.lat},${ad.lon}););out body;`;
 
+      for (const endpoint of OVERPASS_ENDPOINTS) {
         if (cancelled) return;
+        try {
+          const url = `${endpoint}?data=${encodeURIComponent(query)}`;
+          const response = await fetch(url);
+          if (!response.ok) continue;
+          const d: { elements: OsmNode[] } = await response.json();
+          if (cancelled) return;
+          if (!d?.elements) continue;
 
-        if (!d?.elements || !Array.isArray(d.elements)) {
-          setError("Réponse OSM invalide");
+          const list: Poi[] = [];
+          for (const n of d.elements) {
+            const tags = n.tags || {};
+            const name = tags.name;
+            if (!name) continue;
+            const type = classify(tags);
+            if (!type) continue;
+            const distance = haversine(ad.lat, ad.lon, n.lat, n.lon);
+            const score =
+              (name ? 1 : 0) + (tags.phone ? 1 : 0) + (tags.opening_hours ? 1 : 0);
+            list.push({
+              id: n.id,
+              name,
+              lat: n.lat,
+              lon: n.lon,
+              type,
+              distance,
+              walkMin: Math.round(distance / 80),
+              score,
+              phone: tags.phone,
+              website: tags.website,
+              hours: tags.opening_hours,
+            });
+          }
+          list.sort((a, b) => b.score - a.score || a.distance - b.distance);
+          setPois(list);
+          setLoading(false);
           return;
+        } catch (error) {
+          console.warn("Overpass endpoint failed:", endpoint, error);
+          continue;
         }
+      }
 
-        const list: Poi[] = [];
-        for (const n of d.elements as OsmNode[]) {
-          const tags = n.tags || {};
-          const name = tags.name;
-          if (!name) continue;
-          const type = classify(tags);
-          if (!type) continue;
-          const distance = haversine(ad.lat, ad.lon, n.lat, n.lon);
-          const score =
-            (name ? 1 : 0) + (tags.phone ? 1 : 0) + (tags.opening_hours ? 1 : 0);
-          list.push({
-            id: n.id,
-            name,
-            lat: n.lat,
-            lon: n.lon,
-            type,
-            distance,
-            walkMin: Math.round(distance / 80),
-            score,
-            phone: tags.phone,
-            website: tags.website,
-            hours: tags.opening_hours,
-          });
-        }
-        list.sort((a, b) => b.score - a.score || a.distance - b.distance);
-        setPois(list);
-      } catch (error) {
-        console.error("Services fetch failed", error);
-        if (!cancelled) setError(error instanceof Error ? error.message : String(error));
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (!cancelled) {
+        setError("Tous les serveurs Overpass sont indisponibles");
+        setLoading(false);
       }
     })();
 
