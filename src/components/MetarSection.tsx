@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Aerodrome } from "@/lib/aerodromes";
 import { ReliabilityBadge } from "./ReliabilityBadge";
+import { fetchMetar } from "@/lib/server/metar";
 
 interface MetarData {
   rawOb?: string;
@@ -23,19 +24,11 @@ export function MetarSection({ ad }: { ad: Aerodrome }) {
 
     (async () => {
       try {
-        const response = await fetch(
-          `/api/metar?station=${encodeURIComponent(ad.metarStation)}`
-        );
-        const json = await response.json();
+        const result = await fetchMetar({ data: { station: ad.metarStation } });
         if (cancelled) return;
 
-        if (json?.error) {
-          setErrored(json.error);
-          return;
-        }
-
-        if (Array.isArray(json) && json.length > 0) {
-          setData(json[0]);
+        if (Array.isArray(result) && result.length > 0) {
+          setData(result[0]);
         } else {
           setErrored("Réponse vide");
         }
