@@ -111,8 +111,14 @@ out body;`;
   return (
     <div className="space-y-4">
       <ReliabilityBadge level="red" label="Communautaire · OpenStreetMap" />
-      {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
-      {error && <p className="text-sm text-muted-foreground">Source indisponible</p>}
+      {loading && (
+        <p className="text-sm text-muted-foreground">
+          Recherche des services à 2 km (peut prendre 10 sec)...
+        </p>
+      )}
+      {error && !loading && (
+        <p className="text-sm text-red-700">Erreur OSM : vérifier la console</p>
+      )}
       {pois &&
         groups.map((g) => {
           const items = pois.filter((p) => p.type === g.key);
