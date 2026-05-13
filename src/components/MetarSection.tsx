@@ -23,9 +23,9 @@ export function MetarSection({ ad }: { ad: Aerodrome }) {
 
     (async () => {
       try {
-        const response = await fetch(
-          `https://aviationweather.gov/api/data/metar?ids=${ad.metarStation}&format=json&taf=true&hours=2`
-        );
+        const apiUrl = `https://aviationweather.gov/api/data/metar?ids=${ad.metarStation}&format=json&taf=true&hours=2`;
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+        const response = await fetch(proxyUrl);
         const json = await response.json();
         if (cancelled) return;
         if (Array.isArray(json) && json.length > 0) {

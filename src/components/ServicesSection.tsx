@@ -57,10 +57,8 @@ export function ServicesSection({ ad }: { ad: Aerodrome }) {
   node["amenity"="fuel"](around:2000,${ad.lat},${ad.lon});
 );
 out body;`;
-        const response = await fetch("https://overpass-api.de/api/interpreter", {
-          method: "POST",
-          body: query,
-        });
+        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+        const response = await fetch(url);
         const d: { elements: OsmNode[] } = await response.json();
         if (cancelled) return;
         const list: Poi[] = [];
