@@ -3,6 +3,7 @@ import { ExternalLink, Phone, Utensils, BedDouble, Fuel } from "lucide-react";
 import type { Aerodrome } from "@/lib/aerodromes";
 import { haversine } from "@/lib/aerodromes";
 import { ReliabilityBadge } from "./ReliabilityBadge";
+import { fetchServices } from "@/lib/server/services";
 
 interface OsmNode {
   id: number;
@@ -45,15 +46,9 @@ export function ServicesSection({ ad }: { ad: Aerodrome }) {
 
     (async () => {
       try {
-        const response = await fetch(`/api/services?lat=${ad.lat}&lon=${ad.lon}`);
-        const d = await response.json();
+        const d = await fetchServices({ data: { lat: ad.lat, lon: ad.lon } });
 
         if (cancelled) return;
-
-        if (d?.error) {
-          setError(d.error);
-          return;
-        }
 
         if (!d?.elements || !Array.isArray(d.elements)) {
           setError("Réponse OSM invalide");
@@ -87,7 +82,7 @@ export function ServicesSection({ ad }: { ad: Aerodrome }) {
         list.sort((a, b) => b.score - a.score || a.distance - b.distance);
         setPois(list);
       } catch (error) {
-        console.error("OSM Overpass fetch failed", error);
+        console.error("Services fetch failed", error);
         if (!cancelled) setError(error instanceof Error ? error.message : String(error));
       } finally {
         if (!cancelled) setLoading(false);
