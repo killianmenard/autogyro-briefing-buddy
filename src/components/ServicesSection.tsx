@@ -111,11 +111,11 @@ out body;`;
       <ReliabilityBadge level="red" label="Communautaire · OpenStreetMap" />
       {loading && (
         <p className="text-sm text-muted-foreground">
-          Recherche des services à 2 km (peut prendre 10 sec)...
+          Recherche des services à 2 km (5-15 sec)...
         </p>
       )}
       {error && !loading && (
-        <p className="text-sm text-red-700">Erreur OSM : vérifier la console</p>
+        <p className="text-sm text-red-700">Erreur OSM : {error}</p>
       )}
       {pois &&
         groups.map((g) => {
