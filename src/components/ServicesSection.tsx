@@ -41,15 +41,28 @@ export function ServicesSection({ ad }: { ad: Aerodrome }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     setError(false);
     setPois(null);
-    fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      body: "data=" + encodeURIComponent(QUERY(ad.lat, ad.lon)),
-    })
-      .then((r) => r.json())
-      .then((d: { elements: OsmNode[] }) => {
+
+    (async () => {
+      try {
+        const query = `[out:json][timeout:25];
+(
+  node["amenity"="restaurant"](around:2000,${ad.lat},${ad.lon});
+  node["amenity"="fast_food"](around:2000,${ad.lat},${ad.lon});
+  node["tourism"="hotel"](around:2000,${ad.lat},${ad.lon});
+  node["tourism"="guest_house"](around:2000,${ad.lat},${ad.lon});
+  node["amenity"="fuel"](around:2000,${ad.lat},${ad.lon});
+);
+out body;`;
+        const response = await fetch("https://overpass-api.de/api/interpreter", {
+          method: "POST",
+          body: query,
+        });
+        const d: { elements: OsmNode[] } = await response.json();
+        if (cancelled) return;
         const list: Poi[] = [];
         for (const n of d.elements) {
           const tags = n.tags || {};
@@ -76,10 +89,18 @@ export function ServicesSection({ ad }: { ad: Aerodrome }) {
         }
         list.sort((a, b) => b.score - a.score || a.distance - b.distance);
         setPois(list);
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [ad.icao]);
+      } catch (error) {
+        console.error("OSM Overpass fetch failed", error);
+        if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ad.icao, ad.lat, ad.lon]);
 
   const groups: { key: Poi["type"]; label: string }[] = [
     { key: "restaurant", label: "Restaurants" },
