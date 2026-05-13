@@ -32,9 +32,6 @@ function classify(tags: Record<string, string>): Poi["type"] | null {
   return null;
 }
 
-const QUERY = (lat: number, lon: number) =>
-  `[out:json][timeout:25];(node["amenity"="restaurant"](around:2000,${lat},${lon});node["amenity"="fast_food"](around:2000,${lat},${lon});node["tourism"="hotel"](around:2000,${lat},${lon});node["tourism"="guest_house"](around:2000,${lat},${lon});node["amenity"="fuel"](around:2000,${lat},${lon}););out body;`;
-
 export function ServicesSection({ ad }: { ad: Aerodrome }) {
   const [pois, setPois] = useState<Poi[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,21 +45,23 @@ export function ServicesSection({ ad }: { ad: Aerodrome }) {
 
     (async () => {
       try {
-        const query = `[out:json][timeout:25];
-(
-  node["amenity"="restaurant"](around:2000,${ad.lat},${ad.lon});
-  node["amenity"="fast_food"](around:2000,${ad.lat},${ad.lon});
-  node["tourism"="hotel"](around:2000,${ad.lat},${ad.lon});
-  node["tourism"="guest_house"](around:2000,${ad.lat},${ad.lon});
-  node["amenity"="fuel"](around:2000,${ad.lat},${ad.lon});
-);
-out body;`;
-        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-        const response = await fetch(url);
-        const d: { elements: OsmNode[] } = await response.json();
+        const response = await fetch(`/api/services?lat=${ad.lat}&lon=${ad.lon}`);
+        const d = await response.json();
+
         if (cancelled) return;
+
+        if (d?.error) {
+          setError(d.error);
+          return;
+        }
+
+        if (!d?.elements || !Array.isArray(d.elements)) {
+          setError("Réponse OSM invalide");
+          return;
+        }
+
         const list: Poi[] = [];
-        for (const n of d.elements) {
+        for (const n of d.elements as OsmNode[]) {
           const tags = n.tags || {};
           const name = tags.name;
           if (!name) continue;
@@ -139,7 +138,7 @@ out body;`;
                       <div className="flex min-w-0 items-start gap-2">
                         <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                         <div className="min-w-0">
-                          <a
+                          
                             href={`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`}
                             target="_blank"
                             rel="noreferrer"
@@ -166,7 +165,7 @@ out body;`;
                           ))}
                         </div>
                         {p.phone && (
-                          <a
+                          
                             href={`tel:${p.phone}`}
                             className="rounded-md p-1 hover:bg-muted"
                             aria-label="Appeler"
@@ -175,7 +174,7 @@ out body;`;
                           </a>
                         )}
                         {p.website && (
-                          <a
+                          
                             href={p.website}
                             target="_blank"
                             rel="noreferrer"
