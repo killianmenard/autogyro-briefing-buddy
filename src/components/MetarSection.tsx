@@ -31,10 +31,7 @@ export function MetarSection({ ad }: { ad: Aerodrome }) {
       .finally(() => setLoading(false));
   }, [ad.icao]);
 
-  // station distance (approx — only useful when station != icao)
   const sameStation = ad.metarStation === ad.icao;
-  // Without a known coord for stations, skip distance calc unless same
-  const distKm = sameStation ? 0 : null;
 
   const ageMin = data?.obsTime
     ? Math.round((Date.now() / 1000 - data.obsTime) / 60)
