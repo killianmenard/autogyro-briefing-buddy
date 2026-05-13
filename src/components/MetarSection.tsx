@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { Aerodrome } from "@/lib/aerodromes";
-import { haversine } from "@/lib/aerodromes";
 import { ReliabilityBadge } from "./ReliabilityBadge";
 
 interface MetarData {
