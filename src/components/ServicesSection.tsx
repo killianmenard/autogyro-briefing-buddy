@@ -37,13 +37,13 @@ const QUERY = (lat: number, lon: number) =>
 
 export function ServicesSection({ ad }: { ad: Aerodrome }) {
   const [pois, setPois] = useState<Poi[] | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    setError(false);
+    setError(null);
     setPois(null);
 
     (async () => {
@@ -89,7 +89,7 @@ out body;`;
         setPois(list);
       } catch (error) {
         console.error("OSM Overpass fetch failed", error);
-        if (!cancelled) setError(true);
+        if (!cancelled) setError(error instanceof Error ? error.message : String(error));
       } finally {
         if (!cancelled) setLoading(false);
       }

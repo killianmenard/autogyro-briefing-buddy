@@ -12,13 +12,13 @@ interface MetarData {
 
 export function MetarSection({ ad }: { ad: Aerodrome }) {
   const [data, setData] = useState<MetarData | null>(null);
-  const [errored, setErrored] = useState(false);
+  const [errored, setErrored] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    setErrored(false);
+    setErrored(null);
     setData(null);
 
     (async () => {
@@ -31,11 +31,11 @@ export function MetarSection({ ad }: { ad: Aerodrome }) {
         if (Array.isArray(json) && json.length > 0) {
           setData(json[0]);
         } else {
-          setErrored(true);
+          setErrored("Réponse vide");
         }
       } catch (error) {
         console.error("METAR fetch failed", error);
-        if (!cancelled) setErrored(true);
+        if (!cancelled) setErrored(error instanceof Error ? error.message : String(error));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -78,7 +78,7 @@ export function MetarSection({ ad }: { ad: Aerodrome }) {
       )}
       {errored && !loading && (
         <p className="text-sm text-red-700">
-          Erreur METAR : vérifier la console
+          Erreur METAR : {errored}
         </p>
       )}
       {data && (
