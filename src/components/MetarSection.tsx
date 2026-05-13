@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Aerodrome } from "@/lib/aerodromes";
 import { ReliabilityBadge } from "./ReliabilityBadge";
-import { fetchMetar } from "@/lib/server/metar";
 
 interface MetarData {
   rawOb?: string;
@@ -23,20 +22,39 @@ export function MetarSection({ ad }: { ad: Aerodrome }) {
     setData(null);
 
     (async () => {
-      try {
-        const result = await fetchMetar({ data: { station: ad.metarStation } });
-        if (cancelled) return;
+      const apiUrl = `https://aviationweather.gov/api/data/metar?ids=${encodeURIComponent(
+        ad.metarStation
+      )}&format=json&taf=true&hours=2`;
 
-        if (Array.isArray(result) && result.length > 0) {
-          setData(result[0]);
-        } else {
-          setErrored("Réponse vide");
+      const proxies = [
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(apiUrl)}`,
+        `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`,
+      ];
+
+      for (const proxyUrl of proxies) {
+        if (cancelled) return;
+        try {
+          const response = await fetch(proxyUrl);
+          if (!response.ok) continue;
+          const text = await response.text();
+          if (!text || text.trim().startsWith("<")) continue;
+          const json = JSON.parse(text);
+          if (cancelled) return;
+          if (Array.isArray(json) && json.length > 0) {
+            setData(json[0]);
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.warn("Proxy failed, trying next:", proxyUrl, error);
+          continue;
         }
-      } catch (error) {
-        console.error("METAR fetch failed", error);
-        if (!cancelled) setErrored(error instanceof Error ? error.message : String(error));
-      } finally {
-        if (!cancelled) setLoading(false);
+      }
+
+      if (!cancelled) {
+        setErrored("Tous les proxies sont indisponibles");
+        setLoading(false);
       }
     })();
 
