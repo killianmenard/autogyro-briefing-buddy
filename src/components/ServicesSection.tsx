@@ -37,13 +37,13 @@ const QUERY = (lat: number, lon: number) =>
 
 export function ServicesSection({ ad }: { ad: Aerodrome }) {
   const [pois, setPois] = useState<Poi[] | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    setError(false);
+    setError(null);
     setPois(null);
 
     (async () => {
@@ -57,10 +57,8 @@ export function ServicesSection({ ad }: { ad: Aerodrome }) {
   node["amenity"="fuel"](around:2000,${ad.lat},${ad.lon});
 );
 out body;`;
-        const response = await fetch("https://overpass-api.de/api/interpreter", {
-          method: "POST",
-          body: query,
-        });
+        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+        const response = await fetch(url);
         const d: { elements: OsmNode[] } = await response.json();
         if (cancelled) return;
         const list: Poi[] = [];
@@ -91,7 +89,7 @@ out body;`;
         setPois(list);
       } catch (error) {
         console.error("OSM Overpass fetch failed", error);
-        if (!cancelled) setError(true);
+        if (!cancelled) setError(error instanceof Error ? error.message : String(error));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -113,11 +111,11 @@ out body;`;
       <ReliabilityBadge level="red" label="Communautaire · OpenStreetMap" />
       {loading && (
         <p className="text-sm text-muted-foreground">
-          Recherche des services à 2 km (peut prendre 10 sec)...
+          Recherche des services à 2 km (5-15 sec)...
         </p>
       )}
       {error && !loading && (
-        <p className="text-sm text-red-700">Erreur OSM : vérifier la console</p>
+        <p className="text-sm text-red-700">Erreur OSM : {error}</p>
       )}
       {pois &&
         groups.map((g) => {

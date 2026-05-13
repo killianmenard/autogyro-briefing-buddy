@@ -12,30 +12,30 @@ interface MetarData {
 
 export function MetarSection({ ad }: { ad: Aerodrome }) {
   const [data, setData] = useState<MetarData | null>(null);
-  const [errored, setErrored] = useState(false);
+  const [errored, setErrored] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    setErrored(false);
+    setErrored(null);
     setData(null);
 
     (async () => {
       try {
-        const response = await fetch(
-          `https://aviationweather.gov/api/data/metar?ids=${ad.metarStation}&format=json&taf=true&hours=2`
-        );
+        const apiUrl = `https://aviationweather.gov/api/data/metar?ids=${ad.metarStation}&format=json&taf=true&hours=2`;
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+        const response = await fetch(proxyUrl);
         const json = await response.json();
         if (cancelled) return;
         if (Array.isArray(json) && json.length > 0) {
           setData(json[0]);
         } else {
-          setErrored(true);
+          setErrored("Réponse vide");
         }
       } catch (error) {
         console.error("METAR fetch failed", error);
-        if (!cancelled) setErrored(true);
+        if (!cancelled) setErrored(error instanceof Error ? error.message : String(error));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -78,7 +78,7 @@ export function MetarSection({ ad }: { ad: Aerodrome }) {
       )}
       {errored && !loading && (
         <p className="text-sm text-red-700">
-          Erreur METAR : vérifier la console
+          Erreur METAR : {errored}
         </p>
       )}
       {data && (
