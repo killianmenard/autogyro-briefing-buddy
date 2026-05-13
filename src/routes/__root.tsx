@@ -75,11 +75,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "AutogyroDash — briefing pré-vol VFR autogire" },
       { name: "description", content: "Briefing pré-vol VFR pour autogire : METAR, TAF, vent multi-couches, NOTAM, TEMSI, logistique aérodrome." },
       { name: "author", content: "AutogyroDash" },
-      { property: "og:title", content: "AutogyroDash" },
-      { property: "og:description", content: "Briefing pré-vol VFR pour autogire" },
+      { property: "og:title", content: "AutogyroDash — briefing pré-vol VFR autogire" },
+      { property: "og:description", content: "Briefing pré-vol VFR pour autogire : METAR, TAF, vent multi-couches, NOTAM, TEMSI, logistique aérodrome." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "AutogyroDash — briefing pré-vol VFR autogire" },
+      { name: "twitter:description", content: "Briefing pré-vol VFR pour autogire : METAR, TAF, vent multi-couches, NOTAM, TEMSI, logistique aérodrome." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6f259800-4ba8-4ef3-bf5e-a3fd219152b7" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6f259800-4ba8-4ef3-bf5e-a3fd219152b7" },
     ],
     links: [
       {
