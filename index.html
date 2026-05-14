@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#F4F4F2" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="AutogyroDash" />
+<title>autogyrodash v0.2 — planification de vol VFR autogire</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --bg: #F4F4F2;
+    --card: #FFFFFF;
+    --border: #E5E5E2;
+    --muted: #F0F0EE;
+    --foreground: #1A1A1A;
+    --muted-foreground: #6B6B6B;
+    --green: oklch(0.72 0.17 145);
+    --yellow: oklch(0.85 0.15 95);
+    --orange: oklch(0.75 0.17 55);
+    --red: oklch(0.62 0.22 27);
+    --blue: oklch(0.55 0.18 250);
+  }
+  html, body { background: var(--bg); color: var(--foreground); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+  .muted-bg { background: var(--muted); }
+  .text-muted { color: var(--muted-foreground); }
+  .border-thin { border: 0.5px solid var(--border); }
+  .pre-mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; }
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] > summary .accordion-icon::before { content: "−"; }
+  details > summary .accordion-icon::before { content: "+"; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-green { background: var(--green); }
+  .dot-yellow { background: var(--yellow); }
+  .dot-orange { background: var(--orange); }
+  .dot-red { background: var(--red); }
+  .dot-blue { background: var(--blue); }
+  .pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; }
+  .pill-vfr { background: #DCFCE7; color: #14532D; }
+  .pill-mvfr { background: #FFEDD5; color: #7C2D12; }
+  .pill-ifr { background: #FEE2E2; color: #7F1D1D; }
+  .pill-obsolete { background: #DC2626; color: white; }
+  .pill-orange { background: var(--orange); color: white; }
+  .pill-green { background: var(--green); color: white; }
+  .pill-blue { background: var(--blue); color: white; }
+  .warn-box { border: 1px solid var(--orange); background: oklch(0.97 0.05 55); border-radius: 6px; padding: 8px 12px; font-size: 12px; }
+  .alert-box { border: 1px solid var(--yellow); background: oklch(0.97 0.06 95); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
+  .info-box { border: 1px solid var(--blue); background: #EFF6FF; border-radius: 6px; padding: 8px 12px; font-size: 13px; }
+  pre { overflow-x: auto; }
+  #map { height: 360px; border-radius: 8px; }
+  .leg-segment { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 8px 12px; background: var(--muted); border-radius: 6px; font-size: 13px; }
+  .tab-btn { padding: 8px 16px; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; }
+  .tab-btn.active { border-bottom-color: var(--foreground); font-weight: 500; }
+  .ad-input { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 14px; width: 100%; }
+  .ad-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--border); border-radius: 6px; margin-top: 4px; max-height: 240px; overflow-y: auto; z-index: 30; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .ad-suggestion { padding: 8px 12px; cursor: pointer; font-size: 13px; }
+  .ad-suggestion:hover { background: var(--muted); }
+  .leaflet-tooltip-permanent { background: white; border: 1px solid var(--border); font-size: 11px; padding: 2px 5px; font-weight: 500; }
+</style>
+</head>
+<body class="min-h-screen pb-24">
+
+<header class="sticky top-0 z-20 border-b border-thin bg-white/95 backdrop-blur">
+  <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
+    <i data-lucide="plane" class="h-5 w-5"></i>
+    <h1 class="text-base font-medium">autogyrodash</h1>
+    <span class="text-xs text-muted pre-mono">v0.2</span>
+    <div class="ml-auto flex flex-wrap items-center gap-2">
+      <span class="tab-btn active" data-tab="plan">plan de vol</span>
+      <span class="tab-btn" data-tab="acft">fiche acft</span>
+      <span class="text-xs text-muted ml-2" id="briefing-time"></span>
+    </div>
+  </div>
+</header>
+
+<main class="mx-auto max-w-7xl space-y-4 px-4 py-4">
+
+  <section id="tab-plan">
+
+    <div class="card p-4 space-y-3">
+      <h2 class="text-sm font-medium uppercase tracking-wide text-muted">trajet</h2>
+
+      <div class="grid gap-3 sm:grid-cols-3">
+        <div class="relative">
+          <label class="text-xs text-muted">départ</label>
+          <input type="text" id="ad-input-0" class="ad-input mt-1" placeholder="ex: LFLQ ou Montélimar" autocomplete="off" />
+          <div id="ad-suggestions-0" class="ad-suggestions hidden"></div>
+        </div>
+        <div class="relative">
+          <label class="text-xs text-muted">étape intermédiaire (optionnel)</label>
+          <input type="text" id="ad-input-1" class="ad-input mt-1" placeholder="ex: LFHO" autocomplete="off" />
+          <div id="ad-suggestions-1" class="ad-suggestions hidden"></div>
+        </div>
+        <div class="relative">
+          <label class="text-xs text-muted">arrivée</label>
+          <input type="text" id="ad-input-2" class="ad-input mt-1" placeholder="ex: LFLU" autocomplete="off" />
+          <div id="ad-suggestions-2" class="ad-suggestions hidden"></div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 flex-wrap">
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" id="loop-checkbox" />
+          <span>retour au départ (boucle)</span>
+        </label>
+        <button id="clear-trip" class="ml-auto text-xs text-muted hover:text-foreground">vider le trajet</button>
+      </div>
+    </div>
+
+    <div class="card p-2 mt-3">
+      <div id="map"></div>
+      <p class="text-xs text-muted mt-2 px-2">
+        159 aérodromes ouverts à la CAP acceptant les ULM. Cliquez sur un marqueur pour l'ajouter au trajet.
+      </p>
+    </div>
+
+    <div id="trip-summary" class="mt-3 hidden">
+      <div class="card p-4 space-y-3">
+        <h2 class="text-sm font-medium uppercase tracking-wide text-muted">résumé du trajet</h2>
+        <div id="trip-segments" class="space-y-2"></div>
+        <div class="border-t border-thin pt-3 grid grid-cols-3 gap-3 text-sm">
+          <div>
+            <p class="text-xs text-muted">distance totale</p>
+            <p class="font-medium text-lg" id="total-distance">—</p>
+          </div>
+          <div>
+            <p class="text-xs text-muted">temps de vol estimé</p>
+            <p class="font-medium text-lg" id="total-time">—</p>
+          </div>
+          <div>
+            <p class="text-xs text-muted">conso estimée</p>
+            <p class="font-medium text-lg" id="total-fuel">—</p>
+          </div>
+        </div>
+        <div id="fuel-warning" class="hidden alert-box">
+          <i data-lucide="alert-triangle" class="inline h-4 w-4"></i>
+          <span id="fuel-warning-text"></span>
+        </div>
+      </div>
+    </div>
+
+    <details class="card overflow-hidden mt-3" id="temsi-section">
+      <summary class="flex w-full items-center justify-between gap-3 px-4 py-3 text-sm">
+        <span class="flex items-center gap-2"><i data-lucide="map" class="h-4 w-4"></i><span class="font-medium">temsi général (météo du jour)</span></span>
+        <span class="text-xs text-muted accordion-icon"></span>
+      </summary>
+      <div class="border-t border-thin px-4 py-4 space-y-3">
+        <div class="flex items-center gap-2 text-xs"><span class="dot dot-green"></span><span class="text-muted">Officiel Météo France · aviation.meteo.fr</span></div>
+        <div class="flex flex-wrap gap-2">
+          <a href="https://aviation.meteo.fr/login.php" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1.5 rounded-md bg-black px-3 py-1.5 text-xs text-white">
+            <i data-lucide="external-link" class="h-3.5 w-3.5"></i>ouvrir aeroweb
+          </a>
+          <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-thin bg-white px-3 py-1.5 text-xs hover:bg-gray-50">
+            <i data-lucide="camera" class="h-3.5 w-3.5"></i>joindre screenshot temsi
+            <input type="file" accept="image/*" class="hidden" id="temsi-input" />
+          </label>
+        </div>
+        <img id="temsi-img" class="hidden w-full rounded-md border border-thin" />
+      </div>
+    </details>
+
+    <div id="ad-cards" class="space-y-3 mt-3"></div>
+
+    <details class="card overflow-hidden mt-3">
+      <summary class="flex w-full items-center justify-between gap-3 px-4 py-3 text-sm">
+        <span class="flex items-center gap-2"><i data-lucide="sticky-note" class="h-4 w-4"></i><span class="font-medium">notes pilote</span></span>
+        <span class="text-xs text-muted accordion-icon"></span>
+      </summary>
+      <div class="border-t border-thin px-4 py-4">
+        <textarea id="notes-textarea" placeholder="Vent en finale, points VFR, dégagement prévu…" class="w-full resize-y rounded-md border border-thin bg-white p-2 text-sm" style="min-height: 60px;"></textarea>
+      </div>
+    </details>
+
+  </section>
+
+  <section id="tab-acft" class="hidden">
+    <div class="card p-4 space-y-4">
+      <h2 class="text-sm font-medium uppercase tracking-wide text-muted">fiche aéronef</h2>
+      <p class="text-xs text-muted">Tous les champs sont facultatifs. Les données sont sauvegardées localement sur ton navigateur.</p>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="text-xs text-muted">immatriculation</label>
+          <input type="text" id="acft-immat" class="ad-input mt-1" placeholder="ex: F-JUBA" />
+        </div>
+        <div>
+          <label class="text-xs text-muted">modèle</label>
+          <input type="text" id="acft-modele" class="ad-input mt-1" placeholder="ex: MTOsport, Magni M16, Calidus" />
+        </div>
+        <div>
+          <label class="text-xs text-muted">MTOW (kg)</label>
+          <input type="number" id="acft-mtow" class="ad-input mt-1" placeholder="ex: 560" />
+        </div>
+        <div>
+          <label class="text-xs text-muted">vitesse de croisière (kt)</label>
+          <input type="number" id="acft-vcroisiere" class="ad-input mt-1" placeholder="ex: 90" />
+        </div>
+        <div>
+          <label class="text-xs text-muted">consommation (L/h)</label>
+          <input type="number" step="0.1" id="acft-conso" class="ad-input mt-1" placeholder="ex: 18.5" />
+        </div>
+        <div>
+          <label class="text-xs text-muted">capacité réservoir (L)</label>
+          <input type="number" step="0.1" id="acft-reservoir" class="ad-input mt-1" placeholder="ex: 90" />
+        </div>
+        <div>
+          <label class="text-xs text-muted">carburant utilisé</label>
+          <select id="acft-carburant" class="ad-input mt-1">
+            <option value="">— sélectionner —</option>
+            <option value="100LL">Avgas 100LL</option>
+            <option value="UL91">UL91</option>
+            <option value="SP98">SP98 / Mogas</option>
+            <option value="SP95">SP95</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-muted">équipement radio</label>
+          <input type="text" id="acft-radio" class="ad-input mt-1" placeholder="ex: VHF Trig TY91" />
+        </div>
+        <div class="sm:col-span-2">
+          <label class="text-xs text-muted">équipement transpondeur</label>
+          <input type="text" id="acft-transpondeur" class="ad-input mt-1" placeholder="ex: Mode S Trig TT22" />
+        </div>
+      </div>
+
+      <div class="info-box">
+        <i data-lucide="info" class="inline h-4 w-4"></i>
+        <span class="ml-1">La <strong>vitesse de croisière</strong> et la <strong>consommation</strong> servent à estimer le temps de vol et la conso de chaque segment du trajet. La <strong>capacité réservoir</strong> permet d'alerter si l'autonomie est dépassée.</span>
+      </div>
+
+      <button id="save-acft" class="inline-flex items-center gap-1.5 rounded-md bg-foreground bg-black px-4 py-2 text-sm text-white hover:opacity-90">
+        <i data-lucide="check" class="h-4 w-4"></i>enregistrer la fiche
+      </button>
+      <span id="acft-saved" class="text-xs text-muted ml-2"></span>
+    </div>
+  </section>
+
+</main>
+
+<footer class="fixed bottom-0 left-0 right-0 z-20 border-t border-thin bg-white/95 px-4 py-3 backdrop-blur">
+  <div class="mx-auto max-w-7xl">
+    <button id="pdf-btn" class="flex w-full items-center justify-center gap-2 rounded-md bg-black px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50" disabled>
+      <i data-lucide="file-text" class="h-4 w-4"></i>
+      <span id="pdf-btn-text">générer le pdf de briefing</span>
+    </button>
+  </div>
+</footer>
+<script>
+const AERODROMES_ALL = [{"icao":"LFLQ","name":"Montelimar Ancone","lat":44.58028,"lon":4.73917,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLQ","metarStation":"LFLQ"},{"icao":"LFHD","name":"Pierrelatte","lat":44.39778,"lon":4.71694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHD","metarStation":"LFHD"},{"icao":"LFHO","name":"Aubenas Ardeche Meridionale","lat":44.53942,"lon":4.37173,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHO","metarStation":"LFHO"},{"icao":"LFNV","name":"Valreas Visan","lat":44.33583,"lon":4.90694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNV","metarStation":"LFNV"},{"icao":"LFLU","name":"Valence Chabeuil","lat":44.91556,"lon":4.96874,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLU","metarStation":"LFLU"},{"icao":"LFMO","name":"Orange Caritat","lat":44.14009,"lon":4.86858,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMO","metarStation":"LFMO"},{"icao":"LFKC","name":"Calvi Sainte Catherine","lat":42.52436,"lon":8.79301,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKC","metarStation":"LFKC"},{"icao":"LFLI","name":"Annemasse","lat":46.19194,"lon":6.26833,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLI","metarStation":"LFLI"},{"icao":"LFHV","name":"Villefranche Tarare","lat":45.91998,"lon":4.63493,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHV","metarStation":"LFHV"},{"icao":"LFLB","name":"Chambery Aix Les Bains","lat":45.63927,"lon":5.88012,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLB","metarStation":"LFLB"},{"icao":"LFHM","name":"Megeve","lat":45.82361,"lon":6.64917,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHM","metarStation":"LFHM"},{"icao":"LFKA","name":"Albertville","lat":45.62722,"lon":6.32972,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKA","metarStation":"LFKA"},{"icao":"LFKL","name":"Lyon Brindas","lat":45.71065,"lon":4.69665,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKL","metarStation":"LFKL"},{"icao":"LFLN","name":"Saint Yan","lat":46.40649,"lon":4.0211,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLN","metarStation":"LFLN"},{"icao":"LFHN","name":"Bellegarde Vouvray","lat":46.12333,"lon":5.80472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHN","metarStation":"LFHN"},{"icao":"LFLJ","name":"Courchevel","lat":45.39583,"lon":6.6325,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLJ","metarStation":"LFLJ"},{"icao":"LFKD","name":"Sollieres Sardieres","lat":45.25389,"lon":6.80111,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKD","metarStation":"LFKD"},{"icao":"LFLP","name":"Annecy Meythet","lat":45.93077,"lon":6.10629,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLP","metarStation":"LFLP"},{"icao":"LFTH","name":"Hyeres Le Palyvestre","lat":43.09734,"lon":6.14603,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTH","metarStation":"LFTH"},{"icao":"LFTW","name":"Nimes Garons","lat":43.75743,"lon":4.41634,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTW","metarStation":"LFTW"},{"icao":"LFTZ","name":"La Mole","lat":43.20639,"lon":6.4825,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTZ","metarStation":"LFTZ"},{"icao":"LFMS","name":"Ales Cevennes","lat":44.07273,"lon":4.14292,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMS","metarStation":"LFMS"},{"icao":"LFKF","name":"Figari Sud Corse","lat":41.50211,"lon":9.09675,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKF","metarStation":"LFKF"},{"icao":"LFTF","name":"Cuers Pierrefeu","lat":43.24759,"lon":6.12729,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTF","metarStation":"LFTF"},{"icao":"LFNH","name":"Carpentras","lat":44.0225,"lon":5.09,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNH","metarStation":"LFNH"},{"icao":"LFNF","name":"Vinon","lat":43.73639,"lon":5.78306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNF","metarStation":"LFNF"},{"icao":"LFMU","name":"Beziers Vias","lat":43.32343,"lon":3.3534,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMU","metarStation":"LFMU"},{"icao":"LFMQ","name":"Le Castellet","lat":43.25222,"lon":5.78611,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMQ","metarStation":"LFMQ"},{"icao":"LFNS","name":"Sisteron Theze","lat":44.28667,"lon":5.92917,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNS","metarStation":"LFNS"},{"icao":"LFNG","name":"Montpellier Candillargues","lat":43.61017,"lon":4.07016,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNG","metarStation":"LFNG"},{"icao":"LFCN","name":"Nogaro","lat":43.76889,"lon":-0.03472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCN","metarStation":"LFCN"},{"icao":"LFMP","name":"Perpignan Rivesaltes","lat":42.74083,"lon":2.86972,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMP","metarStation":"LFMP"},{"icao":"LFNB","name":"Mende Brenoux","lat":44.50408,"lon":3.52763,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNB","metarStation":"LFNB"},{"icao":"LFNW","name":"Puivert","lat":42.91028,"lon":2.05472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNW","metarStation":"LFNW"},{"icao":"LFCK","name":"Castres Mazamet","lat":43.55496,"lon":2.29059,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCK","metarStation":"LFCK"},{"icao":"LFMT","name":"Montpellier Mediterranee","lat":43.58326,"lon":3.96138,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMT","metarStation":"LFMT"},{"icao":"LFNA","name":"Gap Tallard","lat":44.45389,"lon":6.03667,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNA","metarStation":"LFNA"},{"icao":"LFCY","name":"Royan Medis","lat":45.63116,"lon":-0.97549,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCY","metarStation":"LFCY"},{"icao":"LFDB","name":"Montauban","lat":44.02667,"lon":1.37694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDB","metarStation":"LFDB"},{"icao":"LFMV","name":"Avignon Caumont","lat":43.90658,"lon":4.90203,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMV","metarStation":"LFMV"},{"icao":"LFCJ","name":"Jonzac Neulles","lat":45.48306,"lon":-0.42306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCJ","metarStation":"LFCJ"},{"icao":"LFCG","name":"Saint Girons Antichan","lat":43.00778,"lon":1.10306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCG","metarStation":"LFCG"},{"icao":"LFNX","name":"Bedarieux La Tour Sur Orb","lat":43.63972,"lon":3.14472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNX","metarStation":"LFNX"},{"icao":"LFCL","name":"Toulouse Lasbordes","lat":43.58778,"lon":1.49861,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCL","metarStation":"LFCL"},{"icao":"LFBA","name":"Agen La Garenne","lat":44.17471,"lon":0.59062,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBA","metarStation":"LFBA"},{"icao":"LFBI","name":"Poitiers Biard","lat":46.5874,"lon":0.30679,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBI","metarStation":"LFBI"},{"icao":"LFBH","name":"La Rochelle Ile De Re","lat":46.17921,"lon":-1.19524,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBH","metarStation":"LFBH"},{"icao":"LFBC","name":"Cazaux","lat":44.53488,"lon":-1.13145,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBC","metarStation":"LFBC"},{"icao":"LFBD","name":"Bordeaux Merignac","lat":44.82865,"lon":-0.71534,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBD","metarStation":"LFBD"},{"icao":"LFBE","name":"Bergerac Roumaniere","lat":44.82443,"lon":0.52053,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBE","metarStation":"LFBE"},{"icao":"LFBG","name":"Cognac Chateaubernard","lat":45.65833,"lon":-0.3175,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBG","metarStation":"LFBG"},{"icao":"LFBK","name":"Montlucon Gueret","lat":46.22609,"lon":2.36282,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBK","metarStation":"LFBK"},{"icao":"LFBM","name":"Mont De Marsan","lat":43.91139,"lon":-0.51,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBM","metarStation":"LFBM"},{"icao":"LFBP","name":"Pau Pyrenees","lat":43.3799,"lon":-0.41851,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBP","metarStation":"LFBP"},{"icao":"LFBR","name":"Muret Lherm","lat":43.44916,"lon":1.26369,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBR","metarStation":"LFBR"},{"icao":"LFBS","name":"Biscarrosse Parentis","lat":44.36806,"lon":-1.13222,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBS","metarStation":"LFBS"},{"icao":"LFBU","name":"Angouleme Brie Champniers","lat":45.72948,"lon":0.21915,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBU","metarStation":"LFBU"},{"icao":"LFBX","name":"Perigueux Bassillac","lat":45.19749,"lon":0.81522,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBX","metarStation":"LFBX"},{"icao":"LFBY","name":"Dax Seyresse","lat":43.68917,"lon":-1.06889,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBY","metarStation":"LFBY"},{"icao":"LFBZ","name":"Biarritz Bayonne Anglet","lat":43.46831,"lon":-1.53116,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBZ","metarStation":"LFBZ"},{"icao":"LFCC","name":"Cahors Lalbenque","lat":44.35054,"lon":1.47859,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCC","metarStation":"LFCC"},{"icao":"LFCH","name":"Arcachon La Teste De Buch","lat":44.59694,"lon":-1.11389,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCH","metarStation":"LFCH"},{"icao":"LFCI","name":"Albi Le Sequestre","lat":43.91328,"lon":2.11675,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCI","metarStation":"LFCI"},{"icao":"LFDA","name":"Aire Sur L'Adour","lat":43.70861,"lon":-0.24722,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDA","metarStation":"LFDA"},{"icao":"LFDH","name":"Auch Lamothe","lat":43.68684,"lon":0.60005,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDH","metarStation":"LFDH"},{"icao":"LFDI","name":"Libourne Artigues De Lussac","lat":44.985,"lon":-0.13611,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDI","metarStation":"LFDI"},{"icao":"LFDJ","name":"Pamiers Les Pujols","lat":43.09068,"lon":1.69585,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDJ","metarStation":"LFDJ"},{"icao":"LFDN","name":"Rochefort Charente Maritime","lat":45.88953,"lon":-0.98239,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDN","metarStation":"LFDN"},{"icao":"LFDU","name":"Lesparre Saint Laurent Medoc","lat":45.19778,"lon":-0.88222,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDU","metarStation":"LFDU"},{"icao":"LFDX","name":"Fumel Montayral","lat":44.45917,"lon":1.00722,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDX","metarStation":"LFDX"},{"icao":"LFRH","name":"Lorient Lann Bihoue","lat":47.76053,"lon":-3.43995,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRH","metarStation":"LFRH"},{"icao":"LFRT","name":"Saint Brieuc Armor","lat":48.53749,"lon":-2.85654,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRT","metarStation":"LFRT"},{"icao":"LFRD","name":"Dinard Pleurtuit Saint Malo","lat":48.58771,"lon":-2.07995,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRD","metarStation":"LFRD"},{"icao":"LFRO","name":"Lannion","lat":48.75444,"lon":-3.47194,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRO","metarStation":"LFRO"},{"icao":"LFRC","name":"Cherbourg Maupertus","lat":49.65078,"lon":-1.4753,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRC","metarStation":"LFRC"},{"icao":"LFRB","name":"Brest Bretagne","lat":48.44713,"lon":-4.42175,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRB","metarStation":"LFRB"},{"icao":"LFRJ","name":"Landivisiau","lat":48.53026,"lon":-4.15164,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRJ","metarStation":"LFRJ"},{"icao":"LFRL","name":"Lanveoc Poulmic","lat":48.28253,"lon":-4.44369,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRL","metarStation":"LFRL"},{"icao":"LFRN","name":"Rennes Saint Jacques","lat":48.07193,"lon":-1.73223,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRN","metarStation":"LFRN"},{"icao":"LFRP","name":"Ploermel Loyat","lat":48.00186,"lon":-2.37872,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRP","metarStation":"LFRP"},{"icao":"LFRS","name":"Nantes Atlantique","lat":47.15702,"lon":-1.60781,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRS","metarStation":"LFRS"},{"icao":"LFRU","name":"Morlaix Ploujean","lat":48.60075,"lon":-3.81667,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRU","metarStation":"LFRU"},{"icao":"LFRV","name":"Vannes Meucon","lat":47.71924,"lon":-2.72338,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRV","metarStation":"LFRV"},{"icao":"LFRZ","name":"Saint Nazaire Montoir","lat":47.31065,"lon":-2.1568,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRZ","metarStation":"LFRZ"},{"icao":"LFOA","name":"Avord","lat":47.05694,"lon":2.63889,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOA","metarStation":"LFOA"},{"icao":"LFOH","name":"Le Havre Octeville","lat":49.53385,"lon":0.08812,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOH","metarStation":"LFOH"},{"icao":"LFOI","name":"Abbeville","lat":50.14306,"lon":1.8325,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOI","metarStation":"LFOI"},{"icao":"LFOJ","name":"Orleans Bricy","lat":47.98778,"lon":1.76056,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOJ","metarStation":"LFOJ"},{"icao":"LFOO","name":"Les Sables D'Olonne Talmont","lat":46.47556,"lon":-1.725,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOO","metarStation":"LFOO"},{"icao":"LFOU","name":"Cholet Le Pontreau","lat":47.08191,"lon":-0.87722,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOU","metarStation":"LFOU"},{"icao":"LFOV","name":"Laval Entrammes","lat":48.03225,"lon":-0.74278,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOV","metarStation":"LFOV"},{"icao":"LFRI","name":"La Roche Sur Yon Les Ajoncs","lat":46.70238,"lon":-1.38176,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRI","metarStation":"LFRI"},{"icao":"LFRM","name":"Le Mans Arnage","lat":47.94849,"lon":0.20165,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRM","metarStation":"LFRM"},{"icao":"LFOC","name":"Chateaudun","lat":48.05788,"lon":1.37944,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOC","metarStation":"LFOC"},{"icao":"LFOK","name":"Chalons Vatry","lat":48.77332,"lon":4.20616,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOK","metarStation":"LFOK"},{"icao":"LFOQ","name":"Blois Le Breuil","lat":47.67983,"lon":1.20578,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOQ","metarStation":"LFOQ"},{"icao":"LFOT","name":"Tours Val De Loire","lat":47.43184,"lon":0.72318,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOT","metarStation":"LFOT"},{"icao":"LFOZ","name":"Orleans Saint Denis De L'Hotel","lat":47.89762,"lon":2.16421,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOZ","metarStation":"LFOZ"},{"icao":"LFOG","name":"Flers Saint Paul","lat":48.74972,"lon":-0.59472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOG","metarStation":"LFOG"},{"icao":"LFOX","name":"Etampes Mondesir","lat":48.38111,"lon":2.07389,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOX","metarStation":"LFOX"},{"icao":"LFPB","name":"Paris Le Bourget","lat":48.96952,"lon":2.44149,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPB","metarStation":"LFPB"},{"icao":"LFPN","name":"Toussus Le Noble","lat":48.74976,"lon":2.11118,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPN","metarStation":"LFPN"},{"icao":"LFPT","name":"Pontoise Cormeilles En Vexin","lat":49.09663,"lon":2.04072,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPT","metarStation":"LFPT"},{"icao":"LFPK","name":"Coulommiers Voisins","lat":48.8375,"lon":3.01444,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPK","metarStation":"LFPK"},{"icao":"LFPL","name":"Lognes Emerainville","lat":48.82194,"lon":2.62278,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPL","metarStation":"LFPL"},{"icao":"LFPX","name":"Chavenay Villepreux","lat":48.84222,"lon":1.98028,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPX","metarStation":"LFPX"},{"icao":"LFPZ","name":"Saint Cyr L'Ecole","lat":48.81028,"lon":2.07333,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPZ","metarStation":"LFPZ"},{"icao":"LFPA","name":"Persan Beaumont","lat":49.165,"lon":2.31167,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPA","metarStation":"LFPA"},{"icao":"LFAC","name":"Calais Dunkerque","lat":50.96093,"lon":1.95143,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAC","metarStation":"LFAC"},{"icao":"LFAT","name":"Le Touquet Paris Plage","lat":50.51485,"lon":1.62758,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAT","metarStation":"LFAT"},{"icao":"LFAY","name":"Amiens-Glisy","lat":49.8731,"lon":2.38699,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAY","metarStation":"LFAY"},{"icao":"LFAP","name":"Rethel Perthes","lat":49.48111,"lon":4.36333,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAP","metarStation":"LFAP"},{"icao":"LFOB","name":"Beauvais Tille","lat":49.45442,"lon":2.11281,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOB","metarStation":"LFOB"},{"icao":"LFAB","name":"Dieppe Saint Aubin","lat":49.88263,"lon":1.08533,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAB","metarStation":"LFAB"},{"icao":"LFAE","name":"Eu Mers Le Treport","lat":50.06917,"lon":1.42667,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAE","metarStation":"LFAE"},{"icao":"LFAI","name":"Nangis Les Loges","lat":48.59694,"lon":3.00806,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAI","metarStation":"LFAI"},{"icao":"LFAQ","name":"Albert Bray","lat":49.97006,"lon":2.69262,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAQ","metarStation":"LFAQ"},{"icao":"LFQA","name":"Reims Prunay","lat":49.20869,"lon":4.15658,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQA","metarStation":"LFQA"},{"icao":"LFQB","name":"Troyes Barberey","lat":48.32162,"lon":4.01662,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQB","metarStation":"LFQB"},{"icao":"LFQH","name":"Chatillon Sur Seine","lat":47.84528,"lon":4.57944,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQH","metarStation":"LFQH"},{"icao":"LFQJ","name":"Maubeuge Elesmes","lat":50.30833,"lon":4.03,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQJ","metarStation":"LFQJ"},{"icao":"LFQO","name":"Lille Marcq En Baroeul","lat":50.68722,"lon":3.07556,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQO","metarStation":"LFQO"},{"icao":"LFQQ","name":"Lille Lesquin","lat":50.56343,"lon":3.08682,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQQ","metarStation":"LFQQ"},{"icao":"LFQT","name":"Merville Calonne","lat":50.6166,"lon":2.64009,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQT","metarStation":"LFQT"},{"icao":"LFSB","name":"Bale-Mulhouse","lat":47.58988,"lon":7.52922,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSB","metarStation":"LFSB"},{"icao":"LFSI","name":"Saint Dizier Robinson","lat":48.63354,"lon":4.90819,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSI","metarStation":"LFSI"},{"icao":"LFSO","name":"Nancy Ochey","lat":48.58319,"lon":5.95453,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSO","metarStation":"LFSO"},{"icao":"LFSR","name":"Reims Champagne","lat":49.31028,"lon":4.05083,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSR","metarStation":"LFSR"},{"icao":"LFST","name":"Strasbourg Entzheim","lat":48.54194,"lon":7.63444,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFST","metarStation":"LFST"},{"icao":"LFSG","name":"Epinal Mirecourt","lat":48.32501,"lon":6.06674,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSG","metarStation":"LFSG"},{"icao":"LFSF","name":"Metz Frescaty","lat":49.07639,"lon":6.13389,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSF","metarStation":"LFSF"},{"icao":"LFSN","name":"Nancy Essey","lat":48.69209,"lon":6.22605,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSN","metarStation":"LFSN"},{"icao":"LFGA","name":"Colmar Houssen","lat":48.11035,"lon":7.35915,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGA","metarStation":"LFGA"},{"icao":"LFGB","name":"Mulhouse Habsheim","lat":47.73722,"lon":7.42972,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGB","metarStation":"LFGB"},{"icao":"LFGC","name":"Strasbourg Neuhof","lat":48.55361,"lon":7.7775,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGC","metarStation":"LFGC"},{"icao":"LFGI","name":"Dijon Darois","lat":47.38528,"lon":4.94694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGI","metarStation":"LFGI"},{"icao":"LFGM","name":"Montceau Les Mines Pouilloux","lat":46.60333,"lon":4.33278,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGM","metarStation":"LFGM"},{"icao":"LFGW","name":"Verdun Sommedieue","lat":49.12218,"lon":5.47085,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGW","metarStation":"LFGW"},{"icao":"LFGY","name":"Saint Die Remomeix","lat":48.26639,"lon":7.0075,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGY","metarStation":"LFGY"},{"icao":"LFSD","name":"Dijon-Longvic","lat":47.26582,"lon":5.09498,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSD","metarStation":"LFSD"},{"icao":"LFJA","name":"Chaumont Semoutiers","lat":48.09167,"lon":5.05,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFJA","metarStation":"LFJA"},{"icao":"LFOE","name":"Evreux Fauville","lat":49.02861,"lon":1.22,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOE","metarStation":"LFOE"},{"icao":"LFOP","name":"Rouen Vallee De Seine","lat":49.39095,"lon":1.18394,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOP","metarStation":"LFOP"},{"icao":"LFRG","name":"Deauville Normandie","lat":49.36339,"lon":0.16,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRG","metarStation":"LFRG"},{"icao":"LFRK","name":"Caen Carpiquet","lat":49.17328,"lon":-0.44988,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRK","metarStation":"LFRK"},{"icao":"LFRQ","name":"Quimper Pluguffan","lat":47.97495,"lon":-4.16788,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRQ","metarStation":"LFRQ"},{"icao":"LFAD","name":"Compiegne Margny","lat":49.43361,"lon":2.80472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAD","metarStation":"LFAD"},{"icao":"LFAF","name":"Laon Chambry","lat":49.59583,"lon":3.63167,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAF","metarStation":"LFAF"},{"icao":"LFLS","name":"Grenoble Isere","lat":45.36294,"lon":5.33266,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLS","metarStation":"LFLS"},{"icao":"LFGJ","name":"Dole Tavaux","lat":47.04269,"lon":5.43493,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGJ","metarStation":"LFGJ"},{"icao":"LFGN","name":"Paray Le Monial","lat":46.46667,"lon":4.13306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGN","metarStation":"LFGN"},{"icao":"LFGP","name":"Saint Florentin Cheu","lat":47.98139,"lon":3.77694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGP","metarStation":"LFGP"},{"icao":"LFLH","name":"Chalon Champforgeuil","lat":46.82827,"lon":4.81706,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLH","metarStation":"LFLH"},{"icao":"LFGF","name":"Beaune Challanges","lat":47.01028,"lon":4.89639,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGF","metarStation":"LFGF"},{"icao":"LFEZ","name":"Nancy Malzeville","lat":48.72361,"lon":6.20639,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFEZ","metarStation":"LFEZ"},{"icao":"LFGT","name":"Sarrebourg Buhl","lat":48.71833,"lon":7.08,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGT","metarStation":"LFGT"},{"icao":"LFKB","name":"Bastia Poretta","lat":42.55,"lon":9.48485,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKB","metarStation":"LFKB"},{"icao":"LFKJ","name":"Ajaccio Napoleon Bonaparte","lat":41.9239,"lon":8.80244,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKJ","metarStation":"LFKJ"},{"icao":"LFKS","name":"Solenzara","lat":41.92639,"lon":9.40528,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKS","metarStation":"LFKS"}];
+
+const METAR_FALLBACKS = {
+  "LFLQ": "LFLU", "LFHD": "LFMO", "LFHO": "LFMO", "LFNV": "LFMO",
+  "LFTZ": "LFTH", "LFHM": "LFLB", "LFKD": "LFLB", "LFKA": "LFLB",
+  "LFNF": "LFML", "LFNS": "LFMV", "LFNH": "LFMV", "LFNX": "LFMT",
+  "LFCG": "LFBT", "LFCJ": "LFBG", "LFDU": "LFBD", "LFDX": "LFBE",
+  "LFRP": "LFRN", "LFRU": "LFRB", "LFOG": "LFRK", "LFOC": "LFOT",
+  "LFOQ": "LFOT", "LFOZ": "LFOJ", "LFOX": "LFOJ",
+  "LFPK": "LFPB", "LFPL": "LFPB", "LFPX": "LFPN", "LFPZ": "LFPN", "LFPA": "LFPB",
+  "LFAB": "LFRG", "LFAE": "LFRG", "LFAP": "LFQA", "LFAQ": "LFQA",
+  "LFQH": "LFQA", "LFQJ": "LFQQ", "LFQO": "LFQQ",
+  "LFGI": "LFSD", "LFGM": "LFLY", "LFGW": "LFQA", "LFGY": "LFGA",
+  "LFEZ": "LFSN", "LFGT": "LFST", "LFGB": "LFSB", "LFGC": "LFST",
+  "LFAD": "LFOB", "LFAF": "LFQA", "LFGN": "LFGJ", "LFGP": "LFLY",
+  "LFGF": "LFSD", "LFJA": "LFSD", "LFAY": "LFOB", "LFAI": "LFOB",
+  "LFCY": "LFBG", "LFNB": "LFLY", "LFNW": "LFMP", "LFNG": "LFMT",
+  "LFMS": "LFMV", "LFKL": "LFLY", "LFLI": "LFLY", "LFHV": "LFLY",
+  "LFHN": "LFLY", "LFLN": "LFLY", "LFOO": "LFRI", "LFOU": "LFRS"
+};
+
+AERODROMES_ALL.forEach(ad => {
+  if (METAR_FALLBACKS[ad.icao]) {
+    ad.metarStation = METAR_FALLBACKS[ad.icao];
+  }
+});
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat/2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function degToCompass(deg) {
+  const dirs = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
+  return dirs[Math.round(deg / 45) % 8];
+}
+
+function bearing(lat1, lon1, lat2, lon2) {
+  const toRad = d => d * Math.PI / 180;
+  const toDeg = r => r * 180 / Math.PI;
+  const dLon = toRad(lon2 - lon1);
+  const y = Math.sin(dLon) * Math.cos(toRad(lat2));
+  const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+            Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLon);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+function reliabilityBadge(level, label) {
+  return `<div class="flex items-center gap-2 text-xs"><span class="dot dot-${level}"></span><span class="text-muted">${label}</span></div>`;
+}
+
+function fmtMinutes(min) {
+  if (min < 60) return `${Math.round(min)} min`;
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return `${h}h${m.toString().padStart(2,'0')}`;
+}
+
+const STATE = {
+  trip: [null, null, null],
+  loop: false,
+  acft: null,
+  temsiImg: null,
+  notes: "",
+  weatherCache: {}
+};
+
+function loadAcft() {
+  try {
+    const raw = localStorage.getItem('autogyrodash_acft');
+    if (!raw) return null;
+    const a = JSON.parse(raw);
+    document.getElementById('acft-immat').value = a.immat || '';
+    document.getElementById('acft-modele').value = a.modele || '';
+    document.getElementById('acft-mtow').value = a.mtow || '';
+    document.getElementById('acft-vcroisiere').value = a.vcroisiere || '';
+    document.getElementById('acft-conso').value = a.conso || '';
+    document.getElementById('acft-reservoir').value = a.reservoir || '';
+    document.getElementById('acft-carburant').value = a.carburant || '';
+    document.getElementById('acft-radio').value = a.radio || '';
+    document.getElementById('acft-transpondeur').value = a.transpondeur || '';
+    return a;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveAcft() {
+  const a = {
+    immat: document.getElementById('acft-immat').value.trim(),
+    modele: document.getElementById('acft-modele').value.trim(),
+    mtow: parseFloat(document.getElementById('acft-mtow').value) || null,
+    vcroisiere: parseFloat(document.getElementById('acft-vcroisiere').value) || null,
+    conso: parseFloat(document.getElementById('acft-conso').value) || null,
+    reservoir: parseFloat(document.getElementById('acft-reservoir').value) || null,
+    carburant: document.getElementById('acft-carburant').value,
+    radio: document.getElementById('acft-radio').value.trim(),
+    transpondeur: document.getElementById('acft-transpondeur').value.trim()
+  };
+  localStorage.setItem('autogyrodash_acft', JSON.stringify(a));
+  STATE.acft = a;
+  document.getElementById('acft-saved').textContent = "✓ enregistré";
+  setTimeout(() => { document.getElementById('acft-saved').textContent = ""; }, 2500);
+  refreshTripSummary();
+}
+
+function setupAdInput(idx) {
+  const input = document.getElementById(`ad-input-${idx}`);
+  const suggBox = document.getElementById(`ad-suggestions-${idx}`);
+
+  input.addEventListener('input', e => {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) {
+      suggBox.classList.add('hidden');
+      STATE.trip[idx] = null;
+      onTripChange();
+      return;
+    }
+    const matches = AERODROMES_ALL.filter(a =>
+      a.icao.toLowerCase().includes(q) || a.name.toLowerCase().includes(q)
+    ).slice(0, 8);
+    if (matches.length === 0) {
+      suggBox.classList.add('hidden');
+      return;
+    }
+    suggBox.innerHTML = matches.map(a =>
+      `<div class="ad-suggestion" data-icao="${a.icao}"><span class="pre-mono">${a.icao}</span> · ${a.name}</div>`
+    ).join('');
+    suggBox.classList.remove('hidden');
+    suggBox.querySelectorAll('.ad-suggestion').forEach(el => {
+      el.addEventListener('click', () => {
+        const ad = AERODROMES_ALL.find(x => x.icao === el.dataset.icao);
+        input.value = `${ad.icao} · ${ad.name}`;
+        STATE.trip[idx] = ad;
+        suggBox.classList.add('hidden');
+        onTripChange();
+      });
+    });
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => suggBox.classList.add('hidden'), 200);
+  });
+}
+
+let map, markerLayer, routeLayer;
+
+function initMap() {
+  map = L.map('map', { zoomControl: true }).setView([46.5, 2.5], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 18
+  }).addTo(map);
+
+  markerLayer = L.layerGroup().addTo(map);
+  routeLayer = L.layerGroup().addTo(map);
+
+  AERODROMES_ALL.forEach(ad => {
+    const m = L.circleMarker([ad.lat, ad.lon], {
+      radius: 4,
+      color: '#4B5563',
+      weight: 1,
+      fillColor: '#9CA3AF',
+      fillOpacity: 0.6
+    }).addTo(markerLayer);
+    m.bindTooltip(`<strong>${ad.icao}</strong><br>${ad.name}`, { direction: 'top' });
+    m.on('click', () => addAdToTrip(ad));
+  });
+}
+
+function addAdToTrip(ad) {
+  const emptyIdx = STATE.trip.findIndex(x => x === null);
+  if (emptyIdx === -1) {
+    STATE.trip[2] = ad;
+    document.getElementById('ad-input-2').value = `${ad.icao} · ${ad.name}`;
+  } else {
+    STATE.trip[emptyIdx] = ad;
+    document.getElementById(`ad-input-${emptyIdx}`).value = `${ad.icao} · ${ad.name}`;
+  }
+  onTripChange();
+}
+
+function updateMapRoute() {
+  routeLayer.clearLayers();
+  const points = STATE.trip.filter(x => x !== null);
+  if (STATE.loop && points.length >= 2) {
+    points.push(points[0]);
+  }
+  if (points.length < 2) return;
+
+  const latlngs = points.map(p => [p.lat, p.lon]);
+  L.polyline(latlngs, {
+    color: '#000000',
+    weight: 2,
+    opacity: 0.7,
+    dashArray: '8, 4'
+  }).addTo(routeLayer);
+
+  points.forEach((p, i) => {
+    const isStart = i === 0;
+    const isEnd = i === points.length - 1 && !STATE.loop;
+    const color = isStart ? '#10B981' : (isEnd ? '#DC2626' : '#3B82F6');
+    L.circleMarker([p.lat, p.lon], {
+      radius: 8,
+      color: 'white',
+      weight: 2,
+      fillColor: color,
+      fillOpacity: 1
+    }).addTo(routeLayer).bindTooltip(p.icao, { permanent: true, direction: 'top', offset: [0, -10] });
+  });
+
+  map.fitBounds(latlngs, { padding: [40, 40] });
+}
+
+function computeTrip() {
+  const points = STATE.trip.filter(x => x !== null);
+  if (STATE.loop && points.length >= 2) points.push(points[0]);
+  if (points.length < 2) return null;
+
+  const segments = [];
+  let totalDist = 0;
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i], b = points[i + 1];
+    const distM = haversine(a.lat, a.lon, b.lat, b.lon);
+    const distKm = distM / 1000;
+    const distNm = distKm / 1.852;
+    const brg = Math.round(bearing(a.lat, a.lon, b.lat, b.lon));
+    segments.push({ from: a, to: b, distKm, distNm, bearing: brg });
+    totalDist += distKm;
+  }
+
+  let totalTimeMin = null, totalFuelL = null, autonomieMin = null;
+  if (STATE.acft && STATE.acft.vcroisiere > 0) {
+    totalTimeMin = (totalDist / 1.852) / STATE.acft.vcroisiere * 60;
+    segments.forEach(s => {
+      s.timeMin = (s.distNm / STATE.acft.vcroisiere) * 60;
+    });
+    if (STATE.acft.conso > 0) {
+      totalFuelL = (totalTimeMin / 60) * STATE.acft.conso;
+      segments.forEach(s => {
+        s.fuelL = (s.timeMin / 60) * STATE.acft.conso;
+      });
+    }
+    if (STATE.acft.reservoir > 0 && STATE.acft.conso > 0) {
+      autonomieMin = (STATE.acft.reservoir / STATE.acft.conso) * 60;
+    }
+  }
+
+  return { segments, totalDist, totalTimeMin, totalFuelL, autonomieMin, points };
+}
+
+function refreshTripSummary() {
+  const trip = computeTrip();
+  const summaryEl = document.getElementById('trip-summary');
+  const pdfBtn = document.getElementById('pdf-btn');
+
+  if (!trip) {
+    summaryEl.classList.add('hidden');
+    pdfBtn.disabled = true;
+    document.getElementById('ad-cards').innerHTML = '';
+    return;
+  }
+
+  summaryEl.classList.remove('hidden');
+  pdfBtn.disabled = false;
+
+  document.getElementById('trip-segments').innerHTML = trip.segments.map((s, i) => `
+    <div class="leg-segment">
+      <span class="pre-mono text-xs font-medium">${s.from.icao} → ${s.to.icao}</span>
+      <span class="text-xs text-muted">${Math.round(s.distKm)} km · ${Math.round(s.distNm)} NM · ${s.bearing}°</span>
+      <span class="text-xs">${s.timeMin ? fmtMinutes(s.timeMin) : '—'}${s.fuelL ? ' · ' + s.fuelL.toFixed(1) + ' L' : ''}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('total-distance').textContent = `${Math.round(trip.totalDist)} km`;
+  document.getElementById('total-time').textContent = trip.totalTimeMin ? fmtMinutes(trip.totalTimeMin) : '—';
+  document.getElementById('total-fuel').textContent = trip.totalFuelL ? `${trip.totalFuelL.toFixed(1)} L` : '—';
+
+  const warnEl = document.getElementById('fuel-warning');
+  if (trip.autonomieMin && trip.totalTimeMin > trip.autonomieMin) {
+    warnEl.classList.remove('hidden');
+    document.getElementById('fuel-warning-text').textContent = ` Temps de vol estimé (${fmtMinutes(trip.totalTimeMin)}) dépasse l'autonomie (${fmtMinutes(trip.autonomieMin)}). Avitaillement en étape nécessaire.`;
+  } else {
+    warnEl.classList.add('hidden');
+  }
+
+  refreshAdCards();
+}
+
+function onTripChange() {
+  updateMapRoute();
+  refreshTripSummary();
+}
+</script>
+<script>
+const METAR_PROXIES = (apiUrl) => [
+  `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(apiUrl)}`,
+  `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`,
+  `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`,
+];
+
+async function fetchMetar(station) {
+  const apiUrl = `https://aviationweather.gov/api/data/metar?ids=${encodeURIComponent(station)}&format=json&taf=true&hours=2`;
+  for (const proxyUrl of METAR_PROXIES(apiUrl)) {
+    try {
+      const r = await fetch(proxyUrl);
+      if (!r.ok) continue;
+      const text = await r.text();
+      if (!text || text.trim().startsWith("<")) continue;
+      const json = JSON.parse(text);
+      if (Array.isArray(json) && json.length > 0) return json[0];
+    } catch (e) {
+      console.warn("Proxy failed", proxyUrl, e);
+    }
+  }
+  return null;
+}
+
+async function fetchWind(lat, lon) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,wind_speed_80m,wind_direction_80m,wind_speed_120m,wind_direction_120m&hourly=wind_speed_950hPa,wind_direction_950hPa,wind_speed_925hPa,wind_direction_925hPa&forecast_days=1&wind_speed_unit=kn`;
+    const r = await fetch(url);
+    return await r.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+function makeAdCardHtml(ad, role, idx) {
+  const roleLabel = role === 'depart' ? 'départ' : role === 'arrivee' ? 'arrivée' : 'étape';
+  const roleColor = role === 'depart' ? 'green' : role === 'arrivee' ? 'red' : 'blue';
+  return `
+    <div class="card overflow-hidden" data-ad-card="${ad.icao}-${idx}">
+      <div class="px-4 py-3 border-b border-thin flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2">
+          <span class="dot dot-${roleColor}"></span>
+          <span class="text-xs uppercase tracking-wide text-muted">${roleLabel}</span>
+          <span class="pre-mono font-medium">${ad.icao}</span>
+          <span class="text-sm">${ad.name}</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <a href="${ad.piafUrl}" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 px-2 py-1 rounded border border-thin hover:bg-gray-50">
+            <i data-lucide="external-link" class="h-3 w-3"></i>fiche piaf (vac)
+          </a>
+        </div>
+      </div>
+      <div class="p-4 grid gap-3 sm:grid-cols-2">
+        <div data-section="metar"><p class="text-sm text-muted">Chargement METAR…</p></div>
+        <div data-section="wind"><p class="text-sm text-muted">Chargement vent…</p></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderMetarSection(data, ad) {
+  if (!data) {
+    return `${reliabilityBadge("green", `aviationweather.gov · station ${ad.metarStation}`)}
+      <p class="text-sm mt-2" style="color: #B91C1C;">Données METAR indisponibles</p>`;
+  }
+  const cat = data.fltCat || "";
+  const catClass = cat === "VFR" ? "pill-vfr" : cat === "MVFR" ? "pill-mvfr" : (cat === "IFR" || cat === "LIFR") ? "pill-ifr" : "";
+  const ageMin = data.receiptTime ? Math.round((Date.now() - new Date(data.receiptTime).getTime()) / 60000) : null;
+  return `
+    <h4 class="text-xs font-medium uppercase tracking-wide text-muted mb-2">metar / taf</h4>
+    ${reliabilityBadge("green", `aviationweather.gov · station ${ad.metarStation}`)}
+    <div class="flex items-center gap-2 flex-wrap mt-2">
+      ${cat ? `<span class="pill ${catClass}">${cat}</span>` : ""}
+      ${ageMin !== null ? `<span class="text-xs text-muted">Observé il y a ${ageMin} min</span>` : ""}
+      ${ageMin !== null && ageMin > 90 ? '<span class="pill pill-obsolete">Obsolète</span>' : ""}
+    </div>
+    ${data.rawOb ? `<pre class="pre-mono muted-bg p-2 rounded-md text-xs mt-2">${data.rawOb}</pre>` : ""}
+    ${data.rawTaf ? `<pre class="pre-mono muted-bg p-2 rounded-md text-xs mt-1">${data.rawTaf}</pre>` : ""}
+  `;
+}
+
+function renderWindSection(d) {
+  if (!d || !d.current) {
+    return `${reliabilityBadge("yellow", "open-meteo.com")}
+      <p class="text-sm mt-2" style="color: #B91C1C;">Données vent indisponibles</p>`;
+  }
+  const c = d.current;
+  const h = d.hourly;
+  const layers = [
+    { label: "Surface (10m)", dir: c.wind_direction_10m, spd: c.wind_speed_10m, gust: c.wind_gusts_10m },
+    { label: "80m (260 ft)", dir: c.wind_direction_80m, spd: c.wind_speed_80m },
+    { label: "120m (390 ft)", dir: c.wind_direction_120m, spd: c.wind_speed_120m },
+    { label: "950 hPa (1640 ft)", dir: h.wind_direction_950hPa[0], spd: h.wind_speed_950hPa[0] },
+    { label: "925 hPa (2480 ft)", dir: h.wind_direction_925hPa[0], spd: h.wind_speed_925hPa[0] }
+  ];
+  const maxKt = Math.max(...layers.map(l => l.spd), c.wind_gusts_10m || 0);
+  const maxColor = maxKt > 20 ? "pill-mvfr" : "pill-vfr";
+
+  return `
+    <div class="flex items-center justify-between">
+      <h4 class="text-xs font-medium uppercase tracking-wide text-muted">vent (surface → 2480 ft)</h4>
+      <span class="pill ${maxColor}">max ${Math.round(maxKt)} kt</span>
+    </div>
+    ${reliabilityBadge("yellow", "Modèle ECMWF · open-meteo.com")}
+    <ul class="mt-2 rounded-md border border-thin overflow-hidden">
+      ${layers.map(l => `
+        <li class="flex items-center justify-between text-sm py-1.5 px-2 border-t border-thin first:border-t-0">
+          <span class="text-xs">${l.label}</span>
+          <span class="pre-mono text-xs">${Math.round(l.dir)}° ${degToCompass(l.dir)} · ${Math.round(l.spd)} kt${l.gust ? ` (raf. ${Math.round(l.gust)})` : ""}</span>
+        </li>
+      `).join("")}
+    </ul>
+  `;
+}
+
+async function loadAdCardWeather(ad, idx) {
+  const cardEl = document.querySelector(`[data-ad-card="${ad.icao}-${idx}"]`);
+  if (!cardEl) return;
+
+  if (STATE.weatherCache[ad.icao]) {
+    cardEl.querySelector('[data-section="metar"]').innerHTML = renderMetarSection(STATE.weatherCache[ad.icao].metar, ad);
+    cardEl.querySelector('[data-section="wind"]').innerHTML = renderWindSection(STATE.weatherCache[ad.icao].wind);
+    lucide.createIcons();
+    return;
+  }
+
+  const [metar, wind] = await Promise.all([
+    fetchMetar(ad.metarStation),
+    fetchWind(ad.lat, ad.lon)
+  ]);
+  STATE.weatherCache[ad.icao] = { metar, wind };
+
+  cardEl.querySelector('[data-section="metar"]').innerHTML = renderMetarSection(metar, ad);
+  cardEl.querySelector('[data-section="wind"]').innerHTML = renderWindSection(wind);
+  lucide.createIcons();
+}
+
+function refreshAdCards() {
+  const trip = computeTrip();
+  if (!trip) {
+    document.getElementById('ad-cards').innerHTML = '';
+    return;
+  }
+
+  const uniquePoints = [];
+  const seen = new Set();
+  trip.points.forEach(p => {
+    if (!seen.has(p.icao)) { uniquePoints.push(p); seen.add(p.icao); }
+  });
+
+  const container = document.getElementById('ad-cards');
+  container.innerHTML = uniquePoints.map((ad, i) => {
+    const role = i === 0 ? 'depart' : (i === uniquePoints.length - 1 && !STATE.loop ? 'arrivee' : 'etape');
+    return makeAdCardHtml(ad, role, i);
+  }).join('');
+
+  lucide.createIcons();
+
+  uniquePoints.forEach((ad, i) => loadAdCardWeather(ad, i));
+}
+
+async function generatePdf() {
+  const btn = document.getElementById('pdf-btn');
+  const btnText = document.getElementById('pdf-btn-text');
+  const originalText = btnText.textContent;
+  btn.disabled = true;
+  btnText.textContent = 'génération en cours…';
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW = 210, pageH = 297;
+    const margin = 12;
+    let y = margin;
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(16);
+    pdf.text('Briefing pré-vol VFR', margin, y);
+    y += 7;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    const now = new Date();
+    pdf.text(`Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`, margin, y);
+    y += 8;
+    pdf.setDrawColor(200);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 6;
+
+    if (STATE.acft) {
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(11);
+      pdf.text('Aéronef', margin, y);
+      y += 5;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      const acftLines = [];
+      if (STATE.acft.immat) acftLines.push(`Immatriculation : ${STATE.acft.immat}`);
+      if (STATE.acft.modele) acftLines.push(`Modèle : ${STATE.acft.modele}`);
+      if (STATE.acft.mtow) acftLines.push(`MTOW : ${STATE.acft.mtow} kg`);
+      if (STATE.acft.vcroisiere) acftLines.push(`Vitesse croisière : ${STATE.acft.vcroisiere} kt`);
+      if (STATE.acft.conso) acftLines.push(`Consommation : ${STATE.acft.conso} L/h`);
+      if (STATE.acft.reservoir) acftLines.push(`Réservoir : ${STATE.acft.reservoir} L`);
+      if (STATE.acft.carburant) acftLines.push(`Carburant : ${STATE.acft.carburant}`);
+      if (STATE.acft.radio) acftLines.push(`Radio : ${STATE.acft.radio}`);
+      if (STATE.acft.transpondeur) acftLines.push(`Transpondeur : ${STATE.acft.transpondeur}`);
+      acftLines.forEach(line => {
+        pdf.text(line, margin, y);
+        y += 4.5;
+      });
+      y += 3;
+    }
+
+    const trip = computeTrip();
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(11);
+    pdf.text('Trajet', margin, y);
+    y += 5;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+
+    const tripDesc = trip.points.map(p => p.icao).join(' → ');
+    pdf.text(tripDesc, margin, y);
+    y += 5;
+
+    trip.segments.forEach(s => {
+      let line = `  ${s.from.icao} → ${s.to.icao} : ${Math.round(s.distKm)} km / ${Math.round(s.distNm)} NM / cap ${s.bearing}°`;
+      if (s.timeMin) line += ` / ${fmtMinutes(s.timeMin)}`;
+      if (s.fuelL) line += ` / ${s.fuelL.toFixed(1)} L`;
+      pdf.text(line, margin, y);
+      y += 4.5;
+    });
+
+    y += 2;
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(`Total : ${Math.round(trip.totalDist)} km`, margin, y);
+    if (trip.totalTimeMin) {
+      pdf.text(` · ${fmtMinutes(trip.totalTimeMin)}`, margin + 32, y);
+    }
+    if (trip.totalFuelL) {
+      pdf.text(` · ${trip.totalFuelL.toFixed(1)} L`, margin + 65, y);
+    }
+    y += 6;
+
+    if (trip.autonomieMin && trip.totalTimeMin > trip.autonomieMin) {
+      pdf.setTextColor(180, 0, 0);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`⚠ Temps de vol > autonomie (${fmtMinutes(trip.autonomieMin)}) — avitaillement requis`, margin, y);
+      pdf.setTextColor(0);
+      pdf.setFont('helvetica', 'normal');
+      y += 6;
+    }
+    y += 3;
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(11);
+    pdf.text('Carte', margin, y);
+    y += 5;
+
+    try {
+      const mapEl = document.getElementById('map');
+      const mapCanvas = await html2canvas(mapEl, { useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+      const mapImg = mapCanvas.toDataURL('image/png');
+      const mapW = pageW - 2 * margin;
+      const mapH = mapW * (mapCanvas.height / mapCanvas.width);
+      if (y + mapH > pageH - margin) {
+        pdf.addPage();
+        y = margin;
+      }
+      pdf.addImage(mapImg, 'PNG', margin, y, mapW, mapH);
+      y += mapH + 5;
+    } catch (e) {
+      console.warn("Map screenshot failed", e);
+    }
+
+    const uniquePoints = [];
+    const seen = new Set();
+    trip.points.forEach(p => {
+      if (!seen.has(p.icao)) { uniquePoints.push(p); seen.add(p.icao); }
+    });
+
+    pdf.addPage();
+    y = margin;
+
+    for (const ad of uniquePoints) {
+      if (y > pageH - 60) { pdf.addPage(); y = margin; }
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(11);
+      pdf.text(`${ad.icao} · ${ad.name}`, margin, y);
+      y += 5;
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+
+      const cache = STATE.weatherCache[ad.icao];
+      if (cache?.metar) {
+        pdf.text(`METAR (station ${ad.metarStation}) :`, margin, y); y += 4;
+        if (cache.metar.rawOb) {
+          const lines = pdf.splitTextToSize(cache.metar.rawOb, pageW - 2 * margin);
+          pdf.text(lines, margin, y); y += lines.length * 3.5;
+        }
+        if (cache.metar.rawTaf) {
+          y += 1;
+          pdf.text('TAF :', margin, y); y += 4;
+          const lines = pdf.splitTextToSize(cache.metar.rawTaf, pageW - 2 * margin);
+          pdf.text(lines, margin, y); y += lines.length * 3.5;
+        }
+        if (cache.metar.fltCat) {
+          y += 1;
+          pdf.text(`Catégorie : ${cache.metar.fltCat}`, margin, y); y += 4;
+        }
+      } else {
+        pdf.text('METAR : non disponible', margin, y); y += 4;
+      }
+
+      if (cache?.wind?.current) {
+        y += 1;
+        const c = cache.wind.current;
+        const h = cache.wind.hourly;
+        pdf.text('Vent (open-meteo) :', margin, y); y += 4;
+        const layers = [
+          ['Surface', c.wind_direction_10m, c.wind_speed_10m, c.wind_gusts_10m],
+          ['80m', c.wind_direction_80m, c.wind_speed_80m, null],
+          ['120m', c.wind_direction_120m, c.wind_speed_120m, null],
+          ['950hPa (1640ft)', h.wind_direction_950hPa[0], h.wind_speed_950hPa[0], null],
+          ['925hPa (2480ft)', h.wind_direction_925hPa[0], h.wind_speed_925hPa[0], null]
+        ];
+        layers.forEach(([lbl, dir, spd, gust]) => {
+          let l = `  ${lbl}: ${Math.round(dir)}° ${degToCompass(dir)} / ${Math.round(spd)} kt`;
+          if (gust) l += ` (raf. ${Math.round(gust)})`;
+          pdf.text(l, margin, y); y += 4;
+        });
+      }
+
+      y += 4;
+    }
+
+    const notes = document.getElementById('notes-textarea').value.trim();
+    if (notes) {
+      if (y > pageH - 30) { pdf.addPage(); y = margin; }
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(11);
+      pdf.text('Notes pilote', margin, y); y += 5;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(9);
+      const lines = pdf.splitTextToSize(notes, pageW - 2 * margin);
+      pdf.text(lines, margin, y);
+      y += lines.length * 4.5;
+    }
+
+    pdf.setFontSize(7);
+    pdf.setTextColor(120);
+    pdf.text("Données indicatives. Le pilote reste seul responsable de la vérification des informations officielles (SIA, METAR/TAF, NOTAM, AZBA) avant le vol.",
+      margin, pageH - 6, { maxWidth: pageW - 2 * margin });
+
+    const filename = `briefing_${trip.points.map(p => p.icao).join('-')}_${now.toISOString().slice(0,10)}.pdf`;
+    pdf.save(filename);
+  } catch (e) {
+    console.error("PDF generation failed", e);
+    alert("Erreur génération PDF : " + e.message);
+  } finally {
+    btnText.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      document.getElementById('tab-plan').classList.toggle('hidden', tab !== 'plan');
+      document.getElementById('tab-acft').classList.toggle('hidden', tab !== 'acft');
+      if (tab === 'plan' && map) setTimeout(() => map.invalidateSize(), 100);
+    });
+  });
+}
+
+function init() {
+  document.getElementById('briefing-time').textContent = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+  setupAdInput(0);
+  setupAdInput(1);
+  setupAdInput(2);
+  setupTabs();
+  initMap();
+
+  document.getElementById('loop-checkbox').addEventListener('change', e => {
+    STATE.loop = e.target.checked;
+    onTripChange();
+  });
+
+  document.getElementById('clear-trip').addEventListener('click', () => {
+    STATE.trip = [null, null, null];
+    STATE.loop = false;
+    document.getElementById('ad-input-0').value = '';
+    document.getElementById('ad-input-1').value = '';
+    document.getElementById('ad-input-2').value = '';
+    document.getElementById('loop-checkbox').checked = false;
+    onTripChange();
+  });
+
+  document.getElementById('save-acft').addEventListener('click', saveAcft);
+
+  document.getElementById('temsi-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = document.getElementById('temsi-img');
+      img.src = ev.target.result;
+      img.classList.remove('hidden');
+      STATE.temsiImg = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('pdf-btn').addEventListener('click', generatePdf);
+
+  STATE.acft = loadAcft();
+
+  lucide.createIcons();
+}
+
+init();
+</script>
+</body>
+</html>
