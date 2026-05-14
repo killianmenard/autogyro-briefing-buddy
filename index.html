@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.2.1 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.2.2 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -74,7 +74,7 @@
   <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
     <i data-lucide="plane" class="h-5 w-5"></i>
     <h1 class="text-base font-medium">autogyrodash</h1>
-    <span class="text-xs text-muted pre-mono">v0.2.1</span>
+    <span class="text-xs text-muted pre-mono">v0.2.2</span>
     <div class="ml-auto flex flex-wrap items-center gap-2">
       <span class="tab-btn active" data-tab="plan">plan de vol</span>
       <span class="tab-btn" data-tab="acft">fiche acft</span>
@@ -140,11 +140,50 @@
       </div>
     </div>
 
+    <!-- Bandeau OpenAIP + CartaBossy -->
+    <div id="map-controls" class="card p-3 mt-3 space-y-2">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-2 text-xs">
+          <i data-lucide="layers" class="h-4 w-4"></i>
+          <span class="font-medium">overlays carte</span>
+          <span id="openaip-status" class="pill" style="background:#F0F0EE;color:#6B6B6B;">non configuré</span>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button id="openaip-config-btn" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">
+            <i data-lucide="key" class="inline h-3 w-3"></i> configurer OpenAIP
+          </button>
+          <a href="https://www.cartabossy.com/" target="_blank" rel="noreferrer"
+             class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1">
+            <i data-lucide="external-link" class="h-3 w-3"></i> ouvrir CartaBossy
+          </a>
+        </div>
+      </div>
+
+      <!-- Formulaire de saisie clé OpenAIP (caché par défaut) -->
+      <div id="openaip-config-form" class="hidden border-t border-thin pt-3 mt-2 space-y-2">
+        <p class="text-xs text-muted">
+          Pour afficher les espaces aériens et points de report VFR sur la carte, créez un compte gratuit sur
+          <a href="https://www.openaip.net/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">openaip.net</a>,
+          puis copiez votre clé API (Profile → Client API → Generate API key).
+        </p>
+        <div class="flex gap-2 flex-wrap">
+          <input type="text" id="openaip-key-input" class="ad-input flex-1" placeholder="Collez votre clé API OpenAIP ici..." />
+          <button id="openaip-save-btn" class="text-xs px-3 py-1.5 rounded bg-black text-white hover:opacity-90">
+            enregistrer
+          </button>
+          <button id="openaip-clear-btn" class="text-xs px-3 py-1.5 rounded border border-thin bg-white hover:bg-gray-50">
+            effacer
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Carte interactive -->
     <div class="card p-2 mt-3">
       <div id="map"></div>
       <p class="text-xs text-muted mt-2 px-2">
         447 aérodromes officiels DGAC (PIAF). Cliquez sur un marqueur pour l'ajouter au trajet.
+        Coin haut droit : activer/désactiver les overlays OpenAIP (espaces aériens, navaids, points VFR).
       </p>
     </div>
 
@@ -460,9 +499,109 @@ function setupAdInput(idx) {
 // CARTE LEAFLET
 // ============================================================
 let map, markerLayer, routeLayer;
+let layerControl = null;
+let openaipLayers = { airspaces: null, airports: null, navaids: null, reportingPoints: null };
+
+function getOpenaipKey() {
+  return localStorage.getItem('autogyrodash_openaip_key') || '';
+}
+
+function setOpenaipKey(key) {
+  if (key && key.trim()) {
+    localStorage.setItem('autogyrodash_openaip_key', key.trim());
+  } else {
+    localStorage.removeItem('autogyrodash_openaip_key');
+  }
+  updateOpenaipStatus();
+}
+
+function updateOpenaipStatus() {
+  const status = document.getElementById('openaip-status');
+  if (!status) return;
+  const key = getOpenaipKey();
+  if (key) {
+    status.textContent = '✓ configuré';
+    status.style.background = '#DCFCE7';
+    status.style.color = '#14532D';
+  } else {
+    status.textContent = 'non configuré';
+    status.style.background = '#F0F0EE';
+    status.style.color = '#6B6B6B';
+  }
+}
+
+function buildOpenaipLayers() {
+  const key = getOpenaipKey();
+  if (!key) return null;
+
+  // Tiles API v2 OpenAIP : https://api.tiles.openaip.net/api/data/{type}/{z}/{x}/{y}.png?apiKey=KEY
+  const opts = {
+    maxZoom: 14,
+    minZoom: 4,
+    attribution: '© <a href="https://www.openaip.net" target="_blank">OpenAIP</a>',
+    opacity: 0.85,
+    detectRetina: true
+  };
+
+  return {
+    airspaces: L.tileLayer(
+      `https://api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
+      opts
+    ),
+    airports: L.tileLayer(
+      `https://api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
+      opts
+    ),
+    navaids: L.tileLayer(
+      `https://api.tiles.openaip.net/api/data/navaids/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
+      opts
+    ),
+    reportingPoints: L.tileLayer(
+      `https://api.tiles.openaip.net/api/data/reporting-points/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
+      opts
+    )
+  };
+}
+
+function refreshOpenaipLayers() {
+  // Retirer les anciens overlays du contrôle
+  if (layerControl) {
+    map.removeControl(layerControl);
+    layerControl = null;
+  }
+  // Retirer les anciens layers de la carte
+  Object.values(openaipLayers).forEach(layer => {
+    if (layer) {
+      map.removeLayer(layer);
+    }
+  });
+  openaipLayers = { airspaces: null, airports: null, navaids: null, reportingPoints: null };
+
+  const layers = buildOpenaipLayers();
+  if (!layers) return;
+
+  openaipLayers = layers;
+
+  // Activer tous les overlays par défaut
+  layers.airspaces.addTo(map);
+  layers.airports.addTo(map);
+  layers.navaids.addTo(map);
+  layers.reportingPoints.addTo(map);
+
+  // Contrôle de layers en haut à droite
+  const overlayMaps = {
+    "🛡️ espaces aériens": layers.airspaces,
+    "🛬 aérodromes (OpenAIP)": layers.airports,
+    "📡 aides à la nav (VOR, NDB)": layers.navaids,
+    "📍 points de report VFR": layers.reportingPoints
+  };
+  layerControl = L.control.layers(null, overlayMaps, { collapsed: false, position: 'topright' }).addTo(map);
+}
 
 function initMap() {
   map = L.map('map', { zoomControl: true }).setView([46.5, 2.5], 6);
+
+  // Layer de base OSM
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap',
     maxZoom: 18
@@ -470,6 +609,9 @@ function initMap() {
 
   markerLayer = L.layerGroup().addTo(map);
   routeLayer = L.layerGroup().addTo(map);
+
+  // Overlays OpenAIP si clé configurée
+  refreshOpenaipLayers();
 
   // Petit marqueur pour chaque AD
   AERODROMES_ALL.forEach(ad => {
@@ -1262,6 +1404,44 @@ function init() {
   });
 
   document.getElementById('pdf-btn').addEventListener('click', generatePdf);
+
+  // ============= OPENAIP CONTROLS =============
+  const openaipConfigBtn = document.getElementById('openaip-config-btn');
+  const openaipConfigForm = document.getElementById('openaip-config-form');
+  const openaipKeyInput = document.getElementById('openaip-key-input');
+  const openaipSaveBtn = document.getElementById('openaip-save-btn');
+  const openaipClearBtn = document.getElementById('openaip-clear-btn');
+
+  openaipConfigBtn.addEventListener('click', () => {
+    openaipConfigForm.classList.toggle('hidden');
+    if (!openaipConfigForm.classList.contains('hidden')) {
+      openaipKeyInput.value = getOpenaipKey();
+      openaipKeyInput.focus();
+    }
+  });
+
+  openaipSaveBtn.addEventListener('click', () => {
+    const key = openaipKeyInput.value.trim();
+    if (!key) {
+      alert("Saisissez une clé API OpenAIP (ou utilisez le bouton 'effacer').");
+      return;
+    }
+    setOpenaipKey(key);
+    refreshOpenaipLayers();
+    openaipConfigForm.classList.add('hidden');
+    alert("Clé OpenAIP enregistrée. Les overlays s'affichent maintenant sur la carte.");
+  });
+
+  openaipClearBtn.addEventListener('click', () => {
+    if (confirm("Effacer la clé OpenAIP enregistrée ?")) {
+      setOpenaipKey('');
+      refreshOpenaipLayers();
+      openaipKeyInput.value = '';
+      openaipConfigForm.classList.add('hidden');
+    }
+  });
+
+  updateOpenaipStatus();
 
   // Charger ACFT sauvegardée
   STATE.acft = loadAcft();
