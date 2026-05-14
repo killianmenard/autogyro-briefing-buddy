@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.2.6 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.2.7 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -121,7 +121,7 @@
   <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
     <i data-lucide="plane" class="h-5 w-5"></i>
     <h1 class="text-base font-medium">autogyrodash</h1>
-    <span class="text-xs text-muted pre-mono">v0.2.6</span>
+    <span class="text-xs text-muted pre-mono">v0.2.7</span>
     <div class="ml-auto flex flex-wrap items-center gap-2">
       <span class="tab-btn active" data-tab="plan">plan de vol</span>
       <span class="tab-btn" data-tab="acft">fiche acft</span>
@@ -246,16 +246,40 @@
     <!-- Zones aériennes traversées -->
     <div id="airspaces-section" class="mt-3 hidden">
       <div class="card p-4 space-y-2">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between flex-wrap gap-2">
           <h2 class="text-sm font-medium uppercase tracking-wide text-muted">
             <i data-lucide="shield-alert" class="inline h-4 w-4"></i> zones aériennes traversées
           </h2>
           <span id="airspaces-count" class="pill" style="background:#F0F0EE;color:#6B6B6B;">—</span>
         </div>
+        
+        <!-- Filtre d'altitude -->
+        <div class="muted-bg rounded p-2 space-y-2">
+          <label class="flex items-center gap-2 text-xs cursor-pointer">
+            <input type="checkbox" id="altitude-filter-enabled" checked />
+            <span class="font-medium">Filtrer par fourchette d'altitude (ft MSL)</span>
+          </label>
+          <div id="altitude-filter-controls" class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs text-muted">de</span>
+            <input type="number" id="altitude-filter-min" value="0" min="0" max="50000" step="100"
+                   class="ad-input" style="width: 90px;" />
+            <span class="text-xs text-muted">à</span>
+            <input type="number" id="altitude-filter-max" value="2500" min="0" max="50000" step="100"
+                   class="ad-input" style="width: 90px;" />
+            <span class="text-xs text-muted">ft</span>
+            <button id="altitude-filter-papa" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">
+              0-2500 ft (PAPA)
+            </button>
+            <button id="altitude-filter-reset" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">
+              tout (0-50000)
+            </button>
+          </div>
+        </div>
+        
         <div id="airspaces-loading" class="text-xs text-muted">Analyse du trajet...</div>
         <div id="airspaces-list" class="space-y-1"></div>
         <p class="text-xs text-muted mt-2">
-          ⚠️ Détection basée sur la géométrie 2D du trajet. Vérifier les altitudes plancher/plafond vs vos niveaux de vol.
+          ⚠️ Détection basée sur la géométrie 2D du trajet. Le filtre d'altitude utilise les altitudes déclarées (GND traité comme 0 ft).
           Toujours consulter NOTAM et AZBA officiels avant chaque vol.
         </p>
       </div>
@@ -391,6 +415,77 @@
 
 </main>
 
+<!-- MODAL PERSONNALISATION PDF -->
+<div id="pdf-modal" class="hidden" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:12px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-medium">Personnaliser le PDF de briefing</h2>
+      <button id="pdf-modal-close" class="text-muted hover:text-foreground text-2xl leading-none">✕</button>
+    </div>
+    
+    <p class="text-xs text-muted mb-4">Cochez les sections à inclure dans le PDF généré. Vos choix sont mémorisés.</p>
+    
+    <div class="space-y-2">
+      <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
+        <input type="checkbox" id="pdf-section-acft" checked />
+        <span class="text-sm font-medium">Fiche aéronef</span>
+        <span class="ml-auto text-xs text-muted">immat, MTOW, V croisière...</span>
+      </label>
+      
+      <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
+        <input type="checkbox" id="pdf-section-trip" checked />
+        <span class="text-sm font-medium">Trajet</span>
+        <span class="ml-auto text-xs text-muted">segments, distance, temps, conso</span>
+      </label>
+      
+      <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
+        <input type="checkbox" id="pdf-section-map" checked />
+        <span class="text-sm font-medium">Carte avec trajet</span>
+        <span class="ml-auto text-xs text-muted">capture image</span>
+      </label>
+      
+      <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
+        <input type="checkbox" id="pdf-section-weather" checked />
+        <span class="text-sm font-medium">Météo par AD</span>
+        <span class="ml-auto text-xs text-muted">METAR/TAF/vent</span>
+      </label>
+      
+      <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
+        <input type="checkbox" id="pdf-section-airspaces" checked />
+        <span class="text-sm font-medium">Zones aériennes traversées</span>
+        <span class="ml-auto text-xs text-muted">cochez les zones à inclure ci-dessus</span>
+      </label>
+      
+      <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
+        <input type="checkbox" id="pdf-section-fuel" checked />
+        <span class="text-sm font-medium">Logistique AD</span>
+        <span class="ml-auto text-xs text-muted">carburants, contacts, horaires</span>
+      </label>
+      
+      <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
+        <input type="checkbox" id="pdf-section-notes" checked />
+        <span class="text-sm font-medium">Notes pilote</span>
+        <span class="ml-auto text-xs text-muted">texte libre</span>
+      </label>
+    </div>
+    
+    <div class="info-box mt-4 text-xs">
+      <i data-lucide="info" class="inline h-4 w-4"></i>
+      <span class="ml-1">Pour les zones aériennes : cochez/décochez chaque zone individuellement dans la section "zones aériennes traversées" ci-dessus avant de générer le PDF.</span>
+    </div>
+    
+    <div class="flex gap-2 mt-6 justify-end">
+      <button id="pdf-modal-cancel" class="text-sm px-4 py-2 rounded border border-thin bg-white hover:bg-gray-50">
+        Annuler
+      </button>
+      <button id="pdf-modal-generate" class="text-sm px-4 py-2 rounded bg-black text-white hover:opacity-90 inline-flex items-center gap-2">
+        <i data-lucide="file-text" class="h-4 w-4"></i>
+        Générer le PDF
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- FOOTER PDF -->
 <footer class="fixed bottom-0 left-0 right-0 z-20 border-t border-thin bg-white/95 px-4 py-3 backdrop-blur">
   <div class="mx-auto max-w-7xl">
@@ -482,7 +577,7 @@ const STATE = {
   temsiImg: null,
   notes: "",
   weatherCache: {},
-  visibleStops: 2
+  visibleStops: 1
 };
 
 // ============================================================
@@ -1155,7 +1250,7 @@ function refreshAdCards() {
 // ============================================================
 // PDF GÉNÉRATION
 // ============================================================
-async function generatePdf() {
+async function _doGeneratePdf(opts) {
   const btn = document.getElementById('pdf-btn');
   const btnText = document.getElementById('pdf-btn-text');
   const originalText = btnText.textContent;
@@ -1184,7 +1279,7 @@ async function generatePdf() {
     y += 6;
 
     // ============= FICHE ACFT =============
-    if (STATE.acft) {
+    if (STATE.acft && opts.acft) {
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(11);
       pdf.text('Aéronef', margin, y);
@@ -1210,6 +1305,7 @@ async function generatePdf() {
 
     // ============= TRAJET =============
     const trip = computeTrip();
+    if (opts.trip) {
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(11);
     pdf.text('Trajet', margin, y);
@@ -1249,8 +1345,10 @@ async function generatePdf() {
       y += 6;
     }
     y += 3;
+    } // fin if opts.trip
 
     // ============= CARTE (screenshot) =============
+    if (opts.map) {
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(11);
     pdf.text('Carte', margin, y);
@@ -1271,8 +1369,10 @@ async function generatePdf() {
     } catch (e) {
       console.warn("Map screenshot failed", e);
     }
+    } // fin if opts.map
 
     // ============= MÉTÉO PAR AD =============
+    if (opts.weather) {
     const uniquePoints = [];
     const seen = new Set();
     trip.points.forEach(p => {
@@ -1335,8 +1435,10 @@ async function generatePdf() {
       y += 4;
     }
 
-    // ============= NOTES =============
+    } // fin if opts.weather
+
     // ============= LOGISTIQUE (CARBURANTS PAR AD) =============
+    if (opts.fuel) {
     for (const ad of uniquePoints) {
       const fuel = FUEL_DATA[ad.icao];
       if (!fuel) continue;
@@ -1357,9 +1459,38 @@ async function generatePdf() {
       }
       y += 2;
     }
+    } // fin if opts.fuel
+
+    // ============= ZONES AÉRIENNES (avec filtre individuel) =============
+    if (opts.airspaces && opts.selectedAirspaces && opts.selectedAirspaces.length > 0) {
+      if (y > pageH - 40) { pdf.addPage(); y = margin; }
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(11);
+      pdf.text('Zones aériennes traversées', margin, y);
+      y += 5;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      
+      for (const as of opts.selectedAirspaces) {
+        if (y > pageH - 30) { pdf.addPage(); y = margin; }
+        const typeInfo = AIRSPACE_TYPES[as.type] || { label: 'OTHER', short: '?' };
+        const altLow = formatAltitude(as.lowerLimit);
+        const altHigh = formatAltitude(as.upperLimit);
+        const hours = formatHoursOfOperation(as.hoursOfOperation);
+        
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`[${typeInfo.short}] ${as.name}`, margin, y); y += 4;
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`  Type : ${typeInfo.label}`, margin, y); y += 3.5;
+        pdf.text(`  Altitudes : ${altLow} → ${altHigh}`, margin, y); y += 3.5;
+        pdf.text(`  Horaires : ${hours}`, margin, y); y += 3.5;
+        y += 2;
+      }
+      y += 3;
+    }
 
     const notes = document.getElementById('notes-textarea').value.trim();
-    if (notes) {
+    if (notes && opts.notes) {
       if (y > pageH - 30) { pdf.addPage(); y = margin; }
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(11);
@@ -1387,6 +1518,88 @@ async function generatePdf() {
     btnText.textContent = originalText;
     btn.disabled = false;
   }
+}
+
+// ============================================================
+// PDF MODAL & GENERATION
+// ============================================================
+const PDF_PREFS_KEY = 'autogyrodash_pdf_prefs';
+
+function loadPdfPrefs() {
+  try {
+    const raw = localStorage.getItem(PDF_PREFS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) { return null; }
+}
+
+function savePdfPrefs(prefs) {
+  try {
+    localStorage.setItem(PDF_PREFS_KEY, JSON.stringify(prefs));
+  } catch (e) { /* ignore */ }
+}
+
+function openPdfModal() {
+  // Charger les préférences précédentes
+  const prefs = loadPdfPrefs() || {
+    acft: true, trip: true, map: true, weather: true,
+    airspaces: true, fuel: true, notes: true
+  };
+  document.getElementById('pdf-section-acft').checked = prefs.acft;
+  document.getElementById('pdf-section-trip').checked = prefs.trip;
+  document.getElementById('pdf-section-map').checked = prefs.map;
+  document.getElementById('pdf-section-weather').checked = prefs.weather;
+  document.getElementById('pdf-section-airspaces').checked = prefs.airspaces;
+  document.getElementById('pdf-section-fuel').checked = prefs.fuel;
+  document.getElementById('pdf-section-notes').checked = prefs.notes;
+  
+  const modal = document.getElementById('pdf-modal');
+  modal.classList.remove('hidden');
+  modal.style.display = 'flex';
+  lucide.createIcons();
+}
+
+function closePdfModal() {
+  const modal = document.getElementById('pdf-modal');
+  modal.classList.add('hidden');
+  modal.style.display = 'none';
+}
+
+async function generatePdf() {
+  // Anciennement le PDF direct, maintenant ouvre le modal
+  openPdfModal();
+}
+
+async function confirmPdfGeneration() {
+  const opts = {
+    acft: document.getElementById('pdf-section-acft').checked,
+    trip: document.getElementById('pdf-section-trip').checked,
+    map: document.getElementById('pdf-section-map').checked,
+    weather: document.getElementById('pdf-section-weather').checked,
+    airspaces: document.getElementById('pdf-section-airspaces').checked,
+    fuel: document.getElementById('pdf-section-fuel').checked,
+    notes: document.getElementById('pdf-section-notes').checked
+  };
+  
+  // Récupérer les zones cochées dans la section zones aériennes
+  if (opts.airspaces) {
+    const checkedIds = new Set();
+    document.querySelectorAll('.airspace-pdf-checkbox:checked').forEach(cb => {
+      checkedIds.add(cb.dataset.airspaceId);
+    });
+    opts.selectedAirspaces = _crossedAirspacesCache.filter(as => {
+      const id = as._id || '';
+      return checkedIds.has(id) || Array.from(checkedIds).some(cid => cid.startsWith('idx-'));
+    });
+    // Fallback : si on a pas d'id sur les checkboxes (chargement initial), on prend tout
+    if (opts.selectedAirspaces.length === 0 && checkedIds.size > 0) {
+      opts.selectedAirspaces = _crossedAirspacesCache;
+    }
+  }
+  
+  savePdfPrefs(opts);
+  closePdfModal();
+  await _doGeneratePdf(opts);
 }
 
 // ============================================================
@@ -1466,6 +1679,36 @@ function formatAltitude(limit) {
   
   if (unit === 2) return `FL${v}`;
   return `${v} ${unitLabel} ${refLabel}`.trim();
+}
+
+// Convertit une limite d'altitude OpenAIP en ft (approximation MSL)
+// GND est traité comme 0 ft (worst case pour filtre conservateur)
+function altitudeToFt(limit) {
+  if (!limit) return null;
+  const v = limit.value;
+  const unit = limit.unit; // 0=m, 1=ft, 2=FL
+  const ref = limit.referenceDatum; // 0=GND, 1=MSL, 2=STD, 3=UNL
+  
+  if (ref === 3) return 999999; // Unlimited
+  
+  let ft;
+  if (unit === 0) ft = v * 3.28084; // m → ft
+  else if (unit === 1) ft = v;
+  else if (unit === 2) ft = v * 100; // FL → ft
+  else ft = v;
+  
+  return Math.round(ft);
+}
+
+// Vérifie si une zone chevauche la fourchette d'altitude [minFt, maxFt]
+function airspaceOverlapsAltitudeRange(as, minFt, maxFt) {
+  const floor = altitudeToFt(as.lowerLimit);
+  const ceiling = altitudeToFt(as.upperLimit);
+  
+  if (floor === null || ceiling === null) return true; // garder si pas d'info
+  
+  // Overlap si NOT (ceiling < min OR floor > max)
+  return !(ceiling < minFt || floor > maxFt);
 }
 
 function formatHoursOfOperation(hoo) {
@@ -1600,17 +1843,21 @@ function detectAirspacesOnRoute(points, airspaces) {
   return crossed;
 }
 
-function renderAirspaceCard(as) {
+function renderAirspaceCard(as, idx) {
   const typeInfo = AIRSPACE_TYPES[as.type] || { label: 'OTHER', short: '?' };
   const cssClass = `airspace-${typeInfo.short}`;
   const altLow = formatAltitude(as.lowerLimit);
   const altHigh = formatAltitude(as.upperLimit);
   const hours = formatHoursOfOperation(as.hoursOfOperation);
+  const asId = as._id || `idx-${idx}`;
   
   return `
-    <div class="airspace-card ${cssClass}">
+    <div class="airspace-card ${cssClass}" data-airspace-id="${asId}">
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <div class="flex items-center gap-2 flex-wrap">
+          <label class="flex items-center gap-2 cursor-pointer" title="inclure dans le PDF">
+            <input type="checkbox" class="airspace-pdf-checkbox" data-airspace-id="${asId}" checked />
+          </label>
           <strong class="pre-mono">${typeInfo.short}</strong>
           <strong>${as.name}</strong>
         </div>
@@ -1624,49 +1871,41 @@ function renderAirspaceCard(as) {
   `;
 }
 
+// Cache des zones traversées (toutes altitudes) pour ré-appliquer filtre sans recalcul
+let _crossedAirspacesCache = [];
+
 async function updateAirspacesOnRoute() {
   const trip = computeTrip();
   const section = document.getElementById('airspaces-section');
-  const countEl = document.getElementById('airspaces-count');
   const loadingEl = document.getElementById('airspaces-loading');
-  const listEl = document.getElementById('airspaces-list');
   
   if (!trip || trip.points.length < 2) {
     section.classList.add('hidden');
+    _crossedAirspacesCache = [];
     return;
   }
   
   if (!getOpenaipKey()) {
     section.classList.add('hidden');
+    _crossedAirspacesCache = [];
     return;
   }
   
   section.classList.remove('hidden');
   loadingEl.classList.remove('hidden');
-  listEl.innerHTML = '';
-  countEl.textContent = 'analyse...';
+  document.getElementById('airspaces-list').innerHTML = '';
+  document.getElementById('airspaces-count').textContent = 'analyse...';
   
   const airspaces = await fetchFranceAirspaces();
   
   if (airspaces.length === 0) {
     loadingEl.textContent = 'Données zones aériennes indisponibles (clé OpenAIP requise).';
-    countEl.textContent = '—';
+    document.getElementById('airspaces-count').textContent = '—';
     return;
   }
   
   const crossed = detectAirspacesOnRoute(trip.points, airspaces);
-  
-  loadingEl.classList.add('hidden');
-  countEl.textContent = `${crossed.length} zone${crossed.length > 1 ? 's' : ''}`;
-  if (crossed.length > 0) {
-    countEl.style.background = '#FEE2E2';
-    countEl.style.color = '#991B1B';
-  } else {
-    countEl.style.background = '#DCFCE7';
-    countEl.style.color = '#14532D';
-  }
-  
-  // Trier par type (R/D/P d'abord)
+  // Trier par type (P/R/D d'abord)
   const priority = { 3: 0, 1: 1, 2: 2, 4: 3, 7: 4, 13: 5 };
   crossed.sort((a, b) => {
     const pa = priority[a.type] !== undefined ? priority[a.type] : 99;
@@ -1674,10 +1913,48 @@ async function updateAirspacesOnRoute() {
     return pa - pb;
   });
   
-  if (crossed.length === 0) {
-    listEl.innerHTML = '<p class="text-xs text-muted">Aucune zone réglementée détectée sur ce trajet. ✓</p>';
+  _crossedAirspacesCache = crossed;
+  loadingEl.classList.add('hidden');
+  renderFilteredAirspaces();
+}
+
+function renderFilteredAirspaces() {
+  const countEl = document.getElementById('airspaces-count');
+  const listEl = document.getElementById('airspaces-list');
+  
+  // Appliquer filtre d'altitude
+  const filterEnabled = document.getElementById('altitude-filter-enabled').checked;
+  let toShow = _crossedAirspacesCache;
+  
+  if (filterEnabled) {
+    const minFt = parseInt(document.getElementById('altitude-filter-min').value) || 0;
+    const maxFt = parseInt(document.getElementById('altitude-filter-max').value) || 50000;
+    toShow = _crossedAirspacesCache.filter(as => airspaceOverlapsAltitudeRange(as, minFt, maxFt));
+  }
+  
+  const totalCount = _crossedAirspacesCache.length;
+  const filteredCount = toShow.length;
+  
+  if (filterEnabled && totalCount > filteredCount) {
+    countEl.textContent = `${filteredCount} / ${totalCount} zone${totalCount > 1 ? 's' : ''}`;
   } else {
-    listEl.innerHTML = crossed.map(renderAirspaceCard).join('');
+    countEl.textContent = `${totalCount} zone${totalCount > 1 ? 's' : ''}`;
+  }
+  
+  if (filteredCount > 0) {
+    countEl.style.background = '#FEE2E2';
+    countEl.style.color = '#991B1B';
+  } else {
+    countEl.style.background = '#DCFCE7';
+    countEl.style.color = '#14532D';
+  }
+  
+  if (totalCount === 0) {
+    listEl.innerHTML = '<p class="text-xs text-muted">Aucune zone réglementée détectée sur ce trajet. ✓</p>';
+  } else if (filteredCount === 0) {
+    listEl.innerHTML = '<p class="text-xs text-muted">Aucune zone dans la fourchette d\'altitude choisie. ✓ (' + totalCount + ' zone' + (totalCount > 1 ? 's' : '') + ' au total sur le trajet)</p>';
+  } else {
+    listEl.innerHTML = toShow.map((as, i) => renderAirspaceCard(as, i)).join('');
   }
   
   lucide.createIcons();
@@ -1718,7 +1995,7 @@ function init() {
   document.getElementById('clear-trip').addEventListener('click', () => {
     STATE.trip = [null, null, null, null, null];
     STATE.loop = false;
-    STATE.visibleStops = 2;
+    STATE.visibleStops = 1;
     for (let i = 0; i < 5; i++) {
       document.getElementById(`ad-input-${i}`).value = '';
     }
@@ -1787,6 +2064,41 @@ function init() {
   // ============= FULLSCREEN MAP =============
   document.getElementById('map-fullscreen-btn').addEventListener('click', toggleMapFullscreen);
   document.getElementById('map-fullscreen-close').addEventListener('click', toggleMapFullscreen);
+
+  // ============= FILTRE D'ALTITUDE =============
+  const altFilterEnabled = document.getElementById('altitude-filter-enabled');
+  const altFilterMin = document.getElementById('altitude-filter-min');
+  const altFilterMax = document.getElementById('altitude-filter-max');
+  
+  function onAltitudeFilterChange() {
+    renderFilteredAirspaces();
+  }
+  altFilterEnabled.addEventListener('change', onAltitudeFilterChange);
+  altFilterMin.addEventListener('input', onAltitudeFilterChange);
+  altFilterMax.addEventListener('input', onAltitudeFilterChange);
+  
+  document.getElementById('altitude-filter-papa').addEventListener('click', () => {
+    altFilterEnabled.checked = true;
+    altFilterMin.value = 0;
+    altFilterMax.value = 2500;
+    renderFilteredAirspaces();
+  });
+  document.getElementById('altitude-filter-reset').addEventListener('click', () => {
+    altFilterEnabled.checked = true;
+    altFilterMin.value = 0;
+    altFilterMax.value = 50000;
+    renderFilteredAirspaces();
+  });
+
+  // ============= PDF MODAL =============
+  document.getElementById('pdf-modal-close').addEventListener('click', closePdfModal);
+  document.getElementById('pdf-modal-cancel').addEventListener('click', closePdfModal);
+  document.getElementById('pdf-modal-generate').addEventListener('click', confirmPdfGeneration);
+  
+  // Fermer le modal en cliquant à l'extérieur
+  document.getElementById('pdf-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'pdf-modal') closePdfModal();
+  });
 
   // Charger ACFT sauvegardée
   STATE.acft = loadAcft();
