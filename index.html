@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.2 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.2.1 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -73,7 +73,7 @@
   <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
     <i data-lucide="plane" class="h-5 w-5"></i>
     <h1 class="text-base font-medium">autogyrodash</h1>
-    <span class="text-xs text-muted pre-mono">v0.2</span>
+    <span class="text-xs text-muted pre-mono">v0.2.1</span>
     <div class="ml-auto flex flex-wrap items-center gap-2">
       <span class="tab-btn active" data-tab="plan">plan de vol</span>
       <span class="tab-btn" data-tab="acft">fiche acft</span>
@@ -89,23 +89,42 @@
     <div class="card p-4 space-y-3">
       <h2 class="text-sm font-medium uppercase tracking-wide text-muted">trajet</h2>
 
-      <div class="grid gap-3 sm:grid-cols-3">
-        <div class="relative">
+      <div id="trip-inputs" class="space-y-3">
+        <div class="relative" data-trip-slot="0">
           <label class="text-xs text-muted">départ</label>
           <input type="text" id="ad-input-0" class="ad-input mt-1" placeholder="ex: LFLQ ou Montélimar" autocomplete="off" />
           <div id="ad-suggestions-0" class="ad-suggestions hidden"></div>
         </div>
-        <div class="relative">
-          <label class="text-xs text-muted">étape intermédiaire (optionnel)</label>
+        <div class="relative" data-trip-slot="1">
+          <label class="text-xs text-muted">étape 1 (optionnel)</label>
           <input type="text" id="ad-input-1" class="ad-input mt-1" placeholder="ex: LFHO" autocomplete="off" />
           <div id="ad-suggestions-1" class="ad-suggestions hidden"></div>
         </div>
-        <div class="relative">
-          <label class="text-xs text-muted">arrivée</label>
-          <input type="text" id="ad-input-2" class="ad-input mt-1" placeholder="ex: LFLU" autocomplete="off" />
+        <div class="relative hidden" data-trip-slot="2">
+          <label class="text-xs text-muted">étape 2</label>
+          <div class="flex gap-2">
+            <input type="text" id="ad-input-2" class="ad-input mt-1" placeholder="ex: LFNV" autocomplete="off" />
+            <button class="trip-remove-btn mt-1 text-muted hover:text-red-600 px-2" data-remove-slot="2" title="retirer cette étape">✕</button>
+          </div>
           <div id="ad-suggestions-2" class="ad-suggestions hidden"></div>
         </div>
+        <div class="relative hidden" data-trip-slot="3">
+          <label class="text-xs text-muted">étape 3</label>
+          <div class="flex gap-2">
+            <input type="text" id="ad-input-3" class="ad-input mt-1" placeholder="ex: LFNS" autocomplete="off" />
+            <button class="trip-remove-btn mt-1 text-muted hover:text-red-600 px-2" data-remove-slot="3" title="retirer cette étape">✕</button>
+          </div>
+          <div id="ad-suggestions-3" class="ad-suggestions hidden"></div>
+        </div>
+        <div class="relative" data-trip-slot="4">
+          <label class="text-xs text-muted">arrivée</label>
+          <input type="text" id="ad-input-4" class="ad-input mt-1" placeholder="ex: LFLU" autocomplete="off" />
+          <div id="ad-suggestions-4" class="ad-suggestions hidden"></div>
+        </div>
       </div>
+      <button id="add-step-btn" class="text-xs text-blue-600 hover:text-blue-800 mt-2">
+        <i data-lucide="plus" class="inline h-3 w-3"></i> ajouter une étape (max 3)
+      </button>
 
       <div class="flex items-center gap-3 flex-wrap">
         <label class="flex items-center gap-2 text-sm">
@@ -255,7 +274,10 @@
   </div>
 </footer>
 <script>
-const AERODROMES_ALL = [{"icao":"LFLQ","name":"Montelimar Ancone","lat":44.58028,"lon":4.73917,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLQ","metarStation":"LFLQ"},{"icao":"LFHD","name":"Pierrelatte","lat":44.39778,"lon":4.71694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHD","metarStation":"LFHD"},{"icao":"LFHO","name":"Aubenas Ardeche Meridionale","lat":44.53942,"lon":4.37173,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHO","metarStation":"LFHO"},{"icao":"LFNV","name":"Valreas Visan","lat":44.33583,"lon":4.90694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNV","metarStation":"LFNV"},{"icao":"LFLU","name":"Valence Chabeuil","lat":44.91556,"lon":4.96874,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLU","metarStation":"LFLU"},{"icao":"LFMO","name":"Orange Caritat","lat":44.14009,"lon":4.86858,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMO","metarStation":"LFMO"},{"icao":"LFKC","name":"Calvi Sainte Catherine","lat":42.52436,"lon":8.79301,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKC","metarStation":"LFKC"},{"icao":"LFLI","name":"Annemasse","lat":46.19194,"lon":6.26833,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLI","metarStation":"LFLI"},{"icao":"LFHV","name":"Villefranche Tarare","lat":45.91998,"lon":4.63493,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHV","metarStation":"LFHV"},{"icao":"LFLB","name":"Chambery Aix Les Bains","lat":45.63927,"lon":5.88012,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLB","metarStation":"LFLB"},{"icao":"LFHM","name":"Megeve","lat":45.82361,"lon":6.64917,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHM","metarStation":"LFHM"},{"icao":"LFKA","name":"Albertville","lat":45.62722,"lon":6.32972,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKA","metarStation":"LFKA"},{"icao":"LFKL","name":"Lyon Brindas","lat":45.71065,"lon":4.69665,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKL","metarStation":"LFKL"},{"icao":"LFLN","name":"Saint Yan","lat":46.40649,"lon":4.0211,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLN","metarStation":"LFLN"},{"icao":"LFHN","name":"Bellegarde Vouvray","lat":46.12333,"lon":5.80472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHN","metarStation":"LFHN"},{"icao":"LFLJ","name":"Courchevel","lat":45.39583,"lon":6.6325,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLJ","metarStation":"LFLJ"},{"icao":"LFKD","name":"Sollieres Sardieres","lat":45.25389,"lon":6.80111,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKD","metarStation":"LFKD"},{"icao":"LFLP","name":"Annecy Meythet","lat":45.93077,"lon":6.10629,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLP","metarStation":"LFLP"},{"icao":"LFTH","name":"Hyeres Le Palyvestre","lat":43.09734,"lon":6.14603,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTH","metarStation":"LFTH"},{"icao":"LFTW","name":"Nimes Garons","lat":43.75743,"lon":4.41634,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTW","metarStation":"LFTW"},{"icao":"LFTZ","name":"La Mole","lat":43.20639,"lon":6.4825,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTZ","metarStation":"LFTZ"},{"icao":"LFMS","name":"Ales Cevennes","lat":44.07273,"lon":4.14292,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMS","metarStation":"LFMS"},{"icao":"LFKF","name":"Figari Sud Corse","lat":41.50211,"lon":9.09675,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKF","metarStation":"LFKF"},{"icao":"LFTF","name":"Cuers Pierrefeu","lat":43.24759,"lon":6.12729,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTF","metarStation":"LFTF"},{"icao":"LFNH","name":"Carpentras","lat":44.0225,"lon":5.09,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNH","metarStation":"LFNH"},{"icao":"LFNF","name":"Vinon","lat":43.73639,"lon":5.78306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNF","metarStation":"LFNF"},{"icao":"LFMU","name":"Beziers Vias","lat":43.32343,"lon":3.3534,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMU","metarStation":"LFMU"},{"icao":"LFMQ","name":"Le Castellet","lat":43.25222,"lon":5.78611,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMQ","metarStation":"LFMQ"},{"icao":"LFNS","name":"Sisteron Theze","lat":44.28667,"lon":5.92917,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNS","metarStation":"LFNS"},{"icao":"LFNG","name":"Montpellier Candillargues","lat":43.61017,"lon":4.07016,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNG","metarStation":"LFNG"},{"icao":"LFCN","name":"Nogaro","lat":43.76889,"lon":-0.03472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCN","metarStation":"LFCN"},{"icao":"LFMP","name":"Perpignan Rivesaltes","lat":42.74083,"lon":2.86972,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMP","metarStation":"LFMP"},{"icao":"LFNB","name":"Mende Brenoux","lat":44.50408,"lon":3.52763,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNB","metarStation":"LFNB"},{"icao":"LFNW","name":"Puivert","lat":42.91028,"lon":2.05472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNW","metarStation":"LFNW"},{"icao":"LFCK","name":"Castres Mazamet","lat":43.55496,"lon":2.29059,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCK","metarStation":"LFCK"},{"icao":"LFMT","name":"Montpellier Mediterranee","lat":43.58326,"lon":3.96138,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMT","metarStation":"LFMT"},{"icao":"LFNA","name":"Gap Tallard","lat":44.45389,"lon":6.03667,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNA","metarStation":"LFNA"},{"icao":"LFCY","name":"Royan Medis","lat":45.63116,"lon":-0.97549,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCY","metarStation":"LFCY"},{"icao":"LFDB","name":"Montauban","lat":44.02667,"lon":1.37694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDB","metarStation":"LFDB"},{"icao":"LFMV","name":"Avignon Caumont","lat":43.90658,"lon":4.90203,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMV","metarStation":"LFMV"},{"icao":"LFCJ","name":"Jonzac Neulles","lat":45.48306,"lon":-0.42306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCJ","metarStation":"LFCJ"},{"icao":"LFCG","name":"Saint Girons Antichan","lat":43.00778,"lon":1.10306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCG","metarStation":"LFCG"},{"icao":"LFNX","name":"Bedarieux La Tour Sur Orb","lat":43.63972,"lon":3.14472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNX","metarStation":"LFNX"},{"icao":"LFCL","name":"Toulouse Lasbordes","lat":43.58778,"lon":1.49861,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCL","metarStation":"LFCL"},{"icao":"LFBA","name":"Agen La Garenne","lat":44.17471,"lon":0.59062,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBA","metarStation":"LFBA"},{"icao":"LFBI","name":"Poitiers Biard","lat":46.5874,"lon":0.30679,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBI","metarStation":"LFBI"},{"icao":"LFBH","name":"La Rochelle Ile De Re","lat":46.17921,"lon":-1.19524,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBH","metarStation":"LFBH"},{"icao":"LFBC","name":"Cazaux","lat":44.53488,"lon":-1.13145,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBC","metarStation":"LFBC"},{"icao":"LFBD","name":"Bordeaux Merignac","lat":44.82865,"lon":-0.71534,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBD","metarStation":"LFBD"},{"icao":"LFBE","name":"Bergerac Roumaniere","lat":44.82443,"lon":0.52053,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBE","metarStation":"LFBE"},{"icao":"LFBG","name":"Cognac Chateaubernard","lat":45.65833,"lon":-0.3175,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBG","metarStation":"LFBG"},{"icao":"LFBK","name":"Montlucon Gueret","lat":46.22609,"lon":2.36282,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBK","metarStation":"LFBK"},{"icao":"LFBM","name":"Mont De Marsan","lat":43.91139,"lon":-0.51,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBM","metarStation":"LFBM"},{"icao":"LFBP","name":"Pau Pyrenees","lat":43.3799,"lon":-0.41851,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBP","metarStation":"LFBP"},{"icao":"LFBR","name":"Muret Lherm","lat":43.44916,"lon":1.26369,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBR","metarStation":"LFBR"},{"icao":"LFBS","name":"Biscarrosse Parentis","lat":44.36806,"lon":-1.13222,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBS","metarStation":"LFBS"},{"icao":"LFBU","name":"Angouleme Brie Champniers","lat":45.72948,"lon":0.21915,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBU","metarStation":"LFBU"},{"icao":"LFBX","name":"Perigueux Bassillac","lat":45.19749,"lon":0.81522,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBX","metarStation":"LFBX"},{"icao":"LFBY","name":"Dax Seyresse","lat":43.68917,"lon":-1.06889,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBY","metarStation":"LFBY"},{"icao":"LFBZ","name":"Biarritz Bayonne Anglet","lat":43.46831,"lon":-1.53116,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBZ","metarStation":"LFBZ"},{"icao":"LFCC","name":"Cahors Lalbenque","lat":44.35054,"lon":1.47859,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCC","metarStation":"LFCC"},{"icao":"LFCH","name":"Arcachon La Teste De Buch","lat":44.59694,"lon":-1.11389,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCH","metarStation":"LFCH"},{"icao":"LFCI","name":"Albi Le Sequestre","lat":43.91328,"lon":2.11675,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCI","metarStation":"LFCI"},{"icao":"LFDA","name":"Aire Sur L'Adour","lat":43.70861,"lon":-0.24722,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDA","metarStation":"LFDA"},{"icao":"LFDH","name":"Auch Lamothe","lat":43.68684,"lon":0.60005,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDH","metarStation":"LFDH"},{"icao":"LFDI","name":"Libourne Artigues De Lussac","lat":44.985,"lon":-0.13611,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDI","metarStation":"LFDI"},{"icao":"LFDJ","name":"Pamiers Les Pujols","lat":43.09068,"lon":1.69585,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDJ","metarStation":"LFDJ"},{"icao":"LFDN","name":"Rochefort Charente Maritime","lat":45.88953,"lon":-0.98239,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDN","metarStation":"LFDN"},{"icao":"LFDU","name":"Lesparre Saint Laurent Medoc","lat":45.19778,"lon":-0.88222,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDU","metarStation":"LFDU"},{"icao":"LFDX","name":"Fumel Montayral","lat":44.45917,"lon":1.00722,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDX","metarStation":"LFDX"},{"icao":"LFRH","name":"Lorient Lann Bihoue","lat":47.76053,"lon":-3.43995,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRH","metarStation":"LFRH"},{"icao":"LFRT","name":"Saint Brieuc Armor","lat":48.53749,"lon":-2.85654,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRT","metarStation":"LFRT"},{"icao":"LFRD","name":"Dinard Pleurtuit Saint Malo","lat":48.58771,"lon":-2.07995,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRD","metarStation":"LFRD"},{"icao":"LFRO","name":"Lannion","lat":48.75444,"lon":-3.47194,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRO","metarStation":"LFRO"},{"icao":"LFRC","name":"Cherbourg Maupertus","lat":49.65078,"lon":-1.4753,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRC","metarStation":"LFRC"},{"icao":"LFRB","name":"Brest Bretagne","lat":48.44713,"lon":-4.42175,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRB","metarStation":"LFRB"},{"icao":"LFRJ","name":"Landivisiau","lat":48.53026,"lon":-4.15164,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRJ","metarStation":"LFRJ"},{"icao":"LFRL","name":"Lanveoc Poulmic","lat":48.28253,"lon":-4.44369,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRL","metarStation":"LFRL"},{"icao":"LFRN","name":"Rennes Saint Jacques","lat":48.07193,"lon":-1.73223,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRN","metarStation":"LFRN"},{"icao":"LFRP","name":"Ploermel Loyat","lat":48.00186,"lon":-2.37872,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRP","metarStation":"LFRP"},{"icao":"LFRS","name":"Nantes Atlantique","lat":47.15702,"lon":-1.60781,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRS","metarStation":"LFRS"},{"icao":"LFRU","name":"Morlaix Ploujean","lat":48.60075,"lon":-3.81667,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRU","metarStation":"LFRU"},{"icao":"LFRV","name":"Vannes Meucon","lat":47.71924,"lon":-2.72338,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRV","metarStation":"LFRV"},{"icao":"LFRZ","name":"Saint Nazaire Montoir","lat":47.31065,"lon":-2.1568,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRZ","metarStation":"LFRZ"},{"icao":"LFOA","name":"Avord","lat":47.05694,"lon":2.63889,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOA","metarStation":"LFOA"},{"icao":"LFOH","name":"Le Havre Octeville","lat":49.53385,"lon":0.08812,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOH","metarStation":"LFOH"},{"icao":"LFOI","name":"Abbeville","lat":50.14306,"lon":1.8325,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOI","metarStation":"LFOI"},{"icao":"LFOJ","name":"Orleans Bricy","lat":47.98778,"lon":1.76056,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOJ","metarStation":"LFOJ"},{"icao":"LFOO","name":"Les Sables D'Olonne Talmont","lat":46.47556,"lon":-1.725,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOO","metarStation":"LFOO"},{"icao":"LFOU","name":"Cholet Le Pontreau","lat":47.08191,"lon":-0.87722,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOU","metarStation":"LFOU"},{"icao":"LFOV","name":"Laval Entrammes","lat":48.03225,"lon":-0.74278,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOV","metarStation":"LFOV"},{"icao":"LFRI","name":"La Roche Sur Yon Les Ajoncs","lat":46.70238,"lon":-1.38176,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRI","metarStation":"LFRI"},{"icao":"LFRM","name":"Le Mans Arnage","lat":47.94849,"lon":0.20165,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRM","metarStation":"LFRM"},{"icao":"LFOC","name":"Chateaudun","lat":48.05788,"lon":1.37944,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOC","metarStation":"LFOC"},{"icao":"LFOK","name":"Chalons Vatry","lat":48.77332,"lon":4.20616,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOK","metarStation":"LFOK"},{"icao":"LFOQ","name":"Blois Le Breuil","lat":47.67983,"lon":1.20578,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOQ","metarStation":"LFOQ"},{"icao":"LFOT","name":"Tours Val De Loire","lat":47.43184,"lon":0.72318,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOT","metarStation":"LFOT"},{"icao":"LFOZ","name":"Orleans Saint Denis De L'Hotel","lat":47.89762,"lon":2.16421,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOZ","metarStation":"LFOZ"},{"icao":"LFOG","name":"Flers Saint Paul","lat":48.74972,"lon":-0.59472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOG","metarStation":"LFOG"},{"icao":"LFOX","name":"Etampes Mondesir","lat":48.38111,"lon":2.07389,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOX","metarStation":"LFOX"},{"icao":"LFPB","name":"Paris Le Bourget","lat":48.96952,"lon":2.44149,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPB","metarStation":"LFPB"},{"icao":"LFPN","name":"Toussus Le Noble","lat":48.74976,"lon":2.11118,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPN","metarStation":"LFPN"},{"icao":"LFPT","name":"Pontoise Cormeilles En Vexin","lat":49.09663,"lon":2.04072,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPT","metarStation":"LFPT"},{"icao":"LFPK","name":"Coulommiers Voisins","lat":48.8375,"lon":3.01444,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPK","metarStation":"LFPK"},{"icao":"LFPL","name":"Lognes Emerainville","lat":48.82194,"lon":2.62278,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPL","metarStation":"LFPL"},{"icao":"LFPX","name":"Chavenay Villepreux","lat":48.84222,"lon":1.98028,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPX","metarStation":"LFPX"},{"icao":"LFPZ","name":"Saint Cyr L'Ecole","lat":48.81028,"lon":2.07333,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPZ","metarStation":"LFPZ"},{"icao":"LFPA","name":"Persan Beaumont","lat":49.165,"lon":2.31167,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPA","metarStation":"LFPA"},{"icao":"LFAC","name":"Calais Dunkerque","lat":50.96093,"lon":1.95143,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAC","metarStation":"LFAC"},{"icao":"LFAT","name":"Le Touquet Paris Plage","lat":50.51485,"lon":1.62758,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAT","metarStation":"LFAT"},{"icao":"LFAY","name":"Amiens-Glisy","lat":49.8731,"lon":2.38699,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAY","metarStation":"LFAY"},{"icao":"LFAP","name":"Rethel Perthes","lat":49.48111,"lon":4.36333,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAP","metarStation":"LFAP"},{"icao":"LFOB","name":"Beauvais Tille","lat":49.45442,"lon":2.11281,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOB","metarStation":"LFOB"},{"icao":"LFAB","name":"Dieppe Saint Aubin","lat":49.88263,"lon":1.08533,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAB","metarStation":"LFAB"},{"icao":"LFAE","name":"Eu Mers Le Treport","lat":50.06917,"lon":1.42667,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAE","metarStation":"LFAE"},{"icao":"LFAI","name":"Nangis Les Loges","lat":48.59694,"lon":3.00806,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAI","metarStation":"LFAI"},{"icao":"LFAQ","name":"Albert Bray","lat":49.97006,"lon":2.69262,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAQ","metarStation":"LFAQ"},{"icao":"LFQA","name":"Reims Prunay","lat":49.20869,"lon":4.15658,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQA","metarStation":"LFQA"},{"icao":"LFQB","name":"Troyes Barberey","lat":48.32162,"lon":4.01662,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQB","metarStation":"LFQB"},{"icao":"LFQH","name":"Chatillon Sur Seine","lat":47.84528,"lon":4.57944,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQH","metarStation":"LFQH"},{"icao":"LFQJ","name":"Maubeuge Elesmes","lat":50.30833,"lon":4.03,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQJ","metarStation":"LFQJ"},{"icao":"LFQO","name":"Lille Marcq En Baroeul","lat":50.68722,"lon":3.07556,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQO","metarStation":"LFQO"},{"icao":"LFQQ","name":"Lille Lesquin","lat":50.56343,"lon":3.08682,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQQ","metarStation":"LFQQ"},{"icao":"LFQT","name":"Merville Calonne","lat":50.6166,"lon":2.64009,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQT","metarStation":"LFQT"},{"icao":"LFSB","name":"Bale-Mulhouse","lat":47.58988,"lon":7.52922,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSB","metarStation":"LFSB"},{"icao":"LFSI","name":"Saint Dizier Robinson","lat":48.63354,"lon":4.90819,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSI","metarStation":"LFSI"},{"icao":"LFSO","name":"Nancy Ochey","lat":48.58319,"lon":5.95453,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSO","metarStation":"LFSO"},{"icao":"LFSR","name":"Reims Champagne","lat":49.31028,"lon":4.05083,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSR","metarStation":"LFSR"},{"icao":"LFST","name":"Strasbourg Entzheim","lat":48.54194,"lon":7.63444,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFST","metarStation":"LFST"},{"icao":"LFSG","name":"Epinal Mirecourt","lat":48.32501,"lon":6.06674,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSG","metarStation":"LFSG"},{"icao":"LFSF","name":"Metz Frescaty","lat":49.07639,"lon":6.13389,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSF","metarStation":"LFSF"},{"icao":"LFSN","name":"Nancy Essey","lat":48.69209,"lon":6.22605,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSN","metarStation":"LFSN"},{"icao":"LFGA","name":"Colmar Houssen","lat":48.11035,"lon":7.35915,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGA","metarStation":"LFGA"},{"icao":"LFGB","name":"Mulhouse Habsheim","lat":47.73722,"lon":7.42972,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGB","metarStation":"LFGB"},{"icao":"LFGC","name":"Strasbourg Neuhof","lat":48.55361,"lon":7.7775,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGC","metarStation":"LFGC"},{"icao":"LFGI","name":"Dijon Darois","lat":47.38528,"lon":4.94694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGI","metarStation":"LFGI"},{"icao":"LFGM","name":"Montceau Les Mines Pouilloux","lat":46.60333,"lon":4.33278,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGM","metarStation":"LFGM"},{"icao":"LFGW","name":"Verdun Sommedieue","lat":49.12218,"lon":5.47085,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGW","metarStation":"LFGW"},{"icao":"LFGY","name":"Saint Die Remomeix","lat":48.26639,"lon":7.0075,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGY","metarStation":"LFGY"},{"icao":"LFSD","name":"Dijon-Longvic","lat":47.26582,"lon":5.09498,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSD","metarStation":"LFSD"},{"icao":"LFJA","name":"Chaumont Semoutiers","lat":48.09167,"lon":5.05,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFJA","metarStation":"LFJA"},{"icao":"LFOE","name":"Evreux Fauville","lat":49.02861,"lon":1.22,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOE","metarStation":"LFOE"},{"icao":"LFOP","name":"Rouen Vallee De Seine","lat":49.39095,"lon":1.18394,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOP","metarStation":"LFOP"},{"icao":"LFRG","name":"Deauville Normandie","lat":49.36339,"lon":0.16,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRG","metarStation":"LFRG"},{"icao":"LFRK","name":"Caen Carpiquet","lat":49.17328,"lon":-0.44988,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRK","metarStation":"LFRK"},{"icao":"LFRQ","name":"Quimper Pluguffan","lat":47.97495,"lon":-4.16788,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRQ","metarStation":"LFRQ"},{"icao":"LFAD","name":"Compiegne Margny","lat":49.43361,"lon":2.80472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAD","metarStation":"LFAD"},{"icao":"LFAF","name":"Laon Chambry","lat":49.59583,"lon":3.63167,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAF","metarStation":"LFAF"},{"icao":"LFLS","name":"Grenoble Isere","lat":45.36294,"lon":5.33266,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLS","metarStation":"LFLS"},{"icao":"LFGJ","name":"Dole Tavaux","lat":47.04269,"lon":5.43493,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGJ","metarStation":"LFGJ"},{"icao":"LFGN","name":"Paray Le Monial","lat":46.46667,"lon":4.13306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGN","metarStation":"LFGN"},{"icao":"LFGP","name":"Saint Florentin Cheu","lat":47.98139,"lon":3.77694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGP","metarStation":"LFGP"},{"icao":"LFLH","name":"Chalon Champforgeuil","lat":46.82827,"lon":4.81706,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLH","metarStation":"LFLH"},{"icao":"LFGF","name":"Beaune Challanges","lat":47.01028,"lon":4.89639,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGF","metarStation":"LFGF"},{"icao":"LFEZ","name":"Nancy Malzeville","lat":48.72361,"lon":6.20639,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFEZ","metarStation":"LFEZ"},{"icao":"LFGT","name":"Sarrebourg Buhl","lat":48.71833,"lon":7.08,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGT","metarStation":"LFGT"},{"icao":"LFKB","name":"Bastia Poretta","lat":42.55,"lon":9.48485,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKB","metarStation":"LFKB"},{"icao":"LFKJ","name":"Ajaccio Napoleon Bonaparte","lat":41.9239,"lon":8.80244,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKJ","metarStation":"LFKJ"},{"icao":"LFKS","name":"Solenzara","lat":41.92639,"lon":9.40528,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKS","metarStation":"LFKS"}];
+// ============================================================
+// DONNÉES STATIQUES — 447 aérodromes officiels DGAC (PIAF)
+// ============================================================
+const AERODROMES_ALL = [{"icao":"LFBP","name":"Pau Pyrenees","lat":43.3799,"lon":-0.41851,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBP","metarStation":"LFBP"},{"icao":"LFLS","name":"Grenoble Isere","lat":45.36294,"lon":5.33266,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLS","metarStation":"LFLS"},{"icao":"LFLY","name":"Lyon Bron","lat":45.7271,"lon":4.94445,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLY","metarStation":"LFLY"},{"icao":"LFLL","name":"Lyon Saint Exupery","lat":45.72561,"lon":5.08815,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLL","metarStation":"LFLL"},{"icao":"LFML","name":"Marseille Provence","lat":43.43927,"lon":5.22137,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFML","metarStation":"LFML"},{"icao":"LFMN","name":"Nice Cote D'Azur","lat":43.66584,"lon":7.21587,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMN","metarStation":"LFMN"},{"icao":"LFKB","name":"Bastia Poretta","lat":42.55,"lon":9.48485,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKB","metarStation":"LFKB"},{"icao":"LFKJ","name":"Ajaccio Napoleon Bonaparte","lat":41.9239,"lon":8.80244,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKJ","metarStation":"LFKJ"},{"icao":"LFKC","name":"Calvi Sainte Catherine","lat":42.52436,"lon":8.79301,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKC","metarStation":"LFKC"},{"icao":"LFKF","name":"Figari Sud Corse","lat":41.50211,"lon":9.09675,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKF","metarStation":"LFKF"},{"icao":"LFTW","name":"Nimes Garons","lat":43.75743,"lon":4.41634,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTW","metarStation":"LFTW"},{"icao":"LFMT","name":"Montpellier Mediterranee","lat":43.58326,"lon":3.96138,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMT","metarStation":"LFMT"},{"icao":"LFMP","name":"Perpignan Rivesaltes","lat":42.74083,"lon":2.86972,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMP","metarStation":"LFMP"},{"icao":"LFBO","name":"Toulouse Blagnac","lat":43.62925,"lon":1.36382,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBO","metarStation":"LFBO"},{"icao":"LFBL","name":"Limoges Bellegarde","lat":45.86278,"lon":1.17944,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBL","metarStation":"LFBL"},{"icao":"LFBT","name":"Tarbes Lourdes Pyrenees","lat":43.18675,"lon":-0.00643,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBT","metarStation":"LFBT"},{"icao":"LFBZ","name":"Biarritz Bayonne Anglet","lat":43.46831,"lon":-1.53116,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBZ","metarStation":"LFBZ"},{"icao":"LFBD","name":"Bordeaux Merignac","lat":44.82865,"lon":-0.71534,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBD","metarStation":"LFBD"},{"icao":"LFRS","name":"Nantes Atlantique","lat":47.15702,"lon":-1.60781,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRS","metarStation":"LFRS"},{"icao":"LFRB","name":"Brest Bretagne","lat":48.44713,"lon":-4.42175,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRB","metarStation":"LFRB"},{"icao":"LFRD","name":"Dinard Pleurtuit Saint Malo","lat":48.58771,"lon":-2.07995,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRD","metarStation":"LFRD"},{"icao":"LFRN","name":"Rennes Saint Jacques","lat":48.07193,"lon":-1.73223,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRN","metarStation":"LFRN"},{"icao":"LFRH","name":"Lorient Lann Bihoue","lat":47.76053,"lon":-3.43995,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRH","metarStation":"LFRH"},{"icao":"LFRQ","name":"Quimper Pluguffan","lat":47.97495,"lon":-4.16788,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRQ","metarStation":"LFRQ"},{"icao":"LFRK","name":"Caen Carpiquet","lat":49.17328,"lon":-0.44988,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRK","metarStation":"LFRK"},{"icao":"LFRG","name":"Deauville Normandie","lat":49.36339,"lon":0.16,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRG","metarStation":"LFRG"},{"icao":"LFRT","name":"Saint Brieuc Armor","lat":48.53749,"lon":-2.85654,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRT","metarStation":"LFRT"},{"icao":"LFRC","name":"Cherbourg Maupertus","lat":49.65078,"lon":-1.4753,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRC","metarStation":"LFRC"},{"icao":"LFOP","name":"Rouen Vallee De Seine","lat":49.39095,"lon":1.18394,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOP","metarStation":"LFOP"},{"icao":"LFOH","name":"Le Havre Octeville","lat":49.53385,"lon":0.08812,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOH","metarStation":"LFOH"},{"icao":"LFOE","name":"Evreux Fauville","lat":49.02861,"lon":1.22,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOE","metarStation":"LFOE"},{"icao":"LFOT","name":"Tours Val De Loire","lat":47.43184,"lon":0.72318,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOT","metarStation":"LFOT"},{"icao":"LFOK","name":"Chalons Vatry","lat":48.77332,"lon":4.20616,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOK","metarStation":"LFOK"},{"icao":"LFOJ","name":"Orleans Bricy","lat":47.98778,"lon":1.76056,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOJ","metarStation":"LFOJ"},{"icao":"LFOB","name":"Beauvais Tille","lat":49.45442,"lon":2.11281,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOB","metarStation":"LFOB"},{"icao":"LFAT","name":"Le Touquet Paris Plage","lat":50.51485,"lon":1.62758,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAT","metarStation":"LFAT"},{"icao":"LFAC","name":"Calais Dunkerque","lat":50.96093,"lon":1.95143,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAC","metarStation":"LFAC"},{"icao":"LFQQ","name":"Lille Lesquin","lat":50.56343,"lon":3.08682,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQQ","metarStation":"LFQQ"},{"icao":"LFSB","name":"Bale-Mulhouse","lat":47.58988,"lon":7.52922,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSB","metarStation":"LFSB"},{"icao":"LFST","name":"Strasbourg Entzheim","lat":48.54194,"lon":7.63444,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFST","metarStation":"LFST"},{"icao":"LFSD","name":"Dijon-Longvic","lat":47.26582,"lon":5.09498,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSD","metarStation":"LFSD"},{"icao":"LFSN","name":"Nancy Essey","lat":48.69209,"lon":6.22605,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSN","metarStation":"LFSN"},{"icao":"LFGJ","name":"Dole Tavaux","lat":47.04269,"lon":5.43493,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGJ","metarStation":"LFGJ"},{"icao":"LFGA","name":"Colmar Houssen","lat":48.11035,"lon":7.35915,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGA","metarStation":"LFGA"},{"icao":"LFSF","name":"Metz Frescaty","lat":49.07639,"lon":6.13389,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSF","metarStation":"LFSF"},{"icao":"LFLB","name":"Chambery Aix Les Bains","lat":45.63927,"lon":5.88012,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLB","metarStation":"LFLB"},{"icao":"LFLP","name":"Annecy Meythet","lat":45.93077,"lon":6.10629,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLP","metarStation":"LFLP"},{"icao":"LFLI","name":"Annemasse","lat":46.19194,"lon":6.26833,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLI","metarStation":"LFLI"},{"icao":"LFLU","name":"Valence Chabeuil","lat":44.91556,"lon":4.96874,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLU","metarStation":"LFLU"},{"icao":"LFLQ","name":"Montelimar Ancone","lat":44.58028,"lon":4.73917,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLQ","metarStation":"LFLQ"},{"icao":"LFHO","name":"Aubenas Ardeche Meridionale","lat":44.53942,"lon":4.37173,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHO","metarStation":"LFHO"},{"icao":"LFHD","name":"Pierrelatte","lat":44.39778,"lon":4.71694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHD","metarStation":"LFHD"},{"icao":"LFNV","name":"Valreas Visan","lat":44.33583,"lon":4.90694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNV","metarStation":"LFNV"},{"icao":"LFMO","name":"Orange Caritat","lat":44.14009,"lon":4.86858,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMO","metarStation":"LFMO"},{"icao":"LFMV","name":"Avignon Caumont","lat":43.90658,"lon":4.90203,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMV","metarStation":"LFMV"},{"icao":"LFTH","name":"Hyeres Le Palyvestre","lat":43.09734,"lon":6.14603,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTH","metarStation":"LFTH"},{"icao":"LFNA","name":"Gap Tallard","lat":44.45389,"lon":6.03667,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNA","metarStation":"LFNA"},{"icao":"LFNB","name":"Mende Brenoux","lat":44.50408,"lon":3.52763,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNB","metarStation":"LFNB"},{"icao":"LFCK","name":"Castres Mazamet","lat":43.55496,"lon":2.29059,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCK","metarStation":"LFCK"},{"icao":"LFCI","name":"Albi Le Sequestre","lat":43.91328,"lon":2.11675,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCI","metarStation":"LFCI"},{"icao":"LFCC","name":"Cahors Lalbenque","lat":44.35054,"lon":1.47859,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCC","metarStation":"LFCC"},{"icao":"LFBE","name":"Bergerac Roumaniere","lat":44.82443,"lon":0.52053,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBE","metarStation":"LFBE"},{"icao":"LFBX","name":"Perigueux Bassillac","lat":45.19749,"lon":0.81522,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBX","metarStation":"LFBX"},{"icao":"LFBU","name":"Angouleme Brie Champniers","lat":45.72948,"lon":0.21915,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBU","metarStation":"LFBU"},{"icao":"LFBG","name":"Cognac Chateaubernard","lat":45.65833,"lon":-0.3175,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBG","metarStation":"LFBG"},{"icao":"LFBH","name":"La Rochelle Ile De Re","lat":46.17921,"lon":-1.19524,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBH","metarStation":"LFBH"},{"icao":"LFBI","name":"Poitiers Biard","lat":46.5874,"lon":0.30679,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBI","metarStation":"LFBI"},{"icao":"LFBM","name":"Mont De Marsan","lat":43.91139,"lon":-0.51,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBM","metarStation":"LFBM"},{"icao":"LFBA","name":"Agen La Garenne","lat":44.17471,"lon":0.59062,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBA","metarStation":"LFBA"},{"icao":"LFBC","name":"Cazaux","lat":44.53488,"lon":-1.13145,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBC","metarStation":"LFBC"},{"icao":"LFBY","name":"Dax Seyresse","lat":43.68917,"lon":-1.06889,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFBY","metarStation":"LFBY"},{"icao":"LFCG","name":"Saint Girons Antichan","lat":43.00778,"lon":1.10306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCG","metarStation":"LFCG"},{"icao":"LFCJ","name":"Jonzac Neulles","lat":45.48306,"lon":-0.42306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCJ","metarStation":"LFCJ"},{"icao":"LFCH","name":"Arcachon La Teste De Buch","lat":44.59694,"lon":-1.11389,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCH","metarStation":"LFCH"},{"icao":"LFCL","name":"Toulouse Lasbordes","lat":43.58778,"lon":1.49861,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCL","metarStation":"LFCL"},{"icao":"LFCN","name":"Nogaro","lat":43.76889,"lon":-0.03472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCN","metarStation":"LFCN"},{"icao":"LFCY","name":"Royan Medis","lat":45.63116,"lon":-0.97549,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFCY","metarStation":"LFCY"},{"icao":"LFDA","name":"Aire Sur L'Adour","lat":43.70861,"lon":-0.24722,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDA","metarStation":"LFDA"},{"icao":"LFDB","name":"Montauban","lat":44.02667,"lon":1.37694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDB","metarStation":"LFDB"},{"icao":"LFDH","name":"Auch Lamothe","lat":43.68684,"lon":0.60005,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDH","metarStation":"LFDH"},{"icao":"LFDI","name":"Libourne Artigues De Lussac","lat":44.985,"lon":-0.13611,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDI","metarStation":"LFDI"},{"icao":"LFDJ","name":"Pamiers Les Pujols","lat":43.09068,"lon":1.69585,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDJ","metarStation":"LFDJ"},{"icao":"LFDN","name":"Rochefort Charente Maritime","lat":45.88953,"lon":-0.98239,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDN","metarStation":"LFDN"},{"icao":"LFDU","name":"Lesparre Saint Laurent Medoc","lat":45.19778,"lon":-0.88222,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDU","metarStation":"LFDU"},{"icao":"LFDX","name":"Fumel Montayral","lat":44.45917,"lon":1.00722,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFDX","metarStation":"LFDX"},{"icao":"LFEZ","name":"Nancy Malzeville","lat":48.72361,"lon":6.20639,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFEZ","metarStation":"LFEZ"},{"icao":"LFGB","name":"Mulhouse Habsheim","lat":47.73722,"lon":7.42972,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGB","metarStation":"LFGB"},{"icao":"LFGC","name":"Strasbourg Neuhof","lat":48.55361,"lon":7.7775,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGC","metarStation":"LFGC"},{"icao":"LFGF","name":"Beaune Challanges","lat":47.01028,"lon":4.89639,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGF","metarStation":"LFGF"},{"icao":"LFGI","name":"Dijon Darois","lat":47.38528,"lon":4.94694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGI","metarStation":"LFGI"},{"icao":"LFGM","name":"Montceau Les Mines Pouilloux","lat":46.60333,"lon":4.33278,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGM","metarStation":"LFGM"},{"icao":"LFGN","name":"Paray Le Monial","lat":46.46667,"lon":4.13306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGN","metarStation":"LFGN"},{"icao":"LFGP","name":"Saint Florentin Cheu","lat":47.98139,"lon":3.77694,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGP","metarStation":"LFGP"},{"icao":"LFGT","name":"Sarrebourg Buhl","lat":48.71833,"lon":7.08,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGT","metarStation":"LFGT"},{"icao":"LFGW","name":"Verdun Sommedieue","lat":49.12218,"lon":5.47085,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGW","metarStation":"LFGW"},{"icao":"LFGY","name":"Saint Die Remomeix","lat":48.26639,"lon":7.0075,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFGY","metarStation":"LFGY"},{"icao":"LFHM","name":"Megeve","lat":45.82361,"lon":6.64917,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHM","metarStation":"LFHM"},{"icao":"LFHN","name":"Bellegarde Vouvray","lat":46.12333,"lon":5.80472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHN","metarStation":"LFHN"},{"icao":"LFHV","name":"Villefranche Tarare","lat":45.91998,"lon":4.63493,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFHV","metarStation":"LFHV"},{"icao":"LFJA","name":"Chaumont Semoutiers","lat":48.09167,"lon":5.05,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFJA","metarStation":"LFJA"},{"icao":"LFJB","name":"Mauleon","lat":46.92118,"lon":-0.74944,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFJB","metarStation":"LFJB"},{"icao":"LFLM","name":"Macon Charnay","lat":46.29516,"lon":4.79574,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLM","metarStation":"LFLM"},{"icao":"LFLN","name":"Saint Yan","lat":46.40649,"lon":4.0211,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLN","metarStation":"LFLN"},{"icao":"LFLO","name":"Roanne Renaison","lat":46.05972,"lon":4.00139,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLO","metarStation":"LFLO"},{"icao":"LFLJ","name":"Courchevel","lat":45.39583,"lon":6.6325,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLJ","metarStation":"LFLJ"},{"icao":"LFKA","name":"Albertville","lat":45.62722,"lon":6.32972,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKA","metarStation":"LFKA"},{"icao":"LFKD","name":"Sollieres Sardieres","lat":45.25389,"lon":6.80111,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKD","metarStation":"LFKD"},{"icao":"LFKL","name":"Lyon Brindas","lat":45.71065,"lon":4.69665,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKL","metarStation":"LFKL"},{"icao":"LFKS","name":"Solenzara","lat":41.92639,"lon":9.40528,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFKS","metarStation":"LFKS"},{"icao":"LFLH","name":"Chalon Champforgeuil","lat":46.82827,"lon":4.81706,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFLH","metarStation":"LFLH"},{"icao":"LFMQ","name":"Le Castellet","lat":43.25222,"lon":5.78611,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMQ","metarStation":"LFMQ"},{"icao":"LFMU","name":"Beziers Vias","lat":43.32343,"lon":3.3534,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMU","metarStation":"LFMU"},{"icao":"LFMS","name":"Ales Cevennes","lat":44.07273,"lon":4.14292,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFMS","metarStation":"LFMS"},{"icao":"LFNF","name":"Vinon","lat":43.73639,"lon":5.78306,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNF","metarStation":"LFNF"},{"icao":"LFNG","name":"Montpellier Candillargues","lat":43.61017,"lon":4.07016,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNG","metarStation":"LFNG"},{"icao":"LFNH","name":"Carpentras","lat":44.0225,"lon":5.09,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNH","metarStation":"LFNH"},{"icao":"LFNS","name":"Sisteron Theze","lat":44.28667,"lon":5.92917,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNS","metarStation":"LFNS"},{"icao":"LFNW","name":"Puivert","lat":42.91028,"lon":2.05472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNW","metarStation":"LFNW"},{"icao":"LFNX","name":"Bedarieux La Tour Sur Orb","lat":43.63972,"lon":3.14472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFNX","metarStation":"LFNX"},{"icao":"LFOA","name":"Avord","lat":47.05694,"lon":2.63889,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOA","metarStation":"LFOA"},{"icao":"LFOC","name":"Chateaudun","lat":48.05788,"lon":1.37944,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOC","metarStation":"LFOC"},{"icao":"LFOG","name":"Flers Saint Paul","lat":48.74972,"lon":-0.59472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOG","metarStation":"LFOG"},{"icao":"LFOI","name":"Abbeville","lat":50.14306,"lon":1.8325,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOI","metarStation":"LFOI"},{"icao":"LFOO","name":"Les Sables D'Olonne Talmont","lat":46.47556,"lon":-1.725,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOO","metarStation":"LFOO"},{"icao":"LFOQ","name":"Blois Le Breuil","lat":47.67983,"lon":1.20578,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOQ","metarStation":"LFOQ"},{"icao":"LFOU","name":"Cholet Le Pontreau","lat":47.08191,"lon":-0.87722,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOU","metarStation":"LFOU"},{"icao":"LFOV","name":"Laval Entrammes","lat":48.03225,"lon":-0.74278,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOV","metarStation":"LFOV"},{"icao":"LFOX","name":"Etampes Mondesir","lat":48.38111,"lon":2.07389,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOX","metarStation":"LFOX"},{"icao":"LFOZ","name":"Orleans Saint Denis De L'Hotel","lat":47.89762,"lon":2.16421,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFOZ","metarStation":"LFOZ"},{"icao":"LFPA","name":"Persan Beaumont","lat":49.165,"lon":2.31167,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPA","metarStation":"LFPA"},{"icao":"LFPB","name":"Paris Le Bourget","lat":48.96952,"lon":2.44149,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPB","metarStation":"LFPB"},{"icao":"LFPK","name":"Coulommiers Voisins","lat":48.8375,"lon":3.01444,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPK","metarStation":"LFPK"},{"icao":"LFPL","name":"Lognes Emerainville","lat":48.82194,"lon":2.62278,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPL","metarStation":"LFPL"},{"icao":"LFPN","name":"Toussus Le Noble","lat":48.74976,"lon":2.11118,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPN","metarStation":"LFPN"},{"icao":"LFPT","name":"Pontoise Cormeilles En Vexin","lat":49.09663,"lon":2.04072,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPT","metarStation":"LFPT"},{"icao":"LFPX","name":"Chavenay Villepreux","lat":48.84222,"lon":1.98028,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPX","metarStation":"LFPX"},{"icao":"LFPZ","name":"Saint Cyr L'Ecole","lat":48.81028,"lon":2.07333,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFPZ","metarStation":"LFPZ"},{"icao":"LFQA","name":"Reims Prunay","lat":49.20869,"lon":4.15658,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQA","metarStation":"LFQA"},{"icao":"LFQB","name":"Troyes Barberey","lat":48.32162,"lon":4.01662,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQB","metarStation":"LFQB"},{"icao":"LFQH","name":"Chatillon Sur Seine","lat":47.84528,"lon":4.57944,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQH","metarStation":"LFQH"},{"icao":"LFQJ","name":"Maubeuge Elesmes","lat":50.30833,"lon":4.03,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQJ","metarStation":"LFQJ"},{"icao":"LFQO","name":"Lille Marcq En Baroeul","lat":50.68722,"lon":3.07556,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQO","metarStation":"LFQO"},{"icao":"LFQT","name":"Merville Calonne","lat":50.6166,"lon":2.64009,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFQT","metarStation":"LFQT"},{"icao":"LFRI","name":"La Roche Sur Yon Les Ajoncs","lat":46.70238,"lon":-1.38176,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRI","metarStation":"LFRI"},{"icao":"LFRJ","name":"Landivisiau","lat":48.53026,"lon":-4.15164,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRJ","metarStation":"LFRJ"},{"icao":"LFRL","name":"Lanveoc Poulmic","lat":48.28253,"lon":-4.44369,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRL","metarStation":"LFRL"},{"icao":"LFRM","name":"Le Mans Arnage","lat":47.94849,"lon":0.20165,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRM","metarStation":"LFRM"},{"icao":"LFRO","name":"Lannion","lat":48.75444,"lon":-3.47194,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRO","metarStation":"LFRO"},{"icao":"LFRP","name":"Ploermel Loyat","lat":48.00186,"lon":-2.37872,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRP","metarStation":"LFRP"},{"icao":"LFRU","name":"Morlaix Ploujean","lat":48.60075,"lon":-3.81667,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRU","metarStation":"LFRU"},{"icao":"LFRV","name":"Vannes Meucon","lat":47.71924,"lon":-2.72338,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRV","metarStation":"LFRV"},{"icao":"LFRZ","name":"Saint Nazaire Montoir","lat":47.31065,"lon":-2.1568,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFRZ","metarStation":"LFRZ"},{"icao":"LFSF","name":"Metz Frescaty","lat":49.07639,"lon":6.13389,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSF","metarStation":"LFSF"},{"icao":"LFSG","name":"Epinal Mirecourt","lat":48.32501,"lon":6.06674,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSG","metarStation":"LFSG"},{"icao":"LFSI","name":"Saint Dizier Robinson","lat":48.63354,"lon":4.90819,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSI","metarStation":"LFSI"},{"icao":"LFSO","name":"Nancy Ochey","lat":48.58319,"lon":5.95453,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSO","metarStation":"LFSO"},{"icao":"LFSR","name":"Reims Champagne","lat":49.31028,"lon":4.05083,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFSR","metarStation":"LFSR"},{"icao":"LFTF","name":"Cuers Pierrefeu","lat":43.24759,"lon":6.12729,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTF","metarStation":"LFTF"},{"icao":"LFTZ","name":"La Mole","lat":43.20639,"lon":6.4825,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFTZ","metarStation":"LFTZ"},{"icao":"LFAB","name":"Dieppe Saint Aubin","lat":49.88263,"lon":1.08533,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAB","metarStation":"LFAB"},{"icao":"LFAD","name":"Compiegne Margny","lat":49.43361,"lon":2.80472,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAD","metarStation":"LFAD"},{"icao":"LFAE","name":"Eu Mers Le Treport","lat":50.06917,"lon":1.42667,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAE","metarStation":"LFAE"},{"icao":"LFAF","name":"Laon Chambry","lat":49.59583,"lon":3.63167,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAF","metarStation":"LFAF"},{"icao":"LFAI","name":"Nangis Les Loges","lat":48.59694,"lon":3.00806,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAI","metarStation":"LFAI"},{"icao":"LFAP","name":"Rethel Perthes","lat":49.48111,"lon":4.36333,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAP","metarStation":"LFAP"},{"icao":"LFAQ","name":"Albert Bray","lat":49.97006,"lon":2.69262,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAQ","metarStation":"LFAQ"},{"icao":"LFAY","name":"Amiens-Glisy","lat":49.8731,"lon":2.38699,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LFAY","metarStation":"LFAY"},{"icao":"LF28","name":"Orange Plan De Dieu","lat":44.16667,"lon":4.93333,"piafUrl":"https://piaf.stac.aviation-civile.gouv.fr/airports/LF28","metarStation":"LF28"}];
 
 const METAR_FALLBACKS = {
   "LFLQ": "LFLU", "LFHD": "LFMO", "LFHO": "LFMO", "LFNV": "LFMO",
@@ -318,12 +340,13 @@ function fmtMinutes(min) {
 }
 
 const STATE = {
-  trip: [null, null, null],
+  trip: [null, null, null, null, null],
   loop: false,
   acft: null,
   temsiImg: null,
   notes: "",
-  weatherCache: {}
+  weatherCache: {},
+  visibleStops: 2
 };
 
 function loadAcft() {
@@ -430,14 +453,55 @@ function initMap() {
 }
 
 function addAdToTrip(ad) {
-  const emptyIdx = STATE.trip.findIndex(x => x === null);
-  if (emptyIdx === -1) {
-    STATE.trip[2] = ad;
-    document.getElementById('ad-input-2').value = `${ad.icao} · ${ad.name}`;
+  if (STATE.trip[0] === null) {
+    STATE.trip[0] = ad;
+    document.getElementById('ad-input-0').value = `${ad.icao} · ${ad.name}`;
+  } else if (STATE.trip[4] === null) {
+    STATE.trip[4] = ad;
+    document.getElementById('ad-input-4').value = `${ad.icao} · ${ad.name}`;
   } else {
-    STATE.trip[emptyIdx] = ad;
-    document.getElementById(`ad-input-${emptyIdx}`).value = `${ad.icao} · ${ad.name}`;
+    for (let i = 1; i <= 3; i++) {
+      const slotEl = document.querySelector(`[data-trip-slot="${i}"]`);
+      if (slotEl && !slotEl.classList.contains('hidden') && STATE.trip[i] === null) {
+        STATE.trip[i] = ad;
+        document.getElementById(`ad-input-${i}`).value = `${ad.icao} · ${ad.name}`;
+        onTripChange();
+        return;
+      }
+    }
+    if (STATE.visibleStops < 3) {
+      addStepSlot();
+      const newIdx = STATE.visibleStops;
+      STATE.trip[newIdx] = ad;
+      document.getElementById(`ad-input-${newIdx}`).value = `${ad.icao} · ${ad.name}`;
+    } else {
+      STATE.trip[4] = ad;
+      document.getElementById('ad-input-4').value = `${ad.icao} · ${ad.name}`;
+    }
   }
+  onTripChange();
+}
+
+function addStepSlot() {
+  if (STATE.visibleStops >= 3) return;
+  STATE.visibleStops += 1;
+  const idx = STATE.visibleStops;
+  const slotEl = document.querySelector(`[data-trip-slot="${idx}"]`);
+  if (slotEl) {
+    slotEl.classList.remove('hidden');
+  }
+  if (STATE.visibleStops >= 3) {
+    document.getElementById('add-step-btn').classList.add('hidden');
+  }
+}
+
+function removeStepSlot(idx) {
+  const slotEl = document.querySelector(`[data-trip-slot="${idx}"]`);
+  if (!slotEl) return;
+  slotEl.classList.add('hidden');
+  document.getElementById(`ad-input-${idx}`).value = '';
+  STATE.trip[idx] = null;
+  document.getElementById('add-step-btn').classList.remove('hidden');
   onTripChange();
 }
 
@@ -587,9 +651,127 @@ async function fetchWind(lat, lon) {
   }
 }
 
+const FUEL_DATA = {
+  "LFLQ": {
+    fuel_100ll: false,
+    fuel_ul91: true,
+    fuel_sp98: false,
+    fuel_jet_a1: false,
+    phone: "06 95 46 87 14",
+    hours: "09h00-17h00 sur RDV la veille",
+    notes: "ULM Aéro Drôme : 06 31 53 43 08 · ACM Porte de Provence : 04 75 46 01 76",
+    last_update: "2026-05-14"
+  },
+  "LFLU": {
+    fuel_100ll: true,
+    fuel_ul91: null,
+    fuel_sp98: false,
+    fuel_jet_a1: true,
+    phone: "04 75 78 04 02 (AFIS)",
+    hours: "LUN-VEN 07h00-18h00, hors AFIS PPR obligatoire",
+    notes: "Aéro-ULM-Valence : 06 66 65 23 39 · b.roustan@valenceaeroport.fr · Pas de SP",
+    last_update: "2026-05-14"
+  },
+  "LFHD": {
+    fuel_100ll: null,
+    fuel_ul91: null,
+    fuel_sp98: null,
+    fuel_jet_a1: null,
+    phone: null,
+    hours: null,
+    notes: "Données fuel à confirmer · consulter VAC SIA",
+    last_update: "2026-05-14"
+  },
+  "LFHO": {
+    fuel_100ll: null,
+    fuel_ul91: null,
+    fuel_sp98: null,
+    fuel_jet_a1: null,
+    phone: null,
+    hours: null,
+    notes: "Données fuel à confirmer · consulter VAC SIA",
+    last_update: "2026-05-14"
+  },
+  "LFNV": {
+    fuel_100ll: null,
+    fuel_ul91: null,
+    fuel_sp98: null,
+    fuel_jet_a1: null,
+    phone: null,
+    hours: null,
+    notes: "Base ULM · données fuel à confirmer · consulter VAC SIA",
+    last_update: "2026-05-14"
+  }
+};
+
+function fuelStatusBadge(status) {
+  if (status === true) return '<span class="pill pill-vfr">✓ disponible</span>';
+  if (status === false) return '<span class="pill pill-ifr">✗ non</span>';
+  return '<span class="pill" style="background:#F0F0EE;color:#6B6B6B;">à confirmer</span>';
+}
+
+function renderFuelSection(ad) {
+  const fuel = FUEL_DATA[ad.icao];
+  const vacUrl = `https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_19_MAR_2026/Atlas-VAC/PDF_AIPparSSection/VAC/AD/AD-2.${ad.icao}.pdf`;
+  const aipUrl = `https://www.sia.aviation-civile.gouv.fr/`;
+  
+  if (!fuel) {
+    return `
+      <div class="info-box">
+        <i data-lucide="info" class="inline h-4 w-4"></i>
+        <span class="ml-1">Données avitaillement non disponibles pour cet AD dans le MVP. Consulter la carte VAC officielle :</span>
+      </div>
+      <div class="flex gap-2 flex-wrap mt-2">
+        <a href="${vacUrl}" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 text-xs">
+          <i data-lucide="file-text" class="h-3 w-3"></i>PDF VAC SIA
+        </a>
+        <a href="${aipUrl}" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 text-xs">
+          <i data-lucide="external-link" class="h-3 w-3"></i>recherche AIP France
+        </a>
+      </div>`;
+  }
+  
+  return `
+    <div class="space-y-2">
+      <h4 class="text-xs font-medium uppercase tracking-wide text-muted">carburants disponibles</h4>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div class="flex items-center justify-between p-2 muted-bg rounded">
+          <span class="pre-mono">Avgas 100LL</span>
+          ${fuelStatusBadge(fuel.fuel_100ll)}
+        </div>
+        <div class="flex items-center justify-between p-2 muted-bg rounded">
+          <span class="pre-mono">UL91</span>
+          ${fuelStatusBadge(fuel.fuel_ul91)}
+        </div>
+        <div class="flex items-center justify-between p-2 muted-bg rounded">
+          <span class="pre-mono">SP98 / Mogas</span>
+          ${fuelStatusBadge(fuel.fuel_sp98)}
+        </div>
+        <div class="flex items-center justify-between p-2 muted-bg rounded">
+          <span class="pre-mono">Jet A1</span>
+          ${fuelStatusBadge(fuel.fuel_jet_a1)}
+        </div>
+      </div>
+      ${fuel.phone ? `<div class="text-xs mt-2"><strong>Téléphone :</strong> <a href="tel:${fuel.phone.replace(/[^\d+]/g,'')}" class="text-blue-600 hover:underline">${fuel.phone}</a></div>` : ''}
+      ${fuel.hours ? `<div class="text-xs"><strong>Horaires :</strong> ${fuel.hours}</div>` : ''}
+      ${fuel.notes ? `<div class="text-xs text-muted mt-2">${fuel.notes}</div>` : ''}
+      <div class="flex gap-2 flex-wrap mt-3">
+        <a href="${vacUrl}" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 text-xs">
+          <i data-lucide="file-text" class="h-3 w-3"></i>PDF VAC SIA
+        </a>
+        <a href="${aipUrl}" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 text-xs">
+          <i data-lucide="external-link" class="h-3 w-3"></i>recherche AIP France
+        </a>
+      </div>
+      <p class="text-xs text-muted mt-2">⚠️ Données indicatives, vérifier sur SIA officiel avant chaque vol. MAJ : ${fuel.last_update}</p>
+    </div>
+  `;
+}
+
 function makeAdCardHtml(ad, role, idx) {
   const roleLabel = role === 'depart' ? 'départ' : role === 'arrivee' ? 'arrivée' : 'étape';
   const roleColor = role === 'depart' ? 'green' : role === 'arrivee' ? 'red' : 'blue';
+  const vacUrl = `https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_19_MAR_2026/Atlas-VAC/PDF_AIPparSSection/VAC/AD/AD-2.${ad.icao}.pdf`;
   return `
     <div class="card overflow-hidden" data-ad-card="${ad.icao}-${idx}">
       <div class="px-4 py-3 border-b border-thin flex items-center justify-between flex-wrap gap-2">
@@ -600,8 +782,8 @@ function makeAdCardHtml(ad, role, idx) {
           <span class="text-sm">${ad.name}</span>
         </div>
         <div class="flex items-center gap-2 text-xs">
-          <a href="${ad.piafUrl}" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 px-2 py-1 rounded border border-thin hover:bg-gray-50">
-            <i data-lucide="external-link" class="h-3 w-3"></i>fiche piaf (vac)
+          <a href="${vacUrl}" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 px-2 py-1 rounded border border-thin hover:bg-gray-50">
+            <i data-lucide="file-text" class="h-3 w-3"></i>carte VAC SIA
           </a>
         </div>
       </div>
@@ -609,6 +791,13 @@ function makeAdCardHtml(ad, role, idx) {
         <div data-section="metar"><p class="text-sm text-muted">Chargement METAR…</p></div>
         <div data-section="wind"><p class="text-sm text-muted">Chargement vent…</p></div>
       </div>
+      <details class="border-t border-thin">
+        <summary class="px-4 py-3 cursor-pointer flex items-center justify-between text-sm">
+          <span class="flex items-center gap-2"><i data-lucide="fuel" class="h-4 w-4"></i><span class="font-medium">logistique (carburant, contacts)</span></span>
+          <span class="text-xs text-muted accordion-icon"></span>
+        </summary>
+        <div class="px-4 py-3 border-t border-thin">${renderFuelSection(ad)}</div>
+      </details>
     </div>
   `;
 }
@@ -889,6 +1078,27 @@ async function generatePdf() {
       y += 4;
     }
 
+    for (const ad of uniquePoints) {
+      const fuel = FUEL_DATA[ad.icao];
+      if (!fuel) continue;
+      if (y > pageH - 40) { pdf.addPage(); y = margin; }
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(10);
+      pdf.text(`Logistique ${ad.icao}`, margin, y); y += 4;
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      const fuelLine = `  Avgas 100LL: ${fuel.fuel_100ll === true ? 'oui' : fuel.fuel_100ll === false ? 'non' : '?'} · UL91: ${fuel.fuel_ul91 === true ? 'oui' : fuel.fuel_ul91 === false ? 'non' : '?'} · SP98: ${fuel.fuel_sp98 === true ? 'oui' : fuel.fuel_sp98 === false ? 'non' : '?'}`;
+      pdf.text(fuelLine, margin, y); y += 3.5;
+      if (fuel.phone) { pdf.text(`  Tel: ${fuel.phone}`, margin, y); y += 3.5; }
+      if (fuel.hours) { pdf.text(`  Hor: ${fuel.hours}`, margin, y); y += 3.5; }
+      if (fuel.notes) {
+        const lines = pdf.splitTextToSize(`  ${fuel.notes}`, pageW - 2 * margin);
+        pdf.text(lines, margin, y);
+        y += lines.length * 3.5;
+      }
+      y += 2;
+    }
+
     const notes = document.getElementById('notes-textarea').value.trim();
     if (notes) {
       if (y > pageH - 30) { pdf.addPage(); y = margin; }
@@ -937,7 +1147,18 @@ function init() {
   setupAdInput(0);
   setupAdInput(1);
   setupAdInput(2);
+  setupAdInput(3);
+  setupAdInput(4);
   setupTabs();
+  
+  document.getElementById('add-step-btn').addEventListener('click', addStepSlot);
+  
+  document.querySelectorAll('.trip-remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.removeSlot);
+      removeStepSlot(idx);
+    });
+  });
   initMap();
 
   document.getElementById('loop-checkbox').addEventListener('change', e => {
@@ -946,11 +1167,15 @@ function init() {
   });
 
   document.getElementById('clear-trip').addEventListener('click', () => {
-    STATE.trip = [null, null, null];
+    STATE.trip = [null, null, null, null, null];
     STATE.loop = false;
-    document.getElementById('ad-input-0').value = '';
-    document.getElementById('ad-input-1').value = '';
-    document.getElementById('ad-input-2').value = '';
+    STATE.visibleStops = 2;
+    for (let i = 0; i < 5; i++) {
+      document.getElementById(`ad-input-${i}`).value = '';
+    }
+    document.querySelector('[data-trip-slot="2"]').classList.add('hidden');
+    document.querySelector('[data-trip-slot="3"]').classList.add('hidden');
+    document.getElementById('add-step-btn').classList.remove('hidden');
     document.getElementById('loop-checkbox').checked = false;
     onTripChange();
   });
