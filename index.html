@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.2.2 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.2.3 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -74,7 +74,7 @@
   <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
     <i data-lucide="plane" class="h-5 w-5"></i>
     <h1 class="text-base font-medium">autogyrodash</h1>
-    <span class="text-xs text-muted pre-mono">v0.2.2</span>
+    <span class="text-xs text-muted pre-mono">v0.2.3</span>
     <div class="ml-auto flex flex-wrap items-center gap-2">
       <span class="tab-btn active" data-tab="plan">plan de vol</span>
       <span class="tab-btn" data-tab="acft">fiche acft</span>
@@ -162,9 +162,12 @@
       <!-- Formulaire de saisie clé OpenAIP (caché par défaut) -->
       <div id="openaip-config-form" class="hidden border-t border-thin pt-3 mt-2 space-y-2">
         <p class="text-xs text-muted">
-          Pour afficher les espaces aériens et points de report VFR sur la carte, créez un compte gratuit sur
-          <a href="https://www.openaip.net/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">openaip.net</a>,
-          puis copiez votre clé API (Profile → Client API → Generate API key).
+          Pour afficher les espaces aériens et points de report VFR sur la carte :
+          <br>1. Connectez-vous sur <a href="https://app.openaip.net/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">app.openaip.net</a>
+          <br>2. Allez dans <strong>Profile → API Clients</strong> (pas "API Keys")
+          <br>3. Créez un nouveau "Client ID Token"
+          <br>4. Copiez-le ci-dessous
+          <br><span class="text-orange-600">⚠️ Tiles visibles à partir du zoom 7 (régional). En zoom 5-6 c'est normal de ne rien voir.</span>
         </p>
         <div class="flex gap-2 flex-wrap">
           <input type="text" id="openaip-key-input" class="ad-input flex-1" placeholder="Collez votre clé API OpenAIP ici..." />
@@ -534,30 +537,34 @@ function buildOpenaipLayers() {
   const key = getOpenaipKey();
   if (!key) return null;
 
-  // Tiles API v2 OpenAIP : https://api.tiles.openaip.net/api/data/{type}/{z}/{x}/{y}.png?apiKey=KEY
+  // Tiles API OpenAIP : https://{s}.api.tiles.openaip.net/api/data/{type}/{z}/{x}/{y}.png?apiKey=KEY
+  // Subdomains '12' = a, 1, 2 (utilisé en rotation pour répartir la charge)
+  // Zoom : 7-14 (en dessous de 7, tiles vides volontairement)
   const opts = {
     maxZoom: 14,
-    minZoom: 4,
+    minZoom: 7,
     attribution: '© <a href="https://www.openaip.net" target="_blank">OpenAIP</a>',
     opacity: 0.85,
-    detectRetina: true
+    detectRetina: true,
+    subdomains: '12',
+    tms: false
   };
 
   return {
     airspaces: L.tileLayer(
-      `https://api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
+      `https://{s}.api.tiles.openaip.net/api/data/airspaces/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
       opts
     ),
     airports: L.tileLayer(
-      `https://api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
+      `https://{s}.api.tiles.openaip.net/api/data/airports/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
       opts
     ),
     navaids: L.tileLayer(
-      `https://api.tiles.openaip.net/api/data/navaids/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
+      `https://{s}.api.tiles.openaip.net/api/data/navaids/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
       opts
     ),
     reportingPoints: L.tileLayer(
-      `https://api.tiles.openaip.net/api/data/reporting-points/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
+      `https://{s}.api.tiles.openaip.net/api/data/reporting-points/{z}/{x}/{y}.png?apiKey=${encodeURIComponent(key)}`,
       opts
     )
   };
