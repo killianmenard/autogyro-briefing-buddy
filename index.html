@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.2.7 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.2.8 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -121,7 +121,7 @@
   <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
     <i data-lucide="plane" class="h-5 w-5"></i>
     <h1 class="text-base font-medium">autogyrodash</h1>
-    <span class="text-xs text-muted pre-mono">v0.2.7</span>
+    <span class="text-xs text-muted pre-mono">v0.2.8</span>
     <div class="ml-auto flex flex-wrap items-center gap-2">
       <span class="tab-btn active" data-tab="plan">plan de vol</span>
       <span class="tab-btn" data-tab="acft">fiche acft</span>
@@ -1371,14 +1371,15 @@ async function _doGeneratePdf(opts) {
     }
     } // fin if opts.map
 
-    // ============= MÉTÉO PAR AD =============
-    if (opts.weather) {
+    // Préparer uniquePoints (utilisé par météo ET logistique)
     const uniquePoints = [];
-    const seen = new Set();
+    const _seen = new Set();
     trip.points.forEach(p => {
-      if (!seen.has(p.icao)) { uniquePoints.push(p); seen.add(p.icao); }
+      if (!_seen.has(p.icao)) { uniquePoints.push(p); _seen.add(p.icao); }
     });
 
+    // ============= MÉTÉO PAR AD =============
+    if (opts.weather) {
     pdf.addPage();
     y = margin;
 
