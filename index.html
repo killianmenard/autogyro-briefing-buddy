@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.2.5 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.2.6 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -14,6 +14,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 <style>
   :root {
     --bg: #F4F4F2;
@@ -65,6 +66,52 @@
   .ad-suggestion { padding: 8px 12px; cursor: pointer; font-size: 13px; }
   .ad-suggestion:hover { background: var(--muted); }
   .leaflet-tooltip-permanent { background: white; border: 1px solid var(--border); font-size: 11px; padding: 2px 5px; font-weight: 500; }
+  
+  /* Mode plein écran carte */
+  .map-fullscreen {
+    position: fixed !important;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    background: white;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .map-fullscreen #map {
+    height: 100vh !important;
+    border-radius: 0 !important;
+  }
+  .map-fullscreen .map-fs-close {
+    position: absolute;
+    top: 12px; right: 12px;
+    z-index: 10001;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .map-fs-close { display: none; }
+  .map-fullscreen .map-fs-close { display: block; }
+  
+  /* Carte des zones aériennes traversées */
+  .airspace-card {
+    border-left: 4px solid;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .airspace-R, .airspace-RESTRICTED { border-left-color: #DC2626; background: #FEF2F2; }
+  .airspace-D, .airspace-DANGER { border-left-color: #EA580C; background: #FFF7ED; }
+  .airspace-P, .airspace-PROHIBITED { border-left-color: #991B1B; background: #FEE2E2; }
+  .airspace-TMA, .airspace-CTR { border-left-color: #2563EB; background: #EFF6FF; }
+  .airspace-ATZ { border-left-color: #7C3AED; background: #F5F3FF; }
+  .airspace-TRA, .airspace-TSA { border-left-color: #B91C1C; background: #FEF2F2; }
+  .airspace-OTHER { border-left-color: #6B7280; background: #F9FAFB; }
 </style>
 </head>
 <body class="min-h-screen pb-24">
@@ -74,7 +121,7 @@
   <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
     <i data-lucide="plane" class="h-5 w-5"></i>
     <h1 class="text-base font-medium">autogyrodash</h1>
-    <span class="text-xs text-muted pre-mono">v0.2.5</span>
+    <span class="text-xs text-muted pre-mono">v0.2.6</span>
     <div class="ml-auto flex flex-wrap items-center gap-2">
       <span class="tab-btn active" data-tab="plan">plan de vol</span>
       <span class="tab-btn" data-tab="acft">fiche acft</span>
@@ -149,6 +196,9 @@
           <span id="openaip-status" class="pill" style="background:#F0F0EE;color:#6B6B6B;">non configuré</span>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
+          <button id="map-fullscreen-btn" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">
+            <i data-lucide="maximize" class="inline h-3 w-3"></i> plein écran
+          </button>
           <button id="openaip-config-btn" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">
             <i data-lucide="key" class="inline h-3 w-3"></i> configurer OpenAIP
           </button>
@@ -182,12 +232,33 @@
     </div>
 
     <!-- Carte interactive -->
-    <div class="card p-2 mt-3">
+    <div id="map-container" class="card p-2 mt-3">
+      <button class="map-fs-close" id="map-fullscreen-close">
+        <i data-lucide="x" class="inline h-4 w-4"></i> fermer plein écran
+      </button>
       <div id="map"></div>
       <p class="text-xs text-muted mt-2 px-2">
         447 aérodromes officiels DGAC (PIAF). Cliquez sur un marqueur pour l'ajouter au trajet.
         Coin haut droit : activer/désactiver l'overlay OpenAIP (espaces aériens + AD + navaids + points VFR combinés). Visible à partir du zoom 7.
       </p>
+    </div>
+
+    <!-- Zones aériennes traversées -->
+    <div id="airspaces-section" class="mt-3 hidden">
+      <div class="card p-4 space-y-2">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-medium uppercase tracking-wide text-muted">
+            <i data-lucide="shield-alert" class="inline h-4 w-4"></i> zones aériennes traversées
+          </h2>
+          <span id="airspaces-count" class="pill" style="background:#F0F0EE;color:#6B6B6B;">—</span>
+        </div>
+        <div id="airspaces-loading" class="text-xs text-muted">Analyse du trajet...</div>
+        <div id="airspaces-list" class="space-y-1"></div>
+        <p class="text-xs text-muted mt-2">
+          ⚠️ Détection basée sur la géométrie 2D du trajet. Vérifier les altitudes plancher/plafond vs vos niveaux de vol.
+          Toujours consulter NOTAM et AZBA officiels avant chaque vol.
+        </p>
+      </div>
     </div>
 
     <!-- Résumé du trajet : distances, temps, conso -->
@@ -1338,6 +1409,287 @@ function setupTabs() {
 // ============================================================
 // INIT
 // ============================================================
+// ============================================================
+// MODE PLEIN ÉCRAN
+// ============================================================
+function toggleMapFullscreen() {
+  const container = document.getElementById('map-container');
+  container.classList.toggle('map-fullscreen');
+  // Important : Leaflet doit recalculer ses dimensions après resize
+  setTimeout(() => {
+    if (map) map.invalidateSize();
+  }, 100);
+}
+
+// ============================================================
+// ZONES AÉRIENNES — Détection des zones traversées
+// ============================================================
+const AIRSPACE_TYPES = {
+  0: { label: 'OTHER', short: '?' },
+  1: { label: 'RESTRICTED', short: 'R' },
+  2: { label: 'DANGER', short: 'D' },
+  3: { label: 'PROHIBITED', short: 'P' },
+  4: { label: 'CTR', short: 'CTR' },
+  5: { label: 'TMZ', short: 'TMZ' },
+  6: { label: 'RMZ', short: 'RMZ' },
+  7: { label: 'TMA', short: 'TMA' },
+  8: { label: 'TRA', short: 'TRA' },
+  9: { label: 'TSA', short: 'TSA' },
+  10: { label: 'FIR', short: 'FIR' },
+  11: { label: 'UIR', short: 'UIR' },
+  12: { label: 'ADIZ', short: 'ADIZ' },
+  13: { label: 'ATZ', short: 'ATZ' },
+  14: { label: 'MATZ', short: 'MATZ' },
+  15: { label: 'AIRWAY', short: 'AWY' },
+  17: { label: 'ALERT', short: 'ALERT' },
+  18: { label: 'WARNING', short: 'WARN' },
+  21: { label: 'GLIDING_SECTOR', short: 'GLD' },
+  29: { label: 'LOW_ALT_RESTRICTION', short: 'LAR' },
+  30: { label: 'MILITARY_ROUTE', short: 'MIL' },
+  31: { label: 'TFR', short: 'TFR' }
+};
+
+function formatAltitude(limit) {
+  if (!limit) return '?';
+  const v = limit.value;
+  const unit = limit.unit;
+  const ref = limit.referenceDatum;
+  
+  // Unit : 0=m, 1=ft, 2=FL
+  // Reference : 0=GND, 1=MSL, 2=STD, 3=UNL
+  if (ref === 3) return 'UNL';
+  if (v === 0 && ref === 0) return 'GND';
+  if (v === 0 && ref === 1) return 'SFC';
+  
+  let unitLabel = unit === 0 ? 'M' : unit === 1 ? 'FT' : 'FL';
+  let refLabel = ref === 0 ? 'GND' : ref === 1 ? 'MSL' : ref === 2 ? 'STD' : '';
+  
+  if (unit === 2) return `FL${v}`;
+  return `${v} ${unitLabel} ${refLabel}`.trim();
+}
+
+function formatHoursOfOperation(hoo) {
+  if (!hoo || !hoo.operatingHours || hoo.operatingHours.length === 0) {
+    return hoo && hoo.publicHolidaysExcluded ? 'sauf JF' : 'H24 ou voir NOTAM';
+  }
+  // Regrouper jours consécutifs avec même horaire
+  const days = hoo.operatingHours;
+  if (days.length === 7) return 'H24';
+  
+  const dayShort = {
+    'MONDAY': 'LUN', 'TUESDAY': 'MAR', 'WEDNESDAY': 'MER',
+    'THURSDAY': 'JEU', 'FRIDAY': 'VEN', 'SATURDAY': 'SAM', 'SUNDAY': 'DIM'
+  };
+  
+  // Simplification : afficher liste des jours + premier créneau horaire
+  const dayLabels = days.map(d => dayShort[d.dayOfWeek] || d.dayOfWeek.slice(0, 3));
+  const firstHours = days[0].startTime && days[0].endTime 
+    ? `${days[0].startTime}-${days[0].endTime}` 
+    : '';
+  
+  return `${dayLabels.join('/')} ${firstHours}`.trim();
+}
+
+async function fetchFranceAirspaces() {
+  const key = getOpenaipKey();
+  if (!key) return [];
+  
+  // Cache 24h
+  const cacheKey = 'autogyrodash_airspaces_fr';
+  const cacheExpiry = 'autogyrodash_airspaces_fr_expiry';
+  const now = Date.now();
+  const expiry = parseInt(localStorage.getItem(cacheExpiry) || '0');
+  
+  if (expiry > now) {
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const data = JSON.parse(cached);
+        console.log(`[airspaces] Cache hit : ${data.length} zones`);
+        return data;
+      }
+    } catch (e) { /* cache invalide, refetch */ }
+  }
+  
+  console.log('[airspaces] Fetching France airspaces from OpenAIP Core API...');
+  const all = [];
+  let page = 1;
+  const limit = 1000;
+  
+  try {
+    while (true) {
+      const url = `https://api.core.openaip.net/api/airspaces?country=FR&page=${page}&limit=${limit}&apiKey=${encodeURIComponent(key)}`;
+      const r = await fetch(url);
+      if (!r.ok) {
+        console.warn(`[airspaces] HTTP ${r.status} sur page ${page}`);
+        break;
+      }
+      const data = await r.json();
+      const items = data.items || [];
+      // On garde uniquement les champs utiles pour limiter taille cache
+      items.forEach(item => {
+        all.push({
+          _id: item._id,
+          name: item.name,
+          type: item.type,
+          icaoClass: item.icaoClass,
+          upperLimit: item.upperLimit,
+          lowerLimit: item.lowerLimit,
+          geometry: item.geometry,
+          hoursOfOperation: item.hoursOfOperation,
+          activity: item.activity,
+          country: item.country
+        });
+      });
+      console.log(`[airspaces] Page ${page} : ${items.length} zones (total ${all.length})`);
+      if (items.length < limit) break;
+      page++;
+      if (page > 10) break; // Garde-fou
+    }
+    
+    // Cacher 24h
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(all));
+      localStorage.setItem(cacheExpiry, (now + 24 * 60 * 60 * 1000).toString());
+    } catch (e) {
+      console.warn('[airspaces] Cache localStorage plein, pas de cache');
+    }
+    
+    return all;
+  } catch (e) {
+    console.error('[airspaces] Erreur fetch :', e);
+    return [];
+  }
+}
+
+function detectAirspacesOnRoute(points, airspaces) {
+  if (!points || points.length < 2 || !airspaces || airspaces.length === 0) return [];
+  if (!window.turf) {
+    console.error('[airspaces] Turf.js non chargé');
+    return [];
+  }
+  
+  // Construire la ligne du trajet
+  const lineCoords = points.map(p => [p.lon, p.lat]);
+  const tripLine = window.turf.lineString(lineCoords);
+  
+  const crossed = [];
+  
+  for (const as of airspaces) {
+    if (!as.geometry || as.geometry.type !== 'Polygon') continue;
+    
+    try {
+      // Construire le polygone
+      const poly = window.turf.polygon(as.geometry.coordinates);
+      
+      // Test intersection ligne-polygone
+      // 1. La ligne traverse-t-elle le contour ?
+      const lineCross = window.turf.booleanCrosses(tripLine, poly);
+      // 2. Ou la ligne est-elle entièrement dans le polygone ?
+      const startIn = window.turf.booleanPointInPolygon(window.turf.point(lineCoords[0]), poly);
+      const endIn = window.turf.booleanPointInPolygon(window.turf.point(lineCoords[lineCoords.length - 1]), poly);
+      
+      if (lineCross || startIn || endIn) {
+        crossed.push(as);
+      }
+    } catch (e) {
+      // Polygone invalide, on skip
+    }
+  }
+  
+  return crossed;
+}
+
+function renderAirspaceCard(as) {
+  const typeInfo = AIRSPACE_TYPES[as.type] || { label: 'OTHER', short: '?' };
+  const cssClass = `airspace-${typeInfo.short}`;
+  const altLow = formatAltitude(as.lowerLimit);
+  const altHigh = formatAltitude(as.upperLimit);
+  const hours = formatHoursOfOperation(as.hoursOfOperation);
+  
+  return `
+    <div class="airspace-card ${cssClass}">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2 flex-wrap">
+          <strong class="pre-mono">${typeInfo.short}</strong>
+          <strong>${as.name}</strong>
+        </div>
+        <span class="text-xs text-muted">${typeInfo.label}</span>
+      </div>
+      <div class="text-xs mt-1 flex flex-wrap gap-x-3">
+        <span><strong>Altitudes :</strong> ${altLow} → ${altHigh}</span>
+        <span><strong>Horaires :</strong> ${hours}</span>
+      </div>
+    </div>
+  `;
+}
+
+async function updateAirspacesOnRoute() {
+  const trip = computeTrip();
+  const section = document.getElementById('airspaces-section');
+  const countEl = document.getElementById('airspaces-count');
+  const loadingEl = document.getElementById('airspaces-loading');
+  const listEl = document.getElementById('airspaces-list');
+  
+  if (!trip || trip.points.length < 2) {
+    section.classList.add('hidden');
+    return;
+  }
+  
+  if (!getOpenaipKey()) {
+    section.classList.add('hidden');
+    return;
+  }
+  
+  section.classList.remove('hidden');
+  loadingEl.classList.remove('hidden');
+  listEl.innerHTML = '';
+  countEl.textContent = 'analyse...';
+  
+  const airspaces = await fetchFranceAirspaces();
+  
+  if (airspaces.length === 0) {
+    loadingEl.textContent = 'Données zones aériennes indisponibles (clé OpenAIP requise).';
+    countEl.textContent = '—';
+    return;
+  }
+  
+  const crossed = detectAirspacesOnRoute(trip.points, airspaces);
+  
+  loadingEl.classList.add('hidden');
+  countEl.textContent = `${crossed.length} zone${crossed.length > 1 ? 's' : ''}`;
+  if (crossed.length > 0) {
+    countEl.style.background = '#FEE2E2';
+    countEl.style.color = '#991B1B';
+  } else {
+    countEl.style.background = '#DCFCE7';
+    countEl.style.color = '#14532D';
+  }
+  
+  // Trier par type (R/D/P d'abord)
+  const priority = { 3: 0, 1: 1, 2: 2, 4: 3, 7: 4, 13: 5 };
+  crossed.sort((a, b) => {
+    const pa = priority[a.type] !== undefined ? priority[a.type] : 99;
+    const pb = priority[b.type] !== undefined ? priority[b.type] : 99;
+    return pa - pb;
+  });
+  
+  if (crossed.length === 0) {
+    listEl.innerHTML = '<p class="text-xs text-muted">Aucune zone réglementée détectée sur ce trajet. ✓</p>';
+  } else {
+    listEl.innerHTML = crossed.map(renderAirspaceCard).join('');
+  }
+  
+  lucide.createIcons();
+}
+
+// Hook dans onTripChange pour rafraîchir les zones quand trajet change
+const _originalOnTripChange = onTripChange;
+onTripChange = function() {
+  _originalOnTripChange();
+  updateAirspacesOnRoute();
+};
+
 function init() {
   document.getElementById('briefing-time').textContent = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
@@ -1431,6 +1783,10 @@ function init() {
   });
 
   updateOpenaipStatus();
+
+  // ============= FULLSCREEN MAP =============
+  document.getElementById('map-fullscreen-btn').addEventListener('click', toggleMapFullscreen);
+  document.getElementById('map-fullscreen-close').addEventListener('click', toggleMapFullscreen);
 
   // Charger ACFT sauvegardée
   STATE.acft = loadAcft();
