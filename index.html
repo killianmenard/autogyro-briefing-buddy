@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.3.0 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.3.1 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -151,8 +151,18 @@
   <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
     <i data-lucide="plane" class="h-5 w-5"></i>
     <h1 class="text-base font-medium">autogyrodash</h1>
-    <span class="text-xs text-muted pre-mono">v0.3.0</span>
+    <span class="text-xs text-muted pre-mono">v0.3.1</span>
     <div class="ml-auto flex flex-wrap items-center gap-2">
+      <button id="refresh-weather" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1" title="Rafraîchir METAR/TAF/vent sans toucher au trajet">
+        <i data-lucide="refresh-cw" class="h-3 w-3"></i> rafraîchir
+      </button>
+      <button id="clear-trip" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50" title="Vider uniquement le trajet">
+        <i data-lucide="x" class="h-3 w-3"></i> vider trajet
+      </button>
+      <button id="reset-all" class="text-xs px-2 py-1 rounded border hover:bg-red-50" style="border-color:#FCA5A5;color:#991B1B;" title="Tout réinitialiser (sauf clé OpenAIP)">
+        <i data-lucide="trash-2" class="h-3 w-3"></i> reset
+      </button>
+      <span class="border-l border-thin mx-1" style="height:20px;"></span>
       <span class="tab-btn active" data-tab="plan">plan de vol</span>
       <span class="tab-btn" data-tab="acft">fiche acft</span>
       <span class="text-xs text-muted ml-2" id="briefing-time"></span>
@@ -213,15 +223,6 @@
           <input type="checkbox" id="loop-checkbox" />
           <span>retour au départ (boucle)</span>
         </label>
-        <div class="ml-auto flex items-center gap-2 flex-wrap">
-          <button id="refresh-weather" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1" title="Rafraîchir METAR/TAF/vent sans toucher au trajet">
-            <i data-lucide="refresh-cw" class="h-3 w-3"></i> rafraîchir météo
-          </button>
-          <button id="clear-trip" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">vider le trajet</button>
-          <button id="reset-all" class="text-xs px-2 py-1 rounded border border-thin hover:bg-red-50" style="border-color:#FCA5A5;color:#991B1B;" title="Tout réinitialiser (sauf clé OpenAIP)">
-            <i data-lucide="trash-2" class="inline h-3 w-3"></i> tout réinitialiser
-          </button>
-        </div>
       </div>
     </div>
 
@@ -234,9 +235,6 @@
           <span id="openaip-status" class="pill" style="background:#F0F0EE;color:#6B6B6B;">non configuré</span>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          <button id="map-fullscreen-btn" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">
-            <i data-lucide="maximize" class="inline h-3 w-3"></i> plein écran
-          </button>
           <button id="openaip-config-btn" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">
             <i data-lucide="key" class="inline h-3 w-3"></i> configurer OpenAIP
           </button>
@@ -267,33 +265,6 @@
           </button>
         </div>
       </div>
-    </div>
-
-    <!-- Widget météo France (vue globale) -->
-    <div id="weather-france-section" class="mt-3">
-      <details class="card p-3">
-        <summary class="flex items-center justify-between cursor-pointer">
-          <span class="flex items-center gap-2 text-sm font-medium">
-            <i data-lucide="cloud-sun" class="h-4 w-4"></i>
-            <span>météo France — vue globale</span>
-            <span id="wf-status" class="pill text-xs" style="background:#F0F0EE;color:#6B6B6B;">non chargée</span>
-          </span>
-          <span class="text-xs text-muted">cliquer pour ouvrir</span>
-        </summary>
-        <div class="mt-3 space-y-2">
-          <div class="flex items-center gap-2 flex-wrap">
-            <button id="wf-load-btn" class="text-xs px-3 py-1.5 rounded bg-black text-white hover:opacity-90 inline-flex items-center gap-1">
-              <i data-lucide="refresh-cw" class="h-3 w-3"></i> charger / rafraîchir
-            </button>
-            <span class="text-xs text-muted">Données Open-Meteo, mise à jour à la demande.</span>
-          </div>
-          <div id="weather-france-map" style="height: 420px; border-radius: 8px; background: var(--muted);"></div>
-          <p class="text-xs text-muted">
-            Vue d'ensemble : 15 villes de France. Chaque marqueur affiche couverture nuageuse, vent (direction & vitesse), température.
-            Cliquer sur un marqueur pour les détails.
-          </p>
-        </div>
-      </details>
     </div>
 
     <!-- Carte interactive -->
@@ -495,6 +466,42 @@
       </div>
     </div>
   </section>
+
+    <!-- ============================================== -->
+    <!-- Widget météo France (vue globale style TV)     -->
+    <!-- ============================================== -->
+    <div id="weather-france-section" class="mt-6">
+      <details class="card p-4">
+        <summary class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-2 text-sm font-medium">
+            <i data-lucide="cloud-sun" class="h-4 w-4"></i>
+            <span>météo France — vue globale du jour</span>
+            <span id="wf-status" class="pill text-xs" style="background:#F0F0EE;color:#6B6B6B;">non chargée</span>
+          </span>
+          <span class="text-xs text-muted">cliquer pour ouvrir</span>
+        </summary>
+        <div class="mt-3 space-y-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="wf-load-btn" class="text-xs px-3 py-1.5 rounded bg-black text-white hover:opacity-90 inline-flex items-center gap-1">
+              <i data-lucide="refresh-cw" class="h-3 w-3"></i> charger / rafraîchir
+            </button>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="text-muted">affichage :</span>
+              <button class="wf-mode-btn px-2 py-0.5 rounded bg-black text-white" data-mode="temp">température</button>
+              <button class="wf-mode-btn px-2 py-0.5 rounded bg-white border" data-mode="wind">vent</button>
+              <button class="wf-mode-btn px-2 py-0.5 rounded bg-white border" data-mode="clouds">nuages</button>
+            </div>
+          </div>
+          
+          <!-- Carte météo style TV — Leaflet épuré -->
+          <div id="weather-france-map" style="height: 480px; border-radius: 12px; background: linear-gradient(180deg, #E0F2FE 0%, #DBEAFE 100%); overflow:hidden;"></div>
+          
+          <p class="text-xs text-muted">
+            Données Open-Meteo, 15 grandes villes. Cliquer sur "vent"/"nuages" pour basculer l'affichage. Cliquer sur une ville pour les détails complets.
+          </p>
+        </div>
+      </details>
+    </div>
 
 </main>
 
@@ -958,26 +965,42 @@ function buildOpenaipLayers() {
 }
 
 function refreshOpenaipLayers() {
+  if (!map) {
+    console.warn('[OpenAIP] map non initialisée, skip refreshOpenaipLayers');
+    return;
+  }
   // Retirer les anciens overlays du contrôle
   if (layerControl) {
-    map.removeControl(layerControl);
+    try { map.removeControl(layerControl); } catch(e){}
     layerControl = null;
   }
   // Retirer les anciens layers de la carte
   Object.values(openaipLayers).forEach(layer => {
     if (layer) {
-      map.removeLayer(layer);
+      try { map.removeLayer(layer); } catch(e){}
     }
   });
   openaipLayers = { openaip: null };
 
   const layers = buildOpenaipLayers();
-  if (!layers) return;
+  if (!layers) {
+    console.log('[OpenAIP] Pas de clé API → pas d\'overlay');
+    return;
+  }
 
   openaipLayers = layers;
 
   // Activer l'overlay all-in-one par défaut
   layers.openaip.addTo(map);
+  console.log('[OpenAIP] Overlay ajouté à la carte ✓');
+  
+  // Listener pour tracer les erreurs de chargement de tiles
+  layers.openaip.on('tileerror', (e) => {
+    console.warn('[OpenAIP] tile error:', e.coords, e.error);
+  });
+  layers.openaip.on('tileload', () => {
+    // log silencieux, juste pour confirmer
+  });
 
   // Contrôle de layers en haut à droite (1 seul toggle car endpoint combiné)
   const overlayMaps = {
@@ -998,8 +1021,30 @@ function initMap() {
   markerLayer = L.layerGroup().addTo(map);
   routeLayer = L.layerGroup().addTo(map);
 
-  // Overlays OpenAIP si clé configurée
-  refreshOpenaipLayers();
+  // Contrôle plein écran custom (en haut à gauche, sous les zoom)
+  const FullscreenControl = L.Control.extend({
+    options: { position: 'topleft' },
+    onAdd: function() {
+      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+      const btn = L.DomUtil.create('a', '', container);
+      btn.href = '#';
+      btn.title = 'Plein écran';
+      btn.style.cssText = 'font-size:18px;text-align:center;line-height:30px;width:30px;height:30px;';
+      btn.innerHTML = '⛶';
+      L.DomEvent.on(btn, 'click', function(e) {
+        L.DomEvent.stop(e);
+        toggleMapFullscreen();
+      });
+      return container;
+    }
+  });
+  map.addControl(new FullscreenControl());
+
+  // Overlays OpenAIP si clé configurée — appel sécurisé après init layers de base
+  setTimeout(() => {
+    console.log('[OpenAIP] Init des overlays...');
+    refreshOpenaipLayers();
+  }, 100);
 
   // Petit marqueur pour chaque AD
   AERODROMES_ALL.forEach(ad => {
@@ -2622,7 +2667,7 @@ onTripChange = function() {
 };
 
 // ============================================================
-// WIDGET MÉTÉO FRANCE — Vue globale (carte Leaflet + Open-Meteo)
+// WIDGET MÉTÉO FRANCE — Style "carte météo TV"
 // ============================================================
 const FRANCE_CITIES = [
   { name: 'Lille', lat: 50.63, lon: 3.06 },
@@ -2644,6 +2689,23 @@ const FRANCE_CITIES = [
 
 let weatherFranceMap = null;
 let weatherFranceMarkers = [];
+let weatherFranceData = null;  // cache des données pour switch affichage rapide
+let weatherFranceMode = 'temp'; // 'temp' | 'wind' | 'clouds'
+
+function weatherCodeToIcon(code) {
+  // WMO weather codes from Open-Meteo
+  // 0 = clear, 1-3 = partial cloud, 45-48 = fog, 51-67 = rain, 71-77 = snow, 80-99 = showers/thunder
+  if (code === 0) return '☀️';
+  if (code <= 2) return '🌤️';
+  if (code === 3) return '⛅';
+  if (code >= 45 && code <= 48) return '🌫️';
+  if (code >= 51 && code <= 57) return '🌦️';
+  if (code >= 61 && code <= 67) return '🌧️';
+  if (code >= 71 && code <= 77) return '❄️';
+  if (code >= 80 && code <= 82) return '🌦️';
+  if (code >= 95) return '⛈️';
+  return '🌤️';
+}
 
 function cloudCoverIcon(pct) {
   if (pct === null || pct === undefined) return '❓';
@@ -2654,20 +2716,24 @@ function cloudCoverIcon(pct) {
   return '☁️';
 }
 
-function windIconHtml(dirDeg, speedKt) {
-  if (dirDeg === null || dirDeg === undefined) return '';
-  // Couleur selon vitesse
-  let color = '#10B981'; // vert
-  if (speedKt > 12) color = '#F59E0B'; // orange
-  if (speedKt > 22) color = '#DC2626'; // rouge
-  
-  // SVG flèche pointant dans la direction d'où vient le vent (convention météo)
-  // En CSS, rotate(0) = nord. Le vent du 270 vient de l'ouest, flèche pointe vers l'est.
-  // On veut afficher la direction VERS où va le vent → rotation = dir + 180
-  const rotation = (dirDeg + 180) % 360;
-  return `<svg width="22" height="22" viewBox="0 0 24 24" style="transform: rotate(${rotation}deg);">
-    <path d="M12 2 L18 12 L13 12 L13 22 L11 22 L11 12 L6 12 Z" fill="${color}" stroke="white" stroke-width="0.5"/>
-  </svg>`;
+function tempColor(t) {
+  // Gradient de couleur Météo France style : bleu froid → vert → jaune → orange → rouge chaud
+  if (t === null || t === undefined) return '#6B7280';
+  if (t < 0) return '#1E40AF';   // bleu froid
+  if (t < 10) return '#3B82F6';  // bleu
+  if (t < 18) return '#10B981';  // vert
+  if (t < 25) return '#F59E0B';  // jaune-orange
+  if (t < 30) return '#EA580C';  // orange
+  return '#DC2626';              // rouge
+}
+
+function windColor(spd) {
+  if (spd === null || spd === undefined) return '#6B7280';
+  if (spd < 5) return '#10B981';   // vert calme
+  if (spd < 12) return '#84CC16';  // vert clair
+  if (spd < 18) return '#F59E0B';  // orange
+  if (spd < 25) return '#EA580C';  // orange foncé
+  return '#DC2626';                // rouge fort
 }
 
 async function fetchFranceWeather() {
@@ -2676,7 +2742,6 @@ async function fetchFranceWeather() {
   statusEl.style.background = '#FEF3C7';
   statusEl.style.color = '#92400E';
   
-  // Open-Meteo accepte multi-locations via paramètres répétés
   const lats = FRANCE_CITIES.map(c => c.lat).join(',');
   const lons = FRANCE_CITIES.map(c => c.lon).join(',');
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code&wind_speed_unit=kn&timezone=Europe%2FParis`;
@@ -2685,7 +2750,6 @@ async function fetchFranceWeather() {
     const r = await fetch(url);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
-    // Open-Meteo retourne soit un objet (1 location) soit un array (multi-locations)
     const results = Array.isArray(data) ? data : [data];
     return results;
   } catch (e) {
@@ -2700,85 +2764,137 @@ async function fetchFranceWeather() {
 function initWeatherFranceMap() {
   if (weatherFranceMap) return;
   
-  weatherFranceMap = L.map('weather-france-map', { zoomControl: true, attributionControl: false }).setView([46.5, 2.5], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 11
+  // Carte sans interaction (style poster TV) - fond très clair via CartoDB Positron (clair et neutre)
+  weatherFranceMap = L.map('weather-france-map', { 
+    zoomControl: false, 
+    attributionControl: false,
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    boxZoom: false,
+    keyboard: false,
+    touchZoom: true,
+    dragging: false
+  }).setView([46.3, 2.5], 6);
+  
+  // CartoDB Positron — fond clair, neutre, idéal pour mettre en valeur les marqueurs
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+    maxZoom: 8,
+    minZoom: 5,
+    subdomains: 'abcd'
   }).addTo(weatherFranceMap);
-  // Petit attribution discret en bas à droite
-  L.control.attribution({prefix: false}).addAttribution('© OpenStreetMap · Open-Meteo').addTo(weatherFranceMap);
+  
+  L.control.attribution({prefix: false}).addAttribution('© CartoDB · Open-Meteo').addTo(weatherFranceMap);
 }
 
-async function loadWeatherFrance() {
-  initWeatherFranceMap();
+function makeWeatherFranceIcon(city, w) {
+  const c = w.current;
+  const mode = weatherFranceMode;
+  const temp = Math.round(c.temperature_2m);
+  const windSpd = Math.round(c.wind_speed_10m);
+  const windDir = c.wind_direction_10m;
+  const cloudPct = c.cloud_cover;
+  const wxIcon = weatherCodeToIcon(c.weather_code);
+  const cloudIc = cloudCoverIcon(cloudPct);
+  
+  let html;
+  if (mode === 'temp') {
+    // Mode TEMPÉRATURE : grosse icône météo + grosse température colorée
+    const tColor = tempColor(temp);
+    html = `
+      <div style="display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
+        <div style="font-size: 30px; line-height: 1; margin-bottom: 2px;">${wxIcon}</div>
+        <div style="background: white; border: 2px solid ${tColor}; border-radius: 16px; padding: 1px 8px; font-size: 16px; font-weight: 700; color: ${tColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.15); white-space: nowrap; line-height: 1.2;">${temp}°</div>
+        <div style="font-size: 10px; color: #444; font-weight: 600; margin-top: 1px; text-shadow: 0 0 3px white;">${city.name}</div>
+      </div>
+    `;
+  } else if (mode === 'wind') {
+    // Mode VENT : flèche directionnelle + vitesse colorée
+    const wColor = windColor(windSpd);
+    const rot = ((windDir || 0) + 180) % 360;
+    html = `
+      <div style="display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
+        <svg width="28" height="28" viewBox="0 0 24 24" style="transform: rotate(${rot}deg); filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
+          <path d="M12 2 L18 12 L13.5 12 L13.5 22 L10.5 22 L10.5 12 L6 12 Z" fill="${wColor}" stroke="white" stroke-width="1"/>
+        </svg>
+        <div style="background: white; border: 2px solid ${wColor}; border-radius: 12px; padding: 1px 6px; font-size: 13px; font-weight: 700; color: ${wColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.15); white-space: nowrap; line-height: 1.2; margin-top: 2px;">${windSpd}kt</div>
+        <div style="font-size: 10px; color: #444; font-weight: 600; margin-top: 1px; text-shadow: 0 0 3px white;">${city.name}</div>
+      </div>
+    `;
+  } else {
+    // Mode NUAGES : icône nuage + % couverture
+    html = `
+      <div style="display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
+        <div style="font-size: 32px; line-height: 1; margin-bottom: 2px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">${cloudIc}</div>
+        <div style="background: white; border: 2px solid #6B7280; border-radius: 12px; padding: 1px 6px; font-size: 12px; font-weight: 700; color: #374151; box-shadow: 0 2px 4px rgba(0,0,0,0.15); white-space: nowrap; line-height: 1.2;">${cloudPct}%</div>
+        <div style="font-size: 10px; color: #444; font-weight: 600; margin-top: 1px; text-shadow: 0 0 3px white;">${city.name}</div>
+      </div>
+    `;
+  }
+  
+  return L.divIcon({
+    html: html,
+    iconSize: [70, 80],
+    iconAnchor: [35, 40],
+    className: 'wf-divicon'
+  });
+}
+
+function renderWeatherFranceMarkers() {
+  if (!weatherFranceMap || !weatherFranceData) return;
   
   // Vider les marqueurs existants
   weatherFranceMarkers.forEach(m => weatherFranceMap.removeLayer(m));
   weatherFranceMarkers = [];
   
-  const results = await fetchFranceWeather();
-  if (!results) return;
-  
-  const statusEl = document.getElementById('wf-status');
-  let validCount = 0;
-  
   FRANCE_CITIES.forEach((city, i) => {
-    const w = results[i];
+    const w = weatherFranceData[i];
     if (!w || !w.current) return;
-    validCount++;
     
+    const icon = makeWeatherFranceIcon(city, w);
     const c = w.current;
-    const cloudPct = c.cloud_cover;
-    const temp = c.temperature_2m;
-    const windDir = c.wind_direction_10m;
-    const windSpd = c.wind_speed_10m;
-    const windGust = c.wind_gusts_10m;
-    
-    const cloudIcon = cloudCoverIcon(cloudPct);
-    const windHtml = windIconHtml(windDir, windSpd);
-    
-    // Couleur de bordure selon vent max
-    const maxWind = Math.max(windSpd || 0, windGust || 0);
-    let borderColor = '#10B981';
-    if (maxWind > 12) borderColor = '#F59E0B';
-    if (maxWind > 22) borderColor = '#DC2626';
-    
-    const html = `
-      <div style="background: white; border: 2px solid ${borderColor}; border-radius: 8px; padding: 4px 6px; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); font-size: 11px; min-width: 80px; line-height: 1.1;">
-        <div style="font-size: 18px;">${cloudIcon}</div>
-        <div>
-          <div style="font-weight: 600;">${city.name}</div>
-          <div style="font-size: 10px; color: #555;">${Math.round(temp)}°C · ${Math.round(windSpd)}kt</div>
-        </div>
-        <div>${windHtml}</div>
-      </div>
-    `;
-    
-    const icon = L.divIcon({
-      html: html,
-      iconSize: [120, 40],
-      iconAnchor: [60, 20],
-      className: ''
-    });
-    
     const popupHtml = `
-      <strong>${city.name}</strong><br>
-      🌡️ ${Math.round(temp)}°C<br>
-      ${cloudIcon} Nuages : ${cloudPct}%<br>
-      🌬️ Vent ${windDir}° / ${Math.round(windSpd)} kt${windGust ? ` (raf. ${Math.round(windGust)})` : ''}<br>
-      ${maxWind > 22 ? '⚠️ Vent fort' : maxWind > 12 ? '🟡 Vent modéré' : '✓ Vent faible'}
+      <strong style="font-size:14px;">${city.name}</strong><br>
+      ${weatherCodeToIcon(c.weather_code)} <strong>${Math.round(c.temperature_2m)}°C</strong><br>
+      ${cloudCoverIcon(c.cloud_cover)} Nuages : ${c.cloud_cover}%<br>
+      🌬️ Vent ${c.wind_direction_10m}° / ${Math.round(c.wind_speed_10m)} kt${c.wind_gusts_10m ? ` (raf. ${Math.round(c.wind_gusts_10m)})` : ''}
     `;
     
     const m = L.marker([city.lat, city.lon], { icon }).addTo(weatherFranceMap);
     m.bindPopup(popupHtml);
     weatherFranceMarkers.push(m);
   });
+}
+
+async function loadWeatherFrance() {
+  initWeatherFranceMap();
   
-  statusEl.textContent = `✓ ${validCount} villes`;
+  const results = await fetchFranceWeather();
+  if (!results) return;
+  
+  weatherFranceData = results;
+  renderWeatherFranceMarkers();
+  
+  const statusEl = document.getElementById('wf-status');
+  statusEl.textContent = `✓ à jour`;
   statusEl.style.background = '#DCFCE7';
   statusEl.style.color = '#14532D';
   
   // Resize fix Leaflet
   setTimeout(() => weatherFranceMap.invalidateSize(), 100);
+}
+
+function setWeatherFranceMode(mode) {
+  weatherFranceMode = mode;
+  // Mettre à jour les boutons (mode actif)
+  document.querySelectorAll('.wf-mode-btn').forEach(btn => {
+    if (btn.dataset.mode === mode) {
+      btn.className = 'wf-mode-btn px-2 py-0.5 rounded bg-black text-white';
+    } else {
+      btn.className = 'wf-mode-btn px-2 py-0.5 rounded bg-white border';
+    }
+  });
+  // Re-rendre les marqueurs si données disponibles
+  if (weatherFranceData) renderWeatherFranceMarkers();
 }
 
 function init() {
@@ -2881,7 +2997,7 @@ function init() {
   updateOpenaipStatus();
 
   // ============= FULLSCREEN MAP =============
-  document.getElementById('map-fullscreen-btn').addEventListener('click', toggleMapFullscreen);
+  // Plein écran : géré via contrôle Leaflet custom (voir initMap)
   document.getElementById('map-fullscreen-close').addEventListener('click', toggleMapFullscreen);
 
   // ============= METAR MODE SWITCHER (event delegation) =============
@@ -2899,10 +3015,21 @@ function init() {
       if (wfDetails.open) {
         initWeatherFranceMap();
         setTimeout(() => weatherFranceMap && weatherFranceMap.invalidateSize(), 200);
+        // Auto-load au premier ouverture si pas encore chargé
+        if (!weatherFranceData) {
+          setTimeout(() => loadWeatherFrance(), 300);
+        }
       }
     });
   }
   document.getElementById('wf-load-btn').addEventListener('click', loadWeatherFrance);
+  
+  // Event delegation pour les boutons de mode du widget
+  document.body.addEventListener('click', (e) => {
+    const btn = e.target.closest('.wf-mode-btn');
+    if (!btn) return;
+    setWeatherFranceMode(btn.dataset.mode);
+  });
 
   // ============= FILTRE D'ALTITUDE =============
   const altFilterEnabled = document.getElementById('altitude-filter-enabled');
