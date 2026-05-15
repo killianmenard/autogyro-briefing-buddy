@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.3.6 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.3.7 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -82,9 +82,71 @@
     box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     flex-wrap: wrap;
     justify-content: center;
+    position: relative;
   }
-  .header-pill > .divider {
+  .header-pill .divider {
     width: 1px; height: 22px; background: #E5E7EB;
+  }
+  .header-pill-extras {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  /* Toggle hamburger : caché sur desktop, visible sur mobile */
+  .header-mobile-toggle {
+    display: none;
+    width: 30px; height: 30px;
+    border-radius: 999px;
+    border: 1px solid #E5E7EB;
+    background: white;
+    cursor: pointer;
+    align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .header-mobile-toggle:hover { background: #F9FAFB; }
+  .header-mobile-toggle.open { background: #000; color: white; border-color: #000; }
+  
+  /* MOBILE : pilule compacte + extras en dropdown */
+  @media (max-width: 768px) {
+    .header-pill {
+      gap: 10px;
+      padding: 6px 12px 6px 14px;
+      width: auto;
+    }
+    .header-mobile-toggle { display: inline-flex; }
+    
+    /* Extras cachés par défaut, dérouler en colonne sous la pilule */
+    .header-pill-extras {
+      display: none;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+      width: 100%;
+      padding-top: 10px;
+      margin-top: 8px;
+      border-top: 1px solid #E5E7EB;
+    }
+    .header-pill.menu-open .header-pill-extras { display: flex; }
+    
+    /* Quand menu ouvert, pilule devient un rectangle arrondi (pas pilule pure) */
+    .header-pill.menu-open {
+      border-radius: 20px;
+      padding: 10px 16px 14px 16px;
+    }
+    
+    /* Sur mobile, les dividers verticaux deviennent horizontaux */
+    .header-pill-extras .divider {
+      width: 100%;
+      height: 1px;
+    }
+    
+    /* Groupes d'éléments en ligne dans le dropdown */
+    .header-pill-extras > div {
+      justify-content: center;
+    }
   }
   
   /* ===== TITRES BOLD UPPERCASE NOIR ===== */
@@ -232,49 +294,57 @@
 <header class="sticky top-0 bg-white/95 backdrop-blur py-3" style="z-index: 1000;">
   <div class="mx-auto max-w-7xl flex justify-center px-3">
     <div class="header-pill">
-      <!-- Logo + nom -->
-      <div class="flex items-center gap-2">
+      <!-- Logo + nom (toujours visible) -->
+      <div class="flex items-center gap-2 header-pill-brand">
         <i data-lucide="plane" class="h-4 w-4"></i>
         <span class="font-semibold text-sm" style="text-transform:none;letter-spacing:0;">autogyrodash</span>
-        <span class="text-xs text-muted pre-mono">v0.3.6</span>
+        <span class="text-xs text-muted pre-mono">v0.3.7</span>
       </div>
       
-      <div class="divider"></div>
+      <!-- Toggle hamburger : visible seulement sur mobile -->
+      <button id="mobile-menu-toggle" class="header-mobile-toggle" aria-label="Ouvrir le menu" title="Ouvrir le menu">
+        <i data-lucide="menu" class="h-4 w-4"></i>
+      </button>
       
-      <!-- Tabs + heure -->
-      <div class="flex items-center gap-3">
-        <span class="tab-btn active" data-tab="plan">brief pré-vol</span>
-        <span class="tab-btn" data-tab="acft">fiche acft</span>
-        <span class="text-xs text-muted" id="briefing-time"></span>
+      <!-- Éléments masqués sur mobile (afficher via toggle) -->
+      <div class="header-pill-extras">
+        <div class="divider"></div>
+        
+        <!-- Tabs + heure -->
+        <div class="flex items-center gap-3">
+          <span class="tab-btn active" data-tab="plan">brief pré-vol</span>
+          <span class="tab-btn" data-tab="acft">fiche acft</span>
+          <span class="text-xs text-muted" id="briefing-time"></span>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <!-- Unités -->
+        <button id="unit-speed-toggle" class="header-unit-btn" title="Basculer kt ↔ km/h">
+          <i data-lucide="wind" class="h-3 w-3"></i>
+          <span id="unit-speed-label">kt</span>
+        </button>
+        <button id="unit-dist-toggle" class="header-unit-btn" title="Basculer NM ↔ km">
+          <i data-lucide="ruler" class="h-3 w-3"></i>
+          <span id="unit-dist-label">NM</span>
+        </button>
+        
+        <div class="divider"></div>
+        
+        <!-- Actions -->
+        <button id="refresh-weather" class="header-action-btn" title="Rafraîchir METAR/TAF/vent">
+          <i data-lucide="refresh-cw" class="h-3 w-3 flex-shrink-0"></i>
+          <span>rafraîchir</span>
+        </button>
+        <button id="clear-trip" class="header-action-btn" title="Vider le trajet">
+          <i data-lucide="x" class="h-3 w-3 flex-shrink-0"></i>
+          <span>vider</span>
+        </button>
+        <button id="reset-all" class="header-action-btn" style="border-color:#FCA5A5;color:#991B1B;" title="Tout réinitialiser">
+          <i data-lucide="trash-2" class="h-3 w-3 flex-shrink-0"></i>
+          <span>reset</span>
+        </button>
       </div>
-      
-      <div class="divider"></div>
-      
-      <!-- Unités -->
-      <button id="unit-speed-toggle" class="header-unit-btn" title="Basculer kt ↔ km/h">
-        <i data-lucide="wind" class="h-3 w-3"></i>
-        <span id="unit-speed-label">kt</span>
-      </button>
-      <button id="unit-dist-toggle" class="header-unit-btn" title="Basculer NM ↔ km">
-        <i data-lucide="ruler" class="h-3 w-3"></i>
-        <span id="unit-dist-label">NM</span>
-      </button>
-      
-      <div class="divider"></div>
-      
-      <!-- Actions -->
-      <button id="refresh-weather" class="header-action-btn" title="Rafraîchir METAR/TAF/vent">
-        <i data-lucide="refresh-cw" class="h-3 w-3 flex-shrink-0"></i>
-        <span>rafraîchir</span>
-      </button>
-      <button id="clear-trip" class="header-action-btn" title="Vider le trajet">
-        <i data-lucide="x" class="h-3 w-3 flex-shrink-0"></i>
-        <span>vider</span>
-      </button>
-      <button id="reset-all" class="header-action-btn" style="border-color:#FCA5A5;color:#991B1B;" title="Tout réinitialiser">
-        <i data-lucide="trash-2" class="h-3 w-3 flex-shrink-0"></i>
-        <span>reset</span>
-      </button>
     </div>
   </div>
 </header>
@@ -482,8 +552,8 @@
             <input type="number" id="altitude-filter-max" value="2500" min="0" max="50000" step="100"
                    class="ad-input" style="width: 90px;" />
             <span class="text-xs text-muted">ft</span>
-            <button id="altitude-filter-papa" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">
-              0-2500 ft (PAPA)
+            <button id="altitude-filter-vfr" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">
+              0-2500 ft (VFR autogire)
             </button>
             <button id="altitude-filter-reset" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">
               tout (0-50000)
@@ -3450,6 +3520,21 @@ function init() {
   document.getElementById('unit-speed-toggle').addEventListener('click', toggleSpeedUnit);
   document.getElementById('unit-dist-toggle').addEventListener('click', toggleDistUnit);
   
+  // ============= MENU MOBILE : toggle hamburger =============
+  const mobileMenuBtn = document.getElementById('mobile-menu-toggle');
+  if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', () => {
+      const pill = mobileMenuBtn.closest('.header-pill');
+      const isOpen = pill.classList.toggle('menu-open');
+      mobileMenuBtn.classList.toggle('open', isOpen);
+      // Change l'icône hamburger ↔ croix
+      mobileMenuBtn.innerHTML = isOpen
+        ? '<i data-lucide="x" class="h-4 w-4"></i>'
+        : '<i data-lucide="menu" class="h-4 w-4"></i>';
+      lucide.createIcons();
+    });
+  }
+  
   // ============= MASSE ACFT : update en temps réel =============
   ['acft-poids-vide','acft-poids-pilote','acft-poids-pax','acft-fuel-litres','acft-mtow','acft-carburant'].forEach(id => {
     const el = document.getElementById(id);
@@ -3590,7 +3675,7 @@ function init() {
   altFilterMin.addEventListener('input', onAltitudeFilterChange);
   altFilterMax.addEventListener('input', onAltitudeFilterChange);
   
-  document.getElementById('altitude-filter-papa').addEventListener('click', () => {
+  document.getElementById('altitude-filter-vfr').addEventListener('click', () => {
     altFilterEnabled.checked = true;
     altFilterMin.value = 0;
     altFilterMax.value = 2500;
