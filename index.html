@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.2.9 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.3.0 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -151,7 +151,7 @@
   <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
     <i data-lucide="plane" class="h-5 w-5"></i>
     <h1 class="text-base font-medium">autogyrodash</h1>
-    <span class="text-xs text-muted pre-mono">v0.2.9</span>
+    <span class="text-xs text-muted pre-mono">v0.3.0</span>
     <div class="ml-auto flex flex-wrap items-center gap-2">
       <span class="tab-btn active" data-tab="plan">plan de vol</span>
       <span class="tab-btn" data-tab="acft">fiche acft</span>
@@ -267,6 +267,33 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- Widget météo France (vue globale) -->
+    <div id="weather-france-section" class="mt-3">
+      <details class="card p-3">
+        <summary class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-2 text-sm font-medium">
+            <i data-lucide="cloud-sun" class="h-4 w-4"></i>
+            <span>météo France — vue globale</span>
+            <span id="wf-status" class="pill text-xs" style="background:#F0F0EE;color:#6B6B6B;">non chargée</span>
+          </span>
+          <span class="text-xs text-muted">cliquer pour ouvrir</span>
+        </summary>
+        <div class="mt-3 space-y-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="wf-load-btn" class="text-xs px-3 py-1.5 rounded bg-black text-white hover:opacity-90 inline-flex items-center gap-1">
+              <i data-lucide="refresh-cw" class="h-3 w-3"></i> charger / rafraîchir
+            </button>
+            <span class="text-xs text-muted">Données Open-Meteo, mise à jour à la demande.</span>
+          </div>
+          <div id="weather-france-map" style="height: 420px; border-radius: 8px; background: var(--muted);"></div>
+          <p class="text-xs text-muted">
+            Vue d'ensemble : 15 villes de France. Chaque marqueur affiche couverture nuageuse, vent (direction & vitesse), température.
+            Cliquer sur un marqueur pour les détails.
+          </p>
+        </div>
+      </details>
     </div>
 
     <!-- Carte interactive -->
@@ -392,8 +419,20 @@
   <!-- ============================================== -->
   <section id="tab-acft" class="hidden">
     <div class="card p-4 space-y-4">
-      <h2 class="text-sm font-medium uppercase tracking-wide text-muted">fiche aéronef</h2>
-      <p class="text-xs text-muted">Tous les champs sont facultatifs. Les données sont sauvegardées localement sur ton navigateur.</p>
+      <h2 class="text-sm font-medium uppercase tracking-wide text-muted">fiches aéronef (jusqu'à 3 machines)</h2>
+      <p class="text-xs text-muted">Sauvegarde locale de plusieurs machines. La fiche active est utilisée pour les calculs de trajet et le PDF.</p>
+
+      <!-- Sélecteur de slot -->
+      <div class="flex items-center gap-2 flex-wrap muted-bg p-2 rounded">
+        <span class="text-xs font-medium">machine active :</span>
+        <div id="acft-slots-tabs" class="flex gap-1 flex-wrap"></div>
+      </div>
+
+      <!-- Nom personnalisé -->
+      <div>
+        <label class="text-xs text-muted">nom de la machine <span class="text-gray-400">(pour la distinguer)</span></label>
+        <input type="text" id="acft-nickname" class="ad-input mt-1" placeholder="ex: Mon Calidus, École, Loisir..." />
+      </div>
 
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
@@ -445,10 +484,15 @@
         <span class="ml-1">La <strong>vitesse de croisière</strong> et la <strong>consommation</strong> servent à estimer le temps de vol et la conso de chaque segment du trajet. La <strong>capacité réservoir</strong> permet d'alerter si l'autonomie est dépassée.</span>
       </div>
 
-      <button id="save-acft" class="inline-flex items-center gap-1.5 rounded-md bg-foreground bg-black px-4 py-2 text-sm text-white hover:opacity-90">
-        <i data-lucide="check" class="h-4 w-4"></i>enregistrer la fiche
-      </button>
-      <span id="acft-saved" class="text-xs text-muted ml-2"></span>
+      <div class="flex gap-2 flex-wrap items-center">
+        <button id="save-acft" class="inline-flex items-center gap-1.5 rounded-md bg-foreground bg-black px-4 py-2 text-sm text-white hover:opacity-90">
+          <i data-lucide="check" class="h-4 w-4"></i>enregistrer cette machine
+        </button>
+        <button id="delete-acft" class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm hover:bg-red-50" style="border-color:#FCA5A5;color:#991B1B;">
+          <i data-lucide="trash-2" class="h-4 w-4"></i>supprimer cette machine
+        </button>
+        <span id="acft-saved" class="text-xs text-muted ml-2"></span>
+      </div>
     </div>
   </section>
 
@@ -652,28 +696,119 @@ function getVacPdfUrl(icao) {
 // ============================================================
 // FICHE ACFT — Persistence localStorage
 // ============================================================
-function loadAcft() {
+// Multi-slots ACFT : 3 machines max stockées en localStorage
+const ACFT_SLOTS_KEY = 'autogyrodash_acft_slots';
+const ACFT_ACTIVE_KEY = 'autogyrodash_acft_active';
+const MAX_ACFT_SLOTS = 3;
+
+function loadAcftSlots() {
+  // Migration ancien format mono-fiche → slot 0
   try {
-    const raw = localStorage.getItem('autogyrodash_acft');
-    if (!raw) return null;
-    const a = JSON.parse(raw);
-    document.getElementById('acft-immat').value = a.immat || '';
-    document.getElementById('acft-modele').value = a.modele || '';
-    document.getElementById('acft-mtow').value = a.mtow || '';
-    document.getElementById('acft-vcroisiere').value = a.vcroisiere || '';
-    document.getElementById('acft-conso').value = a.conso || '';
-    document.getElementById('acft-reservoir').value = a.reservoir || '';
-    document.getElementById('acft-carburant').value = a.carburant || '';
-    document.getElementById('acft-radio').value = a.radio || '';
-    document.getElementById('acft-transpondeur').value = a.transpondeur || '';
-    return a;
-  } catch (e) {
+    const legacyRaw = localStorage.getItem('autogyrodash_acft');
+    if (legacyRaw && !localStorage.getItem(ACFT_SLOTS_KEY)) {
+      const legacy = JSON.parse(legacyRaw);
+      legacy.nickname = legacy.nickname || (legacy.immat ? `Machine ${legacy.immat}` : 'Machine 1');
+      const slots = [legacy, null, null];
+      localStorage.setItem(ACFT_SLOTS_KEY, JSON.stringify(slots));
+      localStorage.setItem(ACFT_ACTIVE_KEY, '0');
+      localStorage.removeItem('autogyrodash_acft');
+      console.log('[ACFT] Migration ancien format vers multi-slots');
+    }
+  } catch (e) { /* ignore */ }
+  
+  try {
+    const raw = localStorage.getItem(ACFT_SLOTS_KEY);
+    if (!raw) return [null, null, null];
+    const slots = JSON.parse(raw);
+    while (slots.length < MAX_ACFT_SLOTS) slots.push(null);
+    return slots.slice(0, MAX_ACFT_SLOTS);
+  } catch (e) { return [null, null, null]; }
+}
+
+function getActiveAcftIndex() {
+  const raw = localStorage.getItem(ACFT_ACTIVE_KEY);
+  const idx = parseInt(raw || '0');
+  return isNaN(idx) || idx < 0 || idx >= MAX_ACFT_SLOTS ? 0 : idx;
+}
+
+function setActiveAcftIndex(idx) {
+  localStorage.setItem(ACFT_ACTIVE_KEY, String(idx));
+}
+
+function saveAcftSlots(slots) {
+  localStorage.setItem(ACFT_SLOTS_KEY, JSON.stringify(slots));
+}
+
+function renderAcftSlotsTabs() {
+  const slots = loadAcftSlots();
+  const activeIdx = getActiveAcftIndex();
+  const tabs = document.getElementById('acft-slots-tabs');
+  if (!tabs) return;
+  
+  tabs.innerHTML = slots.map((slot, i) => {
+    const isActive = i === activeIdx;
+    const isEmpty = !slot;
+    const label = slot ? (slot.nickname || `Machine ${i+1}`) : `+ Slot ${i+1}`;
+    const cls = isActive 
+      ? 'bg-black text-white' 
+      : (isEmpty ? 'bg-white border border-dashed text-muted' : 'bg-white border');
+    return `<button class="acft-slot-tab text-xs px-3 py-1.5 rounded-md ${cls}" data-slot="${i}" style="cursor:pointer;">${label}</button>`;
+  }).join('');
+  
+  tabs.querySelectorAll('.acft-slot-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.slot);
+      switchAcftSlot(idx);
+    });
+  });
+}
+
+function switchAcftSlot(idx) {
+  setActiveAcftIndex(idx);
+  loadAcftToForm();
+  renderAcftSlotsTabs();
+  refreshTripSummary();
+}
+
+function loadAcftToForm() {
+  const slots = loadAcftSlots();
+  const idx = getActiveAcftIndex();
+  const a = slots[idx];
+  
+  if (!a) {
+    // Slot vide : vider tous les champs
+    ['acft-nickname','acft-immat','acft-modele','acft-mtow','acft-vcroisiere','acft-conso','acft-reservoir','acft-radio','acft-transpondeur'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('acft-carburant').value = '';
+    STATE.acft = null;
     return null;
   }
+  
+  document.getElementById('acft-nickname').value = a.nickname || '';
+  document.getElementById('acft-immat').value = a.immat || '';
+  document.getElementById('acft-modele').value = a.modele || '';
+  document.getElementById('acft-mtow').value = a.mtow || '';
+  document.getElementById('acft-vcroisiere').value = a.vcroisiere || '';
+  document.getElementById('acft-conso').value = a.conso || '';
+  document.getElementById('acft-reservoir').value = a.reservoir || '';
+  document.getElementById('acft-carburant').value = a.carburant || '';
+  document.getElementById('acft-radio').value = a.radio || '';
+  document.getElementById('acft-transpondeur').value = a.transpondeur || '';
+  STATE.acft = a;
+  return a;
+}
+
+// Fonction conservée pour rétrocompatibilité avec init()
+function loadAcft() {
+  loadAcftToForm();
+  return STATE.acft;
 }
 
 function saveAcft() {
   const a = {
+    nickname: document.getElementById('acft-nickname').value.trim(),
     immat: document.getElementById('acft-immat').value.trim(),
     modele: document.getElementById('acft-modele').value.trim(),
     mtow: parseFloat(document.getElementById('acft-mtow').value) || null,
@@ -684,11 +819,40 @@ function saveAcft() {
     radio: document.getElementById('acft-radio').value.trim(),
     transpondeur: document.getElementById('acft-transpondeur').value.trim()
   };
-  localStorage.setItem('autogyrodash_acft', JSON.stringify(a));
+  
+  // Auto-set nickname si vide
+  if (!a.nickname) {
+    a.nickname = a.immat || a.modele || `Machine ${getActiveAcftIndex() + 1}`;
+  }
+  
+  const slots = loadAcftSlots();
+  const idx = getActiveAcftIndex();
+  slots[idx] = a;
+  saveAcftSlots(slots);
   STATE.acft = a;
-  document.getElementById('acft-saved').textContent = "✓ enregistré";
+  
+  renderAcftSlotsTabs();
+  document.getElementById('acft-saved').textContent = `✓ "${a.nickname}" enregistrée`;
   setTimeout(() => { document.getElementById('acft-saved').textContent = ""; }, 2500);
   refreshTripSummary();
+}
+
+function deleteAcft() {
+  const slots = loadAcftSlots();
+  const idx = getActiveAcftIndex();
+  if (!slots[idx]) {
+    alert('Aucune machine à supprimer sur ce slot.');
+    return;
+  }
+  if (!confirm(`Supprimer "${slots[idx].nickname || 'Machine ' + (idx+1)}" ?`)) return;
+  
+  slots[idx] = null;
+  saveAcftSlots(slots);
+  loadAcftToForm();
+  renderAcftSlotsTabs();
+  refreshTripSummary();
+  document.getElementById('acft-saved').textContent = "✓ supprimée";
+  setTimeout(() => { document.getElementById('acft-saved').textContent = ""; }, 2500);
 }
 
 // ============================================================
@@ -1214,6 +1378,293 @@ function makeAdCardHtml(ad, role, idx) {
   `;
 }
 
+// ============================================================
+// METAR DECODER — 3 modes : raw / tech / simple
+// ============================================================
+function getMetarMode() {
+  return localStorage.getItem('autogyrodash_metar_mode') || 'simple';
+}
+
+function setMetarMode(mode) {
+  localStorage.setItem('autogyrodash_metar_mode', mode);
+  // Re-render toutes les cartes AD
+  if (typeof refreshAdCards === 'function') {
+    const trip = computeTrip();
+    if (trip && trip.points.length > 0) refreshAdCards();
+  }
+}
+
+// Décodage METAR : extrait tokens d'un METAR brut
+function decodeMetar(raw) {
+  if (!raw) return null;
+  const tokens = raw.replace(/=$/,'').trim().split(/\s+/);
+  const out = { station: null, time: null, wind: null, vis: null, weather: [], clouds: [], temp: null, dewpoint: null, qnh: null, remarks: null };
+  let i = 0;
+  
+  // METAR/SPECI optionnel
+  if (tokens[i] === 'METAR' || tokens[i] === 'SPECI') i++;
+  
+  // Station
+  if (i < tokens.length && /^[A-Z]{4}$/.test(tokens[i])) { out.station = tokens[i]; i++; }
+  
+  // Heure : DDHHmmZ
+  if (i < tokens.length && /^\d{6}Z$/.test(tokens[i])) {
+    out.time = { day: parseInt(tokens[i].slice(0,2)), hour: parseInt(tokens[i].slice(2,4)), min: parseInt(tokens[i].slice(4,6)) };
+    i++;
+  }
+  
+  if (i < tokens.length && tokens[i] === 'AUTO') i++;
+  
+  // Vent : DDDFFKT ou DDDFFGFFKT ou VRB05KT
+  if (i < tokens.length && /^(VRB|\d{3})\d{2,3}(G\d{2,3})?(KT|MPS)$/.test(tokens[i])) {
+    const m = tokens[i].match(/^(VRB|\d{3})(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)$/);
+    out.wind = {
+      dir: m[1] === 'VRB' ? 'VRB' : parseInt(m[1]),
+      speed: parseInt(m[2]),
+      gust: m[3] ? parseInt(m[3]) : null,
+      unit: m[4]
+    };
+    i++;
+    // Variabilité directionnelle : "240V300"
+    if (i < tokens.length && /^\d{3}V\d{3}$/.test(tokens[i])) {
+      const v = tokens[i].split('V');
+      out.wind.varFrom = parseInt(v[0]);
+      out.wind.varTo = parseInt(v[1]);
+      i++;
+    }
+  }
+  
+  // Visibilité : 9999, 0500, 1 1/2SM
+  if (i < tokens.length) {
+    if (/^\d{4}$/.test(tokens[i])) {
+      out.vis = { meters: parseInt(tokens[i]) };
+      i++;
+    } else if (/^CAVOK$/.test(tokens[i])) {
+      out.vis = { cavok: true };
+      out.clouds = [{cavok: true}];
+      i++;
+    }
+  }
+  
+  // Météo significative (RA, SN, TS, etc.) — accept multiple tokens
+  const wxRegex = /^[\+\-]?(VC)?(MI|PR|BC|DR|BL|SH|TS|FZ)?(DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PO|SQ|FC|SS|DS|NSW)+$/;
+  while (i < tokens.length && wxRegex.test(tokens[i])) {
+    out.weather.push(tokens[i]);
+    i++;
+  }
+  
+  // Nuages : FEWnnn, SCTnnn, BKNnnn, OVCnnn, NSC, NCD, SKC
+  while (i < tokens.length) {
+    if (/^(FEW|SCT|BKN|OVC)\d{3}(CB|TCU)?$/.test(tokens[i])) {
+      const m = tokens[i].match(/^(FEW|SCT|BKN|OVC)(\d{3})(CB|TCU)?$/);
+      out.clouds.push({ cover: m[1], base: parseInt(m[2]) * 100, type: m[3] || null });
+      i++;
+    } else if (/^(NSC|NCD|SKC|CLR)$/.test(tokens[i])) {
+      out.clouds.push({ cover: tokens[i] });
+      i++;
+    } else break;
+  }
+  
+  // Température / point de rosée : MM/MM ou M03/M05
+  if (i < tokens.length && /^M?\d{2}\/M?\d{2}$/.test(tokens[i])) {
+    const [t, d] = tokens[i].split('/');
+    out.temp = (t.startsWith('M') ? -1 : 1) * parseInt(t.replace('M',''));
+    out.dewpoint = (d.startsWith('M') ? -1 : 1) * parseInt(d.replace('M',''));
+    i++;
+  }
+  
+  // QNH : Qnnnn ou Annnn (inches Hg)
+  if (i < tokens.length && /^Q\d{4}$/.test(tokens[i])) {
+    out.qnh = { value: parseInt(tokens[i].slice(1)), unit: 'hPa' };
+    i++;
+  } else if (i < tokens.length && /^A\d{4}$/.test(tokens[i])) {
+    out.qnh = { value: parseInt(tokens[i].slice(1)) / 100, unit: 'inHg' };
+    i++;
+  }
+  
+  // Rest = remarks
+  if (i < tokens.length) out.remarks = tokens.slice(i).join(' ');
+  
+  return out;
+}
+
+function degToCompassFR(deg) {
+  if (deg === 'VRB' || deg === null || deg === undefined) return 'variable';
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
+
+function degToCompassSimple(deg) {
+  if (deg === 'VRB' || deg === null || deg === undefined) return 'variable';
+  if (deg >= 337 || deg < 23) return 'Nord';
+  if (deg < 68) return 'Nord-Est';
+  if (deg < 113) return 'Est';
+  if (deg < 158) return 'Sud-Est';
+  if (deg < 203) return 'Sud';
+  if (deg < 248) return 'Sud-Ouest';
+  if (deg < 293) return 'Ouest';
+  return 'Nord-Ouest';
+}
+
+const WX_MAP = {
+  'RA': 'pluie', 'SN': 'neige', 'TS': 'orages', 'FG': 'brouillard', 'BR': 'brume',
+  'DZ': 'bruine', 'SH': 'averses', 'GR': 'grêle', 'GS': 'petite grêle',
+  'HZ': 'brume sèche', 'FU': 'fumée', 'VA': 'cendres volcaniques',
+  'DU': 'poussière', 'SA': 'sable', 'PO': 'tornade poussière',
+  'SQ': 'grain', 'FC': 'tornade', 'SS': 'tempête de sable', 'DS': 'tempête de poussière',
+  'PL': 'granules de glace', 'IC': 'cristaux de glace', 'SG': 'neige en grain',
+  'UP': 'précip inconnue', 'NSW': 'pas d\'intempérie'
+};
+
+function decodeWeatherCode(code) {
+  let intensity = '';
+  if (code.startsWith('-')) { intensity = 'légère '; code = code.slice(1); }
+  else if (code.startsWith('+')) { intensity = 'forte '; code = code.slice(1); }
+  if (code.startsWith('VC')) { intensity = 'proche '; code = code.slice(2); }
+  // Descripteurs (TS, SH, etc.)
+  let descriptor = '';
+  const descriptors = { 'TS': 'orages avec ', 'SH': 'averses de ', 'FZ': 'verglaçante ', 'BL': 'soufflée ', 'DR': 'rampante ', 'MI': 'mince ', 'BC': 'bancs ', 'PR': 'partiel ' };
+  for (const d in descriptors) {
+    if (code.startsWith(d)) { descriptor = descriptors[d]; code = code.slice(d.length); break; }
+  }
+  // Phénomène principal
+  let phenomenon = '';
+  // Diviser en blocs de 2 et concat
+  for (let j = 0; j < code.length; j += 2) {
+    const c = code.substr(j, 2);
+    if (WX_MAP[c]) phenomenon += (phenomenon ? ' + ' : '') + WX_MAP[c];
+  }
+  return (intensity + descriptor + phenomenon).trim();
+}
+
+function renderMetarTech(decoded) {
+  if (!decoded) return '';
+  const parts = [];
+  
+  if (decoded.time) {
+    parts.push(`<strong>Heure obs :</strong> jour ${decoded.time.day}, ${String(decoded.time.hour).padStart(2,'0')}h${String(decoded.time.min).padStart(2,'0')} UTC`);
+  }
+  
+  if (decoded.wind) {
+    let w = '<strong>Vent :</strong> ';
+    if (decoded.wind.dir === 'VRB') {
+      w += `variable, ${decoded.wind.speed} ${decoded.wind.unit === 'MPS' ? 'm/s' : 'kt'}`;
+    } else {
+      w += `du ${String(decoded.wind.dir).padStart(3,'0')}° (${degToCompassFR(decoded.wind.dir)}) à ${decoded.wind.speed} ${decoded.wind.unit === 'MPS' ? 'm/s' : 'kt'}`;
+    }
+    if (decoded.wind.gust) w += `, rafales ${decoded.wind.gust} kt`;
+    if (decoded.wind.varFrom !== undefined) w += ` (variable de ${decoded.wind.varFrom}° à ${decoded.wind.varTo}°)`;
+    parts.push(w);
+  }
+  
+  if (decoded.vis) {
+    if (decoded.vis.cavok) parts.push('<strong>Visibilité :</strong> CAVOK (vis ≥ 10 km, pas de nuages significatifs)');
+    else if (decoded.vis.meters === 9999) parts.push('<strong>Visibilité :</strong> supérieure à 10 km');
+    else parts.push(`<strong>Visibilité :</strong> ${decoded.vis.meters} m`);
+  }
+  
+  if (decoded.weather && decoded.weather.length) {
+    parts.push(`<strong>Phénomènes :</strong> ${decoded.weather.map(decodeWeatherCode).join(', ')}`);
+  }
+  
+  if (decoded.clouds && decoded.clouds.length && !decoded.clouds[0].cavok) {
+    const cloudMap = { 'FEW': 'épars', 'SCT': 'fragmentés', 'BKN': 'morcelés', 'OVC': 'couverts' };
+    const oktasMap = { 'FEW': '1-2/8', 'SCT': '3-4/8', 'BKN': '5-7/8', 'OVC': '8/8' };
+    const cloudParts = decoded.clouds.map(c => {
+      if (c.cover === 'NSC' || c.cover === 'NCD') return 'pas de nuages significatifs';
+      if (c.cover === 'SKC' || c.cover === 'CLR') return 'ciel clair';
+      return `${cloudMap[c.cover] || c.cover} (${oktasMap[c.cover] || '?'}) à ${c.base} ft${c.type ? ' (' + c.type + ')' : ''}`;
+    });
+    parts.push(`<strong>Nuages :</strong> ${cloudParts.join(' ; ')}`);
+  }
+  
+  if (decoded.temp !== null) {
+    parts.push(`<strong>Température / pt de rosée :</strong> ${decoded.temp}°C / ${decoded.dewpoint}°C`);
+  }
+  
+  if (decoded.qnh) {
+    parts.push(`<strong>QNH :</strong> ${decoded.qnh.value} ${decoded.qnh.unit}`);
+  }
+  
+  return parts.map(p => `<div class="text-xs py-0.5">${p}</div>`).join('');
+}
+
+function renderMetarSimple(decoded) {
+  if (!decoded) return '';
+  const lines = [];
+  
+  // Vent
+  if (decoded.wind) {
+    const spd = decoded.wind.speed;
+    const spdKmh = Math.round(spd * 1.852);
+    let level = '';
+    if (spd < 5) level = 'calme';
+    else if (spd < 10) level = 'léger';
+    else if (spd < 15) level = 'modéré';
+    else if (spd < 22) level = 'fort';
+    else level = 'très fort';
+    
+    let windText;
+    if (decoded.wind.dir === 'VRB') windText = `Vent variable, ${level} (${spd} kt ≈ ${spdKmh} km/h)`;
+    else windText = `Vent ${degToCompassSimple(decoded.wind.dir)} ${level} (${spd} kt ≈ ${spdKmh} km/h)`;
+    
+    if (decoded.wind.gust) {
+      const gustKmh = Math.round(decoded.wind.gust * 1.852);
+      windText += ` ⚠️ rafales ${decoded.wind.gust} kt (${gustKmh} km/h)`;
+    }
+    lines.push(`<span>🌬️</span> ${windText}`);
+  }
+  
+  // Visibilité
+  if (decoded.vis) {
+    if (decoded.vis.cavok || decoded.vis.meters === 9999) {
+      lines.push(`<span>👁️</span> Visibilité excellente (> 10 km)`);
+    } else if (decoded.vis.meters >= 5000) {
+      lines.push(`<span>👁️</span> Bonne visibilité (${(decoded.vis.meters/1000).toFixed(1)} km)`);
+    } else if (decoded.vis.meters >= 1500) {
+      lines.push(`<span>⚠️</span> Visibilité réduite (${(decoded.vis.meters/1000).toFixed(1)} km) — vigilance VFR`);
+    } else {
+      lines.push(`<span>🚨</span> Visibilité faible (${decoded.vis.meters} m) — VFR difficile`);
+    }
+  }
+  
+  // Phénomènes
+  if (decoded.weather && decoded.weather.length) {
+    const wxText = decoded.weather.map(decodeWeatherCode).join(', ');
+    const isBad = decoded.weather.some(w => /TS|FG|SN|GR|FZ|\+/.test(w));
+    lines.push(`<span>${isBad ? '🚨' : '🌧️'}</span> Phénomènes : ${wxText}`);
+  }
+  
+  // Nuages
+  if (decoded.clouds && decoded.clouds.length && !decoded.clouds[0].cavok) {
+    const c0 = decoded.clouds[0];
+    if (c0.cover === 'NSC' || c0.cover === 'NCD' || c0.cover === 'SKC' || c0.cover === 'CLR') {
+      lines.push(`<span>☀️</span> Ciel dégagé`);
+    } else {
+      const cloudMap = { 'FEW': 'Quelques nuages', 'SCT': 'Nuages épars', 'BKN': 'Ciel nuageux', 'OVC': 'Ciel couvert' };
+      const iconMap = { 'FEW': '🌤️', 'SCT': '⛅', 'BKN': '☁️', 'OVC': '☁️' };
+      const lowest = decoded.clouds.reduce((a, b) => (!a || (b.base && b.base < a.base)) ? b : a, null);
+      if (lowest && lowest.base) {
+        lines.push(`<span>${iconMap[lowest.cover] || '☁️'}</span> ${cloudMap[lowest.cover] || lowest.cover} à ${lowest.base} ft (${Math.round(lowest.base * 0.3048)} m)`);
+      }
+    }
+  } else if (decoded.vis && decoded.vis.cavok) {
+    lines.push(`<span>☀️</span> Ciel dégagé`);
+  }
+  
+  // Température
+  if (decoded.temp !== null) {
+    let tempIcon = '🌡️';
+    let tempNote = '';
+    if (decoded.temp < 0) tempNote = ' (froid, attention givrage)';
+    else if (decoded.temp < 10) tempNote = ' (frais)';
+    else if (decoded.temp > 30) tempNote = ' (chaud)';
+    lines.push(`<span>${tempIcon}</span> ${decoded.temp}°C${tempNote}`);
+  }
+  
+  return lines.map(l => `<div class="text-sm py-0.5">${l}</div>`).join('');
+}
+
 function renderMetarSection(data, ad) {
   if (!data) {
     return `${reliabilityBadge("green", `aviationweather.gov · station ${ad.metarStation}`)}
@@ -1222,6 +1673,29 @@ function renderMetarSection(data, ad) {
   const cat = data.fltCat || "";
   const catClass = cat === "VFR" ? "pill-vfr" : cat === "MVFR" ? "pill-mvfr" : (cat === "IFR" || cat === "LIFR") ? "pill-ifr" : "";
   const ageMin = data.receiptTime ? Math.round((Date.now() - new Date(data.receiptTime).getTime()) / 60000) : null;
+  const mode = getMetarMode();
+  const decoded = data.rawOb ? decodeMetar(data.rawOb) : null;
+  
+  // Switch 3 modes
+  const switcher = `
+    <div class="flex gap-1 text-xs mt-2 metar-mode-switcher" data-station="${ad.metarStation}">
+      <button data-mode="simple" class="metar-mode-btn px-2 py-0.5 rounded ${mode==='simple'?'bg-black text-white':'bg-white border'}">simple</button>
+      <button data-mode="tech" class="metar-mode-btn px-2 py-0.5 rounded ${mode==='tech'?'bg-black text-white':'bg-white border'}">technique</button>
+      <button data-mode="raw" class="metar-mode-btn px-2 py-0.5 rounded ${mode==='raw'?'bg-black text-white':'bg-white border'}">brut</button>
+    </div>
+  `;
+  
+  // Contenu selon mode
+  let contentHtml = '';
+  if (mode === 'simple' && decoded) {
+    contentHtml = `<div class="muted-bg p-2 rounded-md mt-2">${renderMetarSimple(decoded)}</div>`;
+  } else if (mode === 'tech' && decoded) {
+    contentHtml = `<div class="muted-bg p-2 rounded-md mt-2">${renderMetarTech(decoded)}</div>`;
+  } else {
+    // Mode brut (par défaut si decoded est null)
+    contentHtml = data.rawOb ? `<pre class="pre-mono muted-bg p-2 rounded-md text-xs mt-2">${data.rawOb}</pre>` : "";
+  }
+  
   return `
     <h4 class="text-xs font-medium uppercase tracking-wide text-muted mb-2">metar / taf</h4>
     ${reliabilityBadge("green", `aviationweather.gov · station ${ad.metarStation}`)}
@@ -1230,8 +1704,9 @@ function renderMetarSection(data, ad) {
       ${ageMin !== null ? `<span class="text-xs text-muted">Observé il y a ${ageMin} min</span>` : ""}
       ${ageMin !== null && ageMin > 90 ? '<span class="pill pill-obsolete">Obsolète</span>' : ""}
     </div>
-    ${data.rawOb ? `<pre class="pre-mono muted-bg p-2 rounded-md text-xs mt-2">${data.rawOb}</pre>` : ""}
-    ${data.rawTaf ? `<pre class="pre-mono muted-bg p-2 rounded-md text-xs mt-1">${data.rawTaf}</pre>` : ""}
+    ${switcher}
+    ${contentHtml}
+    ${data.rawTaf ? `<details class="mt-2"><summary class="text-xs text-muted cursor-pointer">TAF (prévisions)</summary><pre class="pre-mono muted-bg p-2 rounded-md text-xs mt-1">${data.rawTaf}</pre></details>` : ""}
   `;
 }
 
@@ -1718,21 +2193,32 @@ async function refreshWeather() {
   // Désactiver le bouton et indiquer le rafraîchissement
   const originalHTML = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<i data-lucide="loader-2" class="h-3 w-3 animate-spin"></i> rafraîchissement…';
-  lucide.createIcons();
+  btn.innerHTML = '<svg class="inline animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="40 20" opacity="0.6"/></svg> rafraîchissement…';
   
-  // Vider le cache météo
-  STATE.weatherCache = {};
-  
-  // Re-rendre les cartes AD (ce qui re-déclenche loadAdCardWeather pour chaque AD)
-  renderAdCards();
-  
-  // Attendre un peu pour que les fetches se lancent
-  await new Promise(r => setTimeout(r, 800));
-  
-  btn.disabled = false;
-  btn.innerHTML = originalHTML;
-  lucide.createIcons();
+  try {
+    // Vider le cache météo
+    STATE.weatherCache = {};
+    
+    // Re-rendre les cartes AD avec le bon nom de fonction
+    refreshAdCards();
+    
+    // Attendre que les fetches se terminent réellement
+    await new Promise(r => setTimeout(r, 1500));
+    
+    btn.innerHTML = '<i data-lucide="check" class="h-3 w-3"></i> mis à jour';
+    lucide.createIcons();
+    setTimeout(() => {
+      btn.innerHTML = originalHTML;
+      lucide.createIcons();
+    }, 1500);
+  } catch (e) {
+    console.error('Erreur refreshWeather:', e);
+    btn.innerHTML = originalHTML;
+    lucide.createIcons();
+    alert('Erreur lors du rafraîchissement : ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ============================================================
@@ -1785,11 +2271,18 @@ function resetAll() {
   // Vider les préférences localStorage SAUF clé OpenAIP et zones aériennes cache
   const keysToRemove = [
     'autogyrodash_acft',
+    'autogyrodash_acft_slots',
+    'autogyrodash_acft_active',
     'autogyrodash_pdf_prefs',
     'autogyrodash_notes',
-    'autogyrodash_temsi'
+    'autogyrodash_temsi',
+    'autogyrodash_metar_mode'
   ];
   keysToRemove.forEach(k => localStorage.removeItem(k));
+  // Refresh des tabs ACFT après reset
+  setTimeout(() => { 
+    if (document.getElementById('acft-slots-tabs')) renderAcftSlotsTabs(); 
+  }, 50);
   
   onTripChange();
   alert('✓ Application réinitialisée.');
@@ -2128,6 +2621,166 @@ onTripChange = function() {
   updateAirspacesOnRoute();
 };
 
+// ============================================================
+// WIDGET MÉTÉO FRANCE — Vue globale (carte Leaflet + Open-Meteo)
+// ============================================================
+const FRANCE_CITIES = [
+  { name: 'Lille', lat: 50.63, lon: 3.06 },
+  { name: 'Paris', lat: 48.86, lon: 2.35 },
+  { name: 'Reims', lat: 49.26, lon: 4.03 },
+  { name: 'Strasbourg', lat: 48.58, lon: 7.75 },
+  { name: 'Nantes', lat: 47.22, lon: -1.55 },
+  { name: 'Tours', lat: 47.39, lon: 0.69 },
+  { name: 'Dijon', lat: 47.32, lon: 5.04 },
+  { name: 'Lyon', lat: 45.76, lon: 4.84 },
+  { name: 'Bordeaux', lat: 44.84, lon: -0.58 },
+  { name: 'Limoges', lat: 45.83, lon: 1.26 },
+  { name: 'Clermont-F.', lat: 45.78, lon: 3.08 },
+  { name: 'Toulouse', lat: 43.60, lon: 1.44 },
+  { name: 'Marseille', lat: 43.30, lon: 5.37 },
+  { name: 'Nice', lat: 43.70, lon: 7.27 },
+  { name: 'Ajaccio', lat: 41.93, lon: 8.74 }
+];
+
+let weatherFranceMap = null;
+let weatherFranceMarkers = [];
+
+function cloudCoverIcon(pct) {
+  if (pct === null || pct === undefined) return '❓';
+  if (pct < 15) return '☀️';
+  if (pct < 40) return '🌤️';
+  if (pct < 70) return '⛅';
+  if (pct < 90) return '☁️';
+  return '☁️';
+}
+
+function windIconHtml(dirDeg, speedKt) {
+  if (dirDeg === null || dirDeg === undefined) return '';
+  // Couleur selon vitesse
+  let color = '#10B981'; // vert
+  if (speedKt > 12) color = '#F59E0B'; // orange
+  if (speedKt > 22) color = '#DC2626'; // rouge
+  
+  // SVG flèche pointant dans la direction d'où vient le vent (convention météo)
+  // En CSS, rotate(0) = nord. Le vent du 270 vient de l'ouest, flèche pointe vers l'est.
+  // On veut afficher la direction VERS où va le vent → rotation = dir + 180
+  const rotation = (dirDeg + 180) % 360;
+  return `<svg width="22" height="22" viewBox="0 0 24 24" style="transform: rotate(${rotation}deg);">
+    <path d="M12 2 L18 12 L13 12 L13 22 L11 22 L11 12 L6 12 Z" fill="${color}" stroke="white" stroke-width="0.5"/>
+  </svg>`;
+}
+
+async function fetchFranceWeather() {
+  const statusEl = document.getElementById('wf-status');
+  statusEl.textContent = 'chargement...';
+  statusEl.style.background = '#FEF3C7';
+  statusEl.style.color = '#92400E';
+  
+  // Open-Meteo accepte multi-locations via paramètres répétés
+  const lats = FRANCE_CITIES.map(c => c.lat).join(',');
+  const lons = FRANCE_CITIES.map(c => c.lon).join(',');
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code&wind_speed_unit=kn&timezone=Europe%2FParis`;
+  
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    // Open-Meteo retourne soit un objet (1 location) soit un array (multi-locations)
+    const results = Array.isArray(data) ? data : [data];
+    return results;
+  } catch (e) {
+    console.error('[wf] Fetch error:', e);
+    statusEl.textContent = 'erreur';
+    statusEl.style.background = '#FEE2E2';
+    statusEl.style.color = '#991B1B';
+    return null;
+  }
+}
+
+function initWeatherFranceMap() {
+  if (weatherFranceMap) return;
+  
+  weatherFranceMap = L.map('weather-france-map', { zoomControl: true, attributionControl: false }).setView([46.5, 2.5], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 11
+  }).addTo(weatherFranceMap);
+  // Petit attribution discret en bas à droite
+  L.control.attribution({prefix: false}).addAttribution('© OpenStreetMap · Open-Meteo').addTo(weatherFranceMap);
+}
+
+async function loadWeatherFrance() {
+  initWeatherFranceMap();
+  
+  // Vider les marqueurs existants
+  weatherFranceMarkers.forEach(m => weatherFranceMap.removeLayer(m));
+  weatherFranceMarkers = [];
+  
+  const results = await fetchFranceWeather();
+  if (!results) return;
+  
+  const statusEl = document.getElementById('wf-status');
+  let validCount = 0;
+  
+  FRANCE_CITIES.forEach((city, i) => {
+    const w = results[i];
+    if (!w || !w.current) return;
+    validCount++;
+    
+    const c = w.current;
+    const cloudPct = c.cloud_cover;
+    const temp = c.temperature_2m;
+    const windDir = c.wind_direction_10m;
+    const windSpd = c.wind_speed_10m;
+    const windGust = c.wind_gusts_10m;
+    
+    const cloudIcon = cloudCoverIcon(cloudPct);
+    const windHtml = windIconHtml(windDir, windSpd);
+    
+    // Couleur de bordure selon vent max
+    const maxWind = Math.max(windSpd || 0, windGust || 0);
+    let borderColor = '#10B981';
+    if (maxWind > 12) borderColor = '#F59E0B';
+    if (maxWind > 22) borderColor = '#DC2626';
+    
+    const html = `
+      <div style="background: white; border: 2px solid ${borderColor}; border-radius: 8px; padding: 4px 6px; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); font-size: 11px; min-width: 80px; line-height: 1.1;">
+        <div style="font-size: 18px;">${cloudIcon}</div>
+        <div>
+          <div style="font-weight: 600;">${city.name}</div>
+          <div style="font-size: 10px; color: #555;">${Math.round(temp)}°C · ${Math.round(windSpd)}kt</div>
+        </div>
+        <div>${windHtml}</div>
+      </div>
+    `;
+    
+    const icon = L.divIcon({
+      html: html,
+      iconSize: [120, 40],
+      iconAnchor: [60, 20],
+      className: ''
+    });
+    
+    const popupHtml = `
+      <strong>${city.name}</strong><br>
+      🌡️ ${Math.round(temp)}°C<br>
+      ${cloudIcon} Nuages : ${cloudPct}%<br>
+      🌬️ Vent ${windDir}° / ${Math.round(windSpd)} kt${windGust ? ` (raf. ${Math.round(windGust)})` : ''}<br>
+      ${maxWind > 22 ? '⚠️ Vent fort' : maxWind > 12 ? '🟡 Vent modéré' : '✓ Vent faible'}
+    `;
+    
+    const m = L.marker([city.lat, city.lon], { icon }).addTo(weatherFranceMap);
+    m.bindPopup(popupHtml);
+    weatherFranceMarkers.push(m);
+  });
+  
+  statusEl.textContent = `✓ ${validCount} villes`;
+  statusEl.style.background = '#DCFCE7';
+  statusEl.style.color = '#14532D';
+  
+  // Resize fix Leaflet
+  setTimeout(() => weatherFranceMap.invalidateSize(), 100);
+}
+
 function init() {
   document.getElementById('briefing-time').textContent = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
@@ -2171,6 +2824,8 @@ function init() {
   document.getElementById('reset-all').addEventListener('click', resetAll);
 
   document.getElementById('save-acft').addEventListener('click', saveAcft);
+  document.getElementById('delete-acft').addEventListener('click', deleteAcft);
+  renderAcftSlotsTabs();
 
   document.getElementById('temsi-input').addEventListener('change', e => {
     const file = e.target.files[0];
@@ -2228,6 +2883,26 @@ function init() {
   // ============= FULLSCREEN MAP =============
   document.getElementById('map-fullscreen-btn').addEventListener('click', toggleMapFullscreen);
   document.getElementById('map-fullscreen-close').addEventListener('click', toggleMapFullscreen);
+
+  // ============= METAR MODE SWITCHER (event delegation) =============
+  document.body.addEventListener('click', (e) => {
+    const btn = e.target.closest('.metar-mode-btn');
+    if (!btn) return;
+    const mode = btn.dataset.mode;
+    setMetarMode(mode);
+  });
+
+  // ============= WIDGET MÉTÉO FRANCE =============
+  const wfDetails = document.querySelector('#weather-france-section details');
+  if (wfDetails) {
+    wfDetails.addEventListener('toggle', () => {
+      if (wfDetails.open) {
+        initWeatherFranceMap();
+        setTimeout(() => weatherFranceMap && weatherFranceMap.invalidateSize(), 200);
+      }
+    });
+  }
+  document.getElementById('wf-load-btn').addEventListener('click', loadWeatherFrance);
 
   // ============= FILTRE D'ALTITUDE =============
   const altFilterEnabled = document.getElementById('altitude-filter-enabled');
