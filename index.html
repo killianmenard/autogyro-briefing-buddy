@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.3.2 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.3.3 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -57,7 +57,10 @@
   .alert-box { border: 1px solid var(--yellow); background: oklch(0.97 0.06 95); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
   .info-box { border: 1px solid var(--blue); background: #EFF6FF; border-radius: 6px; padding: 8px 12px; font-size: 13px; }
   pre { overflow-x: auto; }
-  #map { height: 360px; border-radius: 8px; }
+  #map { height: 360px; border-radius: 8px; position: relative; z-index: 1; }
+  #weather-france-map { position: relative; z-index: 1; }
+  .leaflet-container { z-index: 1; }
+  .leaflet-pane { z-index: 1; }
   .leg-segment { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 8px 12px; background: var(--muted); border-radius: 6px; font-size: 13px; }
   .tab-btn { padding: 8px 16px; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; }
   .tab-btn.active { border-bottom-color: var(--foreground); font-weight: 500; }
@@ -67,8 +70,16 @@
   .ad-suggestion:hover { background: var(--muted); }
   .leaflet-tooltip-permanent { background: white; border: 1px solid var(--border); font-size: 11px; padding: 2px 5px; font-weight: 500; }
   
-  /* Mode plein écran carte */
-  .map-fullscreen {
+  /* Boutons d'action du header : même largeur, emoji aligné à gauche */
+  .header-action-btn {
+    min-width: 110px;
+  }
+  @media (max-width: 768px) {
+    .header-action-btn { min-width: 90px; font-size: 11px; padding: 6px 10px; }
+  }
+  
+  /* Mode plein écran carte (OpenAIP + météo France) */
+  .map-fullscreen, .map-fullscreen-wf {
     position: fixed !important;
     top: 0; left: 0; right: 0; bottom: 0;
     z-index: 9999;
@@ -77,11 +88,27 @@
     margin: 0 !important;
     padding: 0 !important;
   }
-  .map-fullscreen #map {
+  .map-fullscreen #map, .map-fullscreen-wf #weather-france-map {
     height: 100vh !important;
     width: 100vw !important;
     border-radius: 0 !important;
   }
+  /* Quitter button pour météo France fullscreen */
+  .map-fullscreen-wf::before {
+    content: "← quitter";
+    position: fixed;
+    top: 12px; left: 60px;
+    z-index: 10001;
+    background: white;
+    border: 1.5px solid #E5E7EB;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .map-fullscreen-wf::before { pointer-events: auto; }
   .map-fullscreen .map-fs-close {
     position: fixed;
     top: 12px; left: 12px;
@@ -147,32 +174,35 @@
 <body class="min-h-screen pb-24">
 
 <!-- HEADER : 3 zones (gauche / centre / droite) -->
-<header class="sticky top-0 z-20 border-b border-thin bg-white/95 backdrop-blur">
-  <div class="mx-auto grid max-w-7xl grid-cols-1 sm:grid-cols-3 items-center gap-3 px-4 py-3">
-    <!-- GAUCHE : logo + nom + version -->
-    <div class="flex items-center gap-2 justify-start">
+<header class="sticky top-0 z-50 border-b border-thin bg-white/95 backdrop-blur" style="z-index: 1000 !important;">
+  <div class="mx-auto grid max-w-7xl grid-cols-1 md:grid-cols-3 items-center gap-2 px-4 py-2 md:py-3">
+    <!-- GAUCHE (mobile : ligne 1) : logo + nom + version -->
+    <div class="flex items-center gap-2 justify-center md:justify-start">
       <i data-lucide="plane" class="h-5 w-5"></i>
       <h1 class="text-base font-medium">autogyrodash</h1>
-      <span class="text-xs text-muted pre-mono">v0.3.2</span>
+      <span class="text-xs text-muted pre-mono">v0.3.3</span>
     </div>
     
-    <!-- CENTRE : onglets + heure -->
+    <!-- CENTRE (mobile : ligne 2) : onglets + heure -->
     <div class="flex items-center justify-center gap-3">
       <span class="tab-btn active" data-tab="plan">plan de vol</span>
       <span class="tab-btn" data-tab="acft">fiche acft</span>
       <span class="text-xs text-muted" id="briefing-time"></span>
     </div>
     
-    <!-- DROITE : boutons d'action -->
-    <div class="flex flex-wrap items-center gap-2 justify-end">
-      <button id="refresh-weather" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1" title="Rafraîchir METAR/TAF/vent sans toucher au trajet">
-        <i data-lucide="refresh-cw" class="h-3 w-3"></i> rafraîchir
+    <!-- DROITE (mobile : ligne 3) : boutons d'action (mêmes dimensions, emoji gauche / texte droite) -->
+    <div class="flex flex-wrap items-center gap-2 justify-center md:justify-end">
+      <button id="refresh-weather" class="header-action-btn text-xs px-3 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center justify-start gap-2" title="Rafraîchir METAR/TAF/vent sans toucher au trajet">
+        <i data-lucide="refresh-cw" class="h-3.5 w-3.5 flex-shrink-0"></i>
+        <span>rafraîchir</span>
       </button>
-      <button id="clear-trip" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50" title="Vider uniquement le trajet">
-        <i data-lucide="x" class="h-3 w-3"></i> vider trajet
+      <button id="clear-trip" class="header-action-btn text-xs px-3 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center justify-start gap-2" title="Vider uniquement le trajet">
+        <i data-lucide="x" class="h-3.5 w-3.5 flex-shrink-0"></i>
+        <span>vider trajet</span>
       </button>
-      <button id="reset-all" class="text-xs px-2 py-1 rounded border hover:bg-red-50" style="border-color:#FCA5A5;color:#991B1B;" title="Tout réinitialiser (sauf clé OpenAIP)">
-        <i data-lucide="trash-2" class="h-3 w-3"></i> reset
+      <button id="reset-all" class="header-action-btn text-xs px-3 py-1.5 rounded border hover:bg-red-50 inline-flex items-center justify-start gap-2" style="border-color:#FCA5A5;color:#991B1B;" title="Tout réinitialiser (sauf clé OpenAIP)">
+        <i data-lucide="trash-2" class="h-3.5 w-3.5 flex-shrink-0"></i>
+        <span>reset</span>
       </button>
     </div>
   </div>
@@ -1046,11 +1076,17 @@ function initMap() {
   });
   map.addControl(new FullscreenControl());
 
-  // Overlays OpenAIP si clé configurée — appel sécurisé après init layers de base
+  // Overlays OpenAIP si clé configurée — appel SYNCHRONE (le setTimeout causait
+  // une race condition sur desktop où les tiles ne se chargeaient pas)
+  console.log('[OpenAIP] Init des overlays...');
+  refreshOpenaipLayers();
+  // Double safety : forcer un redraw après que tout soit settled
   setTimeout(() => {
-    console.log('[OpenAIP] Init des overlays...');
-    refreshOpenaipLayers();
-  }, 100);
+    if (map && openaipLayers && openaipLayers.openaip) {
+      map.invalidateSize();
+      openaipLayers.openaip.redraw && openaipLayers.openaip.redraw();
+    }
+  }, 500);
 
   // Petit marqueur pour chaque AD
   AERODROMES_ALL.forEach(ad => {
@@ -2858,26 +2894,51 @@ async function fetchFranceWeather() {
 function initWeatherFranceMap() {
   if (weatherFranceMap) return;
   
-  // Carte sans interaction (style poster TV) - fond très clair via CartoDB Positron (clair et neutre)
+  // Carte INTERACTIVE (zoom + drag + plein écran) - fond CartoDB Positron clair
   weatherFranceMap = L.map('weather-france-map', { 
-    zoomControl: false, 
+    zoomControl: true, 
     attributionControl: false,
-    scrollWheelZoom: false,
-    doubleClickZoom: false,
-    boxZoom: false,
-    keyboard: false,
+    scrollWheelZoom: true,
+    doubleClickZoom: true,
     touchZoom: true,
-    dragging: false
+    dragging: true
   }).setView([46.3, 2.5], 6);
   
   // CartoDB Positron — fond clair, neutre, idéal pour mettre en valeur les marqueurs
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-    maxZoom: 8,
-    minZoom: 5,
+    maxZoom: 11,
+    minZoom: 4,
     subdomains: 'abcd'
   }).addTo(weatherFranceMap);
   
   L.control.attribution({prefix: false}).addAttribution('© CartoDB · Open-Meteo').addTo(weatherFranceMap);
+  
+  // Contrôle plein écran custom (même que carte OpenAIP)
+  const WFFullscreenControl = L.Control.extend({
+    options: { position: 'topleft' },
+    onAdd: function() {
+      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+      const btn = L.DomUtil.create('a', '', container);
+      btn.href = '#';
+      btn.title = 'Plein écran';
+      btn.style.cssText = 'font-size:18px;text-align:center;line-height:30px;width:30px;height:30px;';
+      btn.innerHTML = '⛶';
+      L.DomEvent.on(btn, 'click', function(e) {
+        L.DomEvent.stop(e);
+        toggleWeatherFranceFullscreen();
+      });
+      return container;
+    }
+  });
+  weatherFranceMap.addControl(new WFFullscreenControl());
+}
+
+function toggleWeatherFranceFullscreen() {
+  const container = document.getElementById('weather-france-section');
+  container.classList.toggle('map-fullscreen-wf');
+  setTimeout(() => {
+    if (weatherFranceMap) weatherFranceMap.invalidateSize();
+  }, 100);
 }
 
 function makeWeatherFranceIcon(city, w) {
