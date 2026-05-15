@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.3.4 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.3.5 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -180,7 +180,7 @@
     <div class="flex items-center gap-2 justify-center md:justify-start">
       <i data-lucide="plane" class="h-5 w-5"></i>
       <h1 class="text-base font-medium">autogyrodash</h1>
-      <span class="text-xs text-muted pre-mono">v0.3.4</span>
+      <span class="text-xs text-muted pre-mono">v0.3.5</span>
     </div>
     
     <!-- CENTRE (mobile : ligne 2) : onglets + heure -->
@@ -190,8 +190,19 @@
       <span class="text-xs text-muted" id="briefing-time"></span>
     </div>
     
-    <!-- DROITE (mobile : ligne 3) : boutons d'action (mêmes dimensions, emoji gauche / texte droite) -->
+    <!-- DROITE (mobile : ligne 3) : unités + boutons d'action -->
     <div class="flex flex-wrap items-center gap-2 justify-center md:justify-end">
+      <!-- Toggle unités vitesse (kt ↔ km/h) -->
+      <button id="unit-speed-toggle" class="text-xs px-2 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1" title="Basculer entre kt (nœuds) et km/h">
+        <i data-lucide="wind" class="h-3.5 w-3.5"></i>
+        <span id="unit-speed-label">kt</span>
+      </button>
+      <!-- Toggle unités distance (NM ↔ km) -->
+      <button id="unit-dist-toggle" class="text-xs px-2 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1" title="Basculer entre NM (miles nautiques) et km">
+        <i data-lucide="ruler" class="h-3.5 w-3.5"></i>
+        <span id="unit-dist-label">NM</span>
+      </button>
+      <span class="border-l border-thin mx-1" style="height:20px;"></span>
       <button id="refresh-weather" class="header-action-btn text-xs px-3 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center justify-start gap-2" title="Rafraîchir METAR/TAF/vent sans toucher au trajet">
         <i data-lucide="refresh-cw" class="h-3.5 w-3.5 flex-shrink-0"></i>
         <span>rafraîchir</span>
@@ -290,6 +301,11 @@
         <button class="wf-mode-btn px-2 py-0.5 rounded bg-black text-white" data-mode="temp">température</button>
         <button class="wf-mode-btn px-2 py-0.5 rounded bg-white border" data-mode="wind">vent</button>
         <button class="wf-mode-btn px-2 py-0.5 rounded bg-white border" data-mode="clouds">nuages</button>
+        <span class="border-l border-thin mx-1" style="height:16px;"></span>
+        <button id="wf-satellite-toggle" class="px-2 py-0.5 rounded bg-white border inline-flex items-center gap-1">
+          <i data-lucide="satellite" class="h-3 w-3"></i>
+          <span>satellite</span>
+        </button>
       </div>
       
       <!-- Bloc TEMSI fusionné -->
@@ -488,7 +504,7 @@
           <input type="number" id="acft-mtow" class="ad-input mt-1" placeholder="ex: 560" />
         </div>
         <div>
-          <label class="text-xs text-muted">vitesse de croisière (kt)</label>
+          <label class="text-xs text-muted">vitesse de croisière (kt, standard aviation)</label>
           <input type="number" id="acft-vcroisiere" class="ad-input mt-1" placeholder="ex: 90" />
         </div>
         <div>
@@ -522,6 +538,39 @@
       <div class="info-box">
         <i data-lucide="info" class="inline h-4 w-4"></i>
         <span class="ml-1">La <strong>vitesse de croisière</strong> et la <strong>consommation</strong> servent à estimer le temps de vol et la conso de chaque segment du trajet. La <strong>capacité réservoir</strong> permet d'alerter si l'autonomie est dépassée.</span>
+      </div>
+
+      <!-- ============= MASSE ET CHARGEMENT ============= -->
+      <div class="border-t border-thin pt-4 mt-4">
+        <h3 class="text-sm font-medium uppercase tracking-wide text-muted mb-3 flex items-center gap-2">
+          <i data-lucide="scale" class="h-4 w-4"></i>
+          masse et chargement
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-muted">poids à vide (kg)</label>
+            <input type="number" step="0.5" id="acft-poids-vide" class="ad-input mt-1" placeholder="ex: 295" />
+            <p class="text-xs text-muted mt-1">Poids de la machine sans pilote, passager ni carburant</p>
+          </div>
+          <div>
+            <label class="text-xs text-muted">poids pilote (kg)</label>
+            <input type="number" step="0.5" id="acft-poids-pilote" class="ad-input mt-1" placeholder="ex: 85" />
+          </div>
+          <div>
+            <label class="text-xs text-muted">poids passager (kg)</label>
+            <input type="number" step="0.5" id="acft-poids-pax" class="ad-input mt-1" placeholder="ex: 70 (0 si vol seul)" />
+          </div>
+          <div>
+            <label class="text-xs text-muted">carburant à bord (L)</label>
+            <input type="number" step="0.5" id="acft-fuel-litres" class="ad-input mt-1" placeholder="ex: 60" />
+            <p class="text-xs text-muted mt-1">Le poids est calculé selon le type (0.72 kg/L pour SP/UL91, 0.72 pour 100LL)</p>
+          </div>
+        </div>
+        
+        <!-- Visualisation calcul de masse -->
+        <div id="masse-recap" class="mt-3 p-3 muted-bg rounded-md text-sm space-y-1">
+          <p class="text-xs text-muted">Saisis les valeurs ci-dessus pour voir le récap masse.</p>
+        </div>
       </div>
 
       <div class="flex gap-2 flex-wrap items-center">
@@ -662,6 +711,153 @@ function haversine(lat1, lon1, lat2, lon2) {
   const dLon = toRad(lon2 - lon1);
   const a = Math.sin(dLat/2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// ============= UNITÉS GLOBALES (vitesse & distance) =============
+// Persistées dans localStorage, switchables via les boutons du header
+let SPEED_UNIT = localStorage.getItem('autogyrodash_speed_unit') || 'kt'; // 'kt' ou 'kmh'
+let DIST_UNIT = localStorage.getItem('autogyrodash_dist_unit') || 'nm'; // 'nm' ou 'km'
+
+const KT_TO_KMH = 1.852;
+const NM_TO_KM = 1.852;
+
+function formatSpeed(speedKt, withUnit = true) {
+  // Entrée TOUJOURS en kt (standard aviation). Convertit selon SPEED_UNIT.
+  if (speedKt === null || speedKt === undefined || isNaN(speedKt)) return '—';
+  if (SPEED_UNIT === 'kmh') {
+    const kmh = speedKt * KT_TO_KMH;
+    return withUnit ? `${Math.round(kmh)} km/h` : Math.round(kmh);
+  }
+  return withUnit ? `${Math.round(speedKt)} kt` : Math.round(speedKt);
+}
+
+function formatDist(distKm, withUnit = true) {
+  // Entrée TOUJOURS en km. Convertit selon DIST_UNIT.
+  if (distKm === null || distKm === undefined || isNaN(distKm)) return '—';
+  if (DIST_UNIT === 'nm') {
+    const nm = distKm / NM_TO_KM;
+    return withUnit ? `${Math.round(nm)} NM` : Math.round(nm);
+  }
+  return withUnit ? `${Math.round(distKm)} km` : Math.round(distKm);
+}
+
+function updateUnitLabels() {
+  const sl = document.getElementById('unit-speed-label');
+  const dl = document.getElementById('unit-dist-label');
+  if (sl) sl.textContent = SPEED_UNIT === 'kmh' ? 'km/h' : 'kt';
+  if (dl) dl.textContent = DIST_UNIT === 'nm' ? 'NM' : 'km';
+}
+
+function toggleSpeedUnit() {
+  SPEED_UNIT = (SPEED_UNIT === 'kt') ? 'kmh' : 'kt';
+  localStorage.setItem('autogyrodash_speed_unit', SPEED_UNIT);
+  updateUnitLabels();
+  // Re-render tout ce qui dépend des unités
+  if (typeof renderTrip === 'function') renderTrip();
+  if (typeof refreshAdCards === 'function') refreshAdCards();
+}
+
+function toggleDistUnit() {
+  DIST_UNIT = (DIST_UNIT === 'nm') ? 'km' : 'nm';
+  localStorage.setItem('autogyrodash_dist_unit', DIST_UNIT);
+  updateUnitLabels();
+  if (typeof renderTrip === 'function') renderTrip();
+  if (typeof refreshAdCards === 'function') refreshAdCards();
+}
+
+// ============= CALCUL MASSE ACFT =============
+function getFuelDensity() {
+  // Densité moyenne des carburants en kg/L
+  const carb = document.getElementById('acft-carburant')?.value;
+  if (carb === '100LL') return 0.72;
+  if (carb === 'UL91' || carb === 'SP98' || carb === 'SP95') return 0.72;
+  return 0.72; // défaut
+}
+
+function updateMasseRecap() {
+  const recap = document.getElementById('masse-recap');
+  if (!recap) return;
+  
+  const vide = parseFloat(document.getElementById('acft-poids-vide')?.value) || 0;
+  const pilote = parseFloat(document.getElementById('acft-poids-pilote')?.value) || 0;
+  const pax = parseFloat(document.getElementById('acft-poids-pax')?.value) || 0;
+  const fuelL = parseFloat(document.getElementById('acft-fuel-litres')?.value) || 0;
+  const mtow = parseFloat(document.getElementById('acft-mtow')?.value) || 0;
+  
+  if (vide === 0 && pilote === 0 && pax === 0 && fuelL === 0) {
+    recap.innerHTML = '<p class="text-xs text-muted">Saisis les valeurs ci-dessus pour voir le récap masse.</p>';
+    return;
+  }
+  
+  const fuelKg = fuelL * getFuelDensity();
+  const totalAvecPleins = vide + pilote + pax + fuelKg;
+  const totalSansFuel = vide + pilote + pax;
+  const margeAvecPleins = mtow > 0 ? mtow - totalAvecPleins : null;
+  const margeSansFuel = mtow > 0 ? mtow - totalSansFuel : null;
+  
+  let marginColor = '#10B981'; // vert
+  let marginIcon = '✓';
+  let marginText = 'OK';
+  if (margeAvecPleins !== null) {
+    if (margeAvecPleins < 0) {
+      marginColor = '#DC2626'; marginIcon = '⛔'; marginText = 'SURCHARGE';
+    } else if (margeAvecPleins < 20) {
+      marginColor = '#F59E0B'; marginIcon = '⚠️'; marginText = 'marge faible';
+    }
+  }
+  
+  recap.innerHTML = `
+    <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+      <div>Poids à vide :</div><div class="text-right font-mono">${vide.toFixed(1)} kg</div>
+      <div>Pilote :</div><div class="text-right font-mono">${pilote.toFixed(1)} kg</div>
+      <div>Passager :</div><div class="text-right font-mono">${pax.toFixed(1)} kg</div>
+      <div class="border-t border-thin pt-1">Sous-total sans pleins :</div><div class="text-right font-mono border-t border-thin pt-1">${totalSansFuel.toFixed(1)} kg</div>
+      <div>Carburant (${fuelL}L × ${getFuelDensity()}) :</div><div class="text-right font-mono">+ ${fuelKg.toFixed(1)} kg</div>
+      <div class="font-semibold border-t border-thin pt-1">TOTAL avec pleins :</div><div class="text-right font-mono font-semibold border-t border-thin pt-1">${totalAvecPleins.toFixed(1)} kg</div>
+      ${mtow > 0 ? `
+        <div>MTOW (limite) :</div><div class="text-right font-mono">${mtow.toFixed(1)} kg</div>
+        <div class="font-bold" style="color:${marginColor}">${marginIcon} Marge avec pleins :</div>
+        <div class="text-right font-mono font-bold" style="color:${marginColor}">${margeAvecPleins >= 0 ? '+' : ''}${margeAvecPleins.toFixed(1)} kg (${marginText})</div>
+      ` : '<div class="col-span-2 text-xs text-muted italic">Saisis le MTOW pour calculer la marge.</div>'}
+    </div>
+  `;
+}
+
+// ============= STATIONS METAR FALLBACK 50km =============
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Rayon Terre en km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Stations METAR connues pour servir des données fiables (depuis AERODROMES_ALL + METAR_FALLBACKS)
+// On considère qu'un AD a un METAR fiable si son metarStation correspond à une station active.
+// Liste statique des codes ICAO connus pour avoir un METAR via aviationweather.gov
+const KNOWN_METAR_STATIONS = new Set([
+  'LFLL','LFLY','LFBO','LFBD','LFBP','LFBZ','LFML','LFMD','LFMN','LFMK','LFMP','LFMT','LFMU',
+  'LFPG','LFPO','LFPB','LFPN','LFPT','LFRB','LFRH','LFRC','LFRD','LFRG','LFRJ','LFRK','LFRM',
+  'LFRN','LFRO','LFRQ','LFRS','LFRZ','LFSB','LFSD','LFST','LFSI','LFSL','LFSN','LFSO','LFSX',
+  'LFTH','LFTW','LFOH','LFOJ','LFOK','LFOP','LFLB','LFLC','LFLE','LFLG','LFLH','LFLM','LFLN',
+  'LFLP','LFLQ','LFLS','LFLU','LFLV','LFLW','LFLX','LFLY','LFKB','LFKC','LFKF','LFKJ','LFKS',
+  'LFBE','LFBI','LFBL','LFBT','LFBU','LFBH','LFCK','LFCI','LFCR','LFGA','LFGJ','LFJL','LFMV',
+  'LFNB','LFOB','LFOE','LFOT','LFOU','LFQQ','LFAT','LFAY','LFAQ','LFBC','LFMI','LFMO','LFMY'
+]);
+
+function findNearbyMetarStations(targetLat, targetLon, excludeIcao, maxDistKm = 50, count = 2) {
+  // Trouve les N stations METAR les plus proches d'un point donné, dans un rayon max
+  const candidates = AERODROMES_ALL
+    .filter(ad => ad.icao !== excludeIcao && KNOWN_METAR_STATIONS.has(ad.icao))
+    .map(ad => ({
+      icao: ad.icao,
+      name: ad.name,
+      distKm: haversineKm(targetLat, targetLon, ad.lat, ad.lon)
+    }))
+    .filter(s => s.distKm <= maxDistKm)
+    .sort((a, b) => a.distKm - b.distKm)
+    .slice(0, count);
+  return candidates;
 }
 
 function degToCompass(deg) {
@@ -817,7 +1013,7 @@ function loadAcftToForm() {
   
   if (!a) {
     // Slot vide : vider tous les champs
-    ['acft-nickname','acft-immat','acft-modele','acft-mtow','acft-vcroisiere','acft-conso','acft-reservoir','acft-radio','acft-transpondeur'].forEach(id => {
+    ['acft-nickname','acft-immat','acft-modele','acft-mtow','acft-vcroisiere','acft-conso','acft-reservoir','acft-radio','acft-transpondeur','acft-poids-vide','acft-poids-pilote','acft-poids-pax','acft-fuel-litres'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -831,6 +1027,10 @@ function loadAcftToForm() {
   document.getElementById('acft-modele').value = a.modele || '';
   document.getElementById('acft-mtow').value = a.mtow || '';
   document.getElementById('acft-vcroisiere').value = a.vcroisiere || '';
+  document.getElementById('acft-poids-vide').value = a.poidsVide || '';
+  document.getElementById('acft-poids-pilote').value = a.poidsPilote || '';
+  document.getElementById('acft-poids-pax').value = a.poidsPax || '';
+  document.getElementById('acft-fuel-litres').value = a.fuelLitres || '';
   document.getElementById('acft-conso').value = a.conso || '';
   document.getElementById('acft-reservoir').value = a.reservoir || '';
   document.getElementById('acft-carburant').value = a.carburant || '';
@@ -853,6 +1053,10 @@ function saveAcft() {
     modele: document.getElementById('acft-modele').value.trim(),
     mtow: parseFloat(document.getElementById('acft-mtow').value) || null,
     vcroisiere: parseFloat(document.getElementById('acft-vcroisiere').value) || null,
+    poidsVide: parseFloat(document.getElementById('acft-poids-vide').value) || null,
+    poidsPilote: parseFloat(document.getElementById('acft-poids-pilote').value) || null,
+    poidsPax: parseFloat(document.getElementById('acft-poids-pax').value) || null,
+    fuelLitres: parseFloat(document.getElementById('acft-fuel-litres').value) || null,
     conso: parseFloat(document.getElementById('acft-conso').value) || null,
     reservoir: parseFloat(document.getElementById('acft-reservoir').value) || null,
     carburant: document.getElementById('acft-carburant').value,
@@ -1240,7 +1444,7 @@ function refreshTripSummary() {
   document.getElementById('trip-segments').innerHTML = trip.segments.map((s, i) => `
     <div class="leg-segment">
       <span class="pre-mono text-xs font-medium">${s.from.icao} → ${s.to.icao}</span>
-      <span class="text-xs text-muted">${Math.round(s.distKm)} km · ${Math.round(s.distNm)} NM · ${s.bearing}°</span>
+      <span class="text-xs text-muted">${formatDist(s.distKm)} · cap ${s.bearing}°</span>
       <span class="text-xs">${s.timeMin ? fmtMinutes(s.timeMin) : '—'}${s.fuelL ? ' · ' + s.fuelL.toFixed(1) + ' L' : ''}</span>
     </div>
   `).join('');
@@ -1748,8 +1952,32 @@ function renderMetarSimple(decoded) {
 
 function renderMetarSection(data, ad) {
   if (!data) {
-    return `${reliabilityBadge("green", `aviationweather.gov · station ${ad.metarStation}`)}
-      <p class="text-sm mt-2" style="color: #B91C1C;">Données METAR indisponibles</p>`;
+    // METAR principal indisponible → chercher 2 stations alternatives dans 50km
+    const alternatives = findNearbyMetarStations(ad.lat, ad.lon, ad.icao, 50, 2);
+    let altHtml = '';
+    if (alternatives.length > 0) {
+      altHtml = `
+        <div class="mt-2 p-2 muted-bg rounded-md">
+          <p class="text-xs font-medium mb-1">📡 Stations METAR alternatives à proximité :</p>
+          <ul class="text-xs space-y-0.5">
+            ${alternatives.map(a => `
+              <li>
+                <a href="https://aviationweather.gov/data/metar/?ids=${a.icao}" target="_blank" rel="noreferrer" 
+                   class="text-blue-600 hover:underline">
+                  ${a.icao} (${a.name}) — ${formatDist(a.distKm)}
+                </a>
+              </li>
+            `).join('')}
+          </ul>
+          <p class="text-xs text-muted mt-1 italic">Le METAR du terrain principal n'est pas disponible. Consulte les stations les plus proches dans un rayon de 50 km.</p>
+        </div>
+      `;
+    } else {
+      altHtml = `<p class="text-xs text-muted mt-2 italic">Aucune station METAR alternative dans un rayon de 50 km.</p>`;
+    }
+    return `${reliabilityBadge("yellow", `aviationweather.gov · station ${ad.metarStation || ad.icao}`)}
+      <p class="text-sm mt-2" style="color: #B91C1C;">Données METAR indisponibles pour ${ad.icao}</p>
+      ${altHtml}`;
   }
   const cat = data.fltCat || "";
   const catClass = cat === "VFR" ? "pill-vfr" : cat === "MVFR" ? "pill-mvfr" : (cat === "IFR" || cat === "LIFR") ? "pill-ifr" : "";
@@ -3042,6 +3270,49 @@ async function loadWeatherFrance() {
   setTimeout(() => weatherFranceMap.invalidateSize(), 100);
 }
 
+// ============= VUE SATELLITE RAINVIEWER (gratuit, sans clé) =============
+let satelliteLayer = null;
+let satelliteActive = false;
+
+async function toggleSatelliteView() {
+  satelliteActive = !satelliteActive;
+  const btn = document.getElementById('wf-satellite-toggle');
+  
+  if (satelliteActive) {
+    btn.className = 'px-2 py-0.5 rounded bg-black text-white inline-flex items-center gap-1';
+    // Récupérer l'URL de la dernière image satellite RainViewer
+    try {
+      const r = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+      const data = await r.json();
+      if (data.satellite && data.satellite.infrared && data.satellite.infrared.length > 0) {
+        // Prendre l'image satellite la plus récente
+        const latest = data.satellite.infrared[data.satellite.infrared.length - 1];
+        const host = data.host;
+        const url = `${host}${latest.path}/256/{z}/{x}/{y}/0/0_0.png`;
+        
+        satelliteLayer = L.tileLayer(url, {
+          opacity: 0.7,
+          attribution: '© RainViewer (satellite IR)',
+          maxZoom: 11,
+          minZoom: 4
+        });
+        satelliteLayer.addTo(weatherFranceMap);
+        console.log('[Satellite] Couche satellite RainViewer ajoutée:', url);
+      }
+    } catch (e) {
+      console.error('[Satellite] Erreur RainViewer:', e);
+      btn.className = 'px-2 py-0.5 rounded bg-white border inline-flex items-center gap-1';
+      satelliteActive = false;
+    }
+  } else {
+    btn.className = 'px-2 py-0.5 rounded bg-white border inline-flex items-center gap-1';
+    if (satelliteLayer) {
+      weatherFranceMap.removeLayer(satelliteLayer);
+      satelliteLayer = null;
+    }
+  }
+}
+
 function setWeatherFranceMode(mode) {
   weatherFranceMode = mode;
   // Mettre à jour les boutons (mode actif)
@@ -3065,6 +3336,19 @@ function init() {
   setupAdInput(3);
   setupAdInput(4);
   setupTabs();
+  
+  // ============= UNITÉS GLOBALES : listeners + init labels =============
+  updateUnitLabels();
+  document.getElementById('unit-speed-toggle').addEventListener('click', toggleSpeedUnit);
+  document.getElementById('unit-dist-toggle').addEventListener('click', toggleDistUnit);
+  
+  // ============= MASSE ACFT : update en temps réel =============
+  ['acft-poids-vide','acft-poids-pilote','acft-poids-pax','acft-fuel-litres','acft-mtow','acft-carburant'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateMasseRecap);
+    if (el) el.addEventListener('change', updateMasseRecap);
+  });
+  setTimeout(updateMasseRecap, 200);  // init au chargement
   
   document.getElementById('add-step-btn').addEventListener('click', addStepSlot);
   
@@ -3182,6 +3466,9 @@ function init() {
     if (!btn) return;
     setWeatherFranceMode(btn.dataset.mode);
   });
+  
+  // Event listener satellite toggle
+  document.getElementById('wf-satellite-toggle').addEventListener('click', toggleSatelliteView);
 
   // ============= FILTRE D'ALTITUDE =============
   const altFilterEnabled = document.getElementById('altitude-filter-enabled');
