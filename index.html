@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.3.5 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.3.6 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -70,12 +70,64 @@
   .ad-suggestion:hover { background: var(--muted); }
   .leaflet-tooltip-permanent { background: white; border: 1px solid var(--border); font-size: 11px; padding: 2px 5px; font-weight: 500; }
   
-  /* Boutons d'action du header : même largeur, emoji aligné à gauche */
-  .header-action-btn {
-    min-width: 110px;
+  /* ===== HEADER PILULE CENTRÉ ===== */
+  .header-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 18px;
+    background: white;
+    border: 1.5px solid #E5E7EB;
+    border-radius: 999px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+    justify-content: center;
   }
+  .header-pill > .divider {
+    width: 1px; height: 22px; background: #E5E7EB;
+  }
+  
+  /* ===== TITRES BOLD UPPERCASE NOIR ===== */
+  h1, h2, h3, h4, .section-title {
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    color: #000000 !important;
+    letter-spacing: 0.04em;
+  }
+  /* Mais on garde la taille fine sur les sub-headers */
+  h4 { font-size: 11px !important; }
+  .text-muted.section-title { color: #000000 !important; }
+  
+  /* Boutons d'action du header : tous même taille, emoji + texte centré */
+  .header-action-btn, .header-unit-btn {
+    min-width: 95px;
+    height: 30px;
+    font-size: 11.5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid #E5E7EB;
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .header-action-btn:hover, .header-unit-btn:hover { background: #F9FAFB; }
+  .header-unit-btn { min-width: 56px; }
+  
+  /* Chevron pour les détails (rotation animée à l'ouverture) */
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  .toggle-chevron { transition: transform 0.2s; }
+  details[open] > summary .toggle-chevron { transform: rotate(180deg); }
+  
+  /* Styles supplémentaires pour cards en toggle */
+  details summary:hover .toggle-chevron { color: #555; }
   @media (max-width: 768px) {
-    .header-action-btn { min-width: 90px; font-size: 11px; padding: 6px 10px; }
+    .header-action-btn { min-width: 80px; font-size: 10.5px; padding: 0 8px; height: 28px; }
+    .header-unit-btn { min-width: 48px; font-size: 10.5px; padding: 0 8px; height: 28px; }
   }
   
   /* Mode plein écran carte (OpenAIP + météo France) */
@@ -93,22 +145,25 @@
     width: 100vw !important;
     border-radius: 0 !important;
   }
-  /* Quitter button pour météo France fullscreen */
-  .map-fullscreen-wf::before {
-    content: "← quitter";
+  /* Bouton quitter plein écran (overlay sur la carte fullscreen) */
+  .map-exit-fullscreen-btn {
+    display: none;
     position: fixed;
-    top: 12px; left: 60px;
+    top: 12px; right: 12px;
     z-index: 10001;
     background: white;
     border: 1.5px solid #E5E7EB;
     border-radius: 999px;
-    padding: 10px 16px;
-    font-size: 15px;
+    padding: 10px 18px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    align-items: center;
+    gap: 6px;
   }
-  .map-fullscreen-wf::before { pointer-events: auto; }
+  .map-fullscreen .map-exit-fullscreen-btn,
+  .map-fullscreen-wf .map-exit-fullscreen-btn { display: inline-flex; }
   .map-fullscreen .map-fs-close {
     position: fixed;
     top: 12px; left: 12px;
@@ -173,46 +228,51 @@
 </head>
 <body class="min-h-screen pb-24">
 
-<!-- HEADER : 3 zones (gauche / centre / droite) -->
-<header class="sticky top-0 z-50 border-b border-thin bg-white/95 backdrop-blur" style="z-index: 1000 !important;">
-  <div class="mx-auto grid max-w-7xl grid-cols-1 md:grid-cols-3 items-center gap-2 px-4 py-2 md:py-3">
-    <!-- GAUCHE (mobile : ligne 1) : logo + nom + version -->
-    <div class="flex items-center gap-2 justify-center md:justify-start">
-      <i data-lucide="plane" class="h-5 w-5"></i>
-      <h1 class="text-base font-medium">autogyrodash</h1>
-      <span class="text-xs text-muted pre-mono">v0.3.5</span>
-    </div>
-    
-    <!-- CENTRE (mobile : ligne 2) : onglets + heure -->
-    <div class="flex items-center justify-center gap-3">
-      <span class="tab-btn active" data-tab="plan">plan de vol</span>
-      <span class="tab-btn" data-tab="acft">fiche acft</span>
-      <span class="text-xs text-muted" id="briefing-time"></span>
-    </div>
-    
-    <!-- DROITE (mobile : ligne 3) : unités + boutons d'action -->
-    <div class="flex flex-wrap items-center gap-2 justify-center md:justify-end">
-      <!-- Toggle unités vitesse (kt ↔ km/h) -->
-      <button id="unit-speed-toggle" class="text-xs px-2 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1" title="Basculer entre kt (nœuds) et km/h">
-        <i data-lucide="wind" class="h-3.5 w-3.5"></i>
+<!-- HEADER : Pilule longue centrée -->
+<header class="sticky top-0 bg-white/95 backdrop-blur py-3" style="z-index: 1000;">
+  <div class="mx-auto max-w-7xl flex justify-center px-3">
+    <div class="header-pill">
+      <!-- Logo + nom -->
+      <div class="flex items-center gap-2">
+        <i data-lucide="plane" class="h-4 w-4"></i>
+        <span class="font-semibold text-sm" style="text-transform:none;letter-spacing:0;">autogyrodash</span>
+        <span class="text-xs text-muted pre-mono">v0.3.6</span>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <!-- Tabs + heure -->
+      <div class="flex items-center gap-3">
+        <span class="tab-btn active" data-tab="plan">brief pré-vol</span>
+        <span class="tab-btn" data-tab="acft">fiche acft</span>
+        <span class="text-xs text-muted" id="briefing-time"></span>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <!-- Unités -->
+      <button id="unit-speed-toggle" class="header-unit-btn" title="Basculer kt ↔ km/h">
+        <i data-lucide="wind" class="h-3 w-3"></i>
         <span id="unit-speed-label">kt</span>
       </button>
-      <!-- Toggle unités distance (NM ↔ km) -->
-      <button id="unit-dist-toggle" class="text-xs px-2 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1" title="Basculer entre NM (miles nautiques) et km">
-        <i data-lucide="ruler" class="h-3.5 w-3.5"></i>
+      <button id="unit-dist-toggle" class="header-unit-btn" title="Basculer NM ↔ km">
+        <i data-lucide="ruler" class="h-3 w-3"></i>
         <span id="unit-dist-label">NM</span>
       </button>
-      <span class="border-l border-thin mx-1" style="height:20px;"></span>
-      <button id="refresh-weather" class="header-action-btn text-xs px-3 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center justify-start gap-2" title="Rafraîchir METAR/TAF/vent sans toucher au trajet">
-        <i data-lucide="refresh-cw" class="h-3.5 w-3.5 flex-shrink-0"></i>
+      
+      <div class="divider"></div>
+      
+      <!-- Actions -->
+      <button id="refresh-weather" class="header-action-btn" title="Rafraîchir METAR/TAF/vent">
+        <i data-lucide="refresh-cw" class="h-3 w-3 flex-shrink-0"></i>
         <span>rafraîchir</span>
       </button>
-      <button id="clear-trip" class="header-action-btn text-xs px-3 py-1.5 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center justify-start gap-2" title="Vider uniquement le trajet">
-        <i data-lucide="x" class="h-3.5 w-3.5 flex-shrink-0"></i>
-        <span>vider trajet</span>
+      <button id="clear-trip" class="header-action-btn" title="Vider le trajet">
+        <i data-lucide="x" class="h-3 w-3 flex-shrink-0"></i>
+        <span>vider</span>
       </button>
-      <button id="reset-all" class="header-action-btn text-xs px-3 py-1.5 rounded border hover:bg-red-50 inline-flex items-center justify-start gap-2" style="border-color:#FCA5A5;color:#991B1B;" title="Tout réinitialiser (sauf clé OpenAIP)">
-        <i data-lucide="trash-2" class="h-3.5 w-3.5 flex-shrink-0"></i>
+      <button id="reset-all" class="header-action-btn" style="border-color:#FCA5A5;color:#991B1B;" title="Tout réinitialiser">
+        <i data-lucide="trash-2" class="h-3 w-3 flex-shrink-0"></i>
         <span>reset</span>
       </button>
     </div>
@@ -229,9 +289,12 @@
     <!-- LIGNE 1 : Grid 2 colonnes (Trajet | Météo+TEMSI) -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-    <!-- COLONNE GAUCHE : Trajet -->
-    <div class="card p-4 space-y-3">
-      <h2 class="text-sm font-medium uppercase tracking-wide text-muted">trajet</h2>
+    <!-- COLONNE GAUCHE : Trajet (toggle) -->
+    <details class="card p-4 space-y-3" open>
+      <summary class="cursor-pointer flex items-center justify-between list-none">
+        <h2 class="section-title text-sm">trajet</h2>
+        <i data-lucide="chevron-down" class="h-4 w-4 toggle-chevron"></i>
+      </summary>
 
       <div id="trip-inputs" class="space-y-3">
         <div class="relative" data-trip-slot="0">
@@ -276,24 +339,30 @@
           <span>retour au départ (boucle)</span>
         </label>
       </div>
-    </div>
+    </details>
     <!-- /COLONNE GAUCHE -->
 
-    <!-- COLONNE DROITE : Météo France + TEMSI fusionnés -->
-    <div class="card p-4 space-y-3" id="weather-france-section">
-      <div class="flex items-center justify-between flex-wrap gap-2">
-        <h2 class="text-sm font-medium uppercase tracking-wide text-muted flex items-center gap-2">
+    <!-- COLONNE DROITE : Météo France + TEMSI (toggle) -->
+    <details class="card p-4 space-y-3" id="weather-france-section" open>
+      <summary class="cursor-pointer flex items-center justify-between flex-wrap gap-2 list-none">
+        <h2 class="section-title text-sm flex items-center gap-2">
           <i data-lucide="cloud-sun" class="h-4 w-4"></i>
           météo générale du jour
-          <span id="wf-status" class="pill text-xs" style="background:#F0F0EE;color:#6B6B6B;">non chargée</span>
+          <span id="wf-status" class="pill text-xs" style="background:#F0F0EE;color:#6B6B6B;text-transform:none;font-weight:400;letter-spacing:0;">non chargée</span>
         </h2>
-        <button id="wf-load-btn" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1">
-          <i data-lucide="refresh-cw" class="h-3 w-3"></i> charger
-        </button>
-      </div>
+        <div class="flex items-center gap-2">
+          <button id="wf-load-btn" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1">
+            <i data-lucide="refresh-cw" class="h-3 w-3"></i> charger
+          </button>
+          <i data-lucide="chevron-down" class="h-4 w-4 toggle-chevron"></i>
+        </div>
+      </summary>
       
       <!-- Carte météo France (compacte, ouverte par défaut) -->
       <div id="weather-france-map" style="height: 280px; border-radius: 8px; background: linear-gradient(180deg, #E0F2FE 0%, #DBEAFE 100%); overflow:hidden;"></div>
+      <button class="map-exit-fullscreen-btn" onclick="toggleWeatherFranceFullscreen()" id="wf-exit-fs-btn">
+        <i data-lucide="x" class="h-4 w-4"></i> Quitter plein écran
+      </button>
       
       <!-- Switch mode affichage -->
       <div class="flex items-center gap-2 flex-wrap text-xs">
@@ -308,8 +377,8 @@
         </button>
       </div>
       
-      <!-- Bloc TEMSI fusionné -->
-      <div class="border-t border-thin pt-3 space-y-2">
+      <!-- Bloc TEMSI fusionné (pas d'encadré) -->
+      <div class="pt-3 space-y-2">
         <div class="flex items-center gap-2 text-xs flex-wrap">
           <i data-lucide="map" class="h-3.5 w-3.5"></i>
           <span class="font-medium">TEMSI (carte phénomènes officiels)</span>
@@ -326,7 +395,7 @@
         </div>
         <img id="temsi-img" class="hidden w-full rounded-md border border-thin" />
       </div>
-    </div>
+    </details>
     <!-- /COLONNE DROITE -->
 
     </div>
@@ -380,6 +449,9 @@
         <span>quitter</span>
       </button>
       <div id="map"></div>
+      <button class="map-exit-fullscreen-btn" onclick="toggleMapFullscreen()" id="map-exit-fs-btn">
+        <i data-lucide="x" class="h-4 w-4"></i> Quitter plein écran
+      </button>
       <p class="text-xs text-muted mt-2 px-2">
         447 aérodromes officiels DGAC (PIAF). Cliquez sur un marqueur pour l'ajouter au trajet.
         Coin haut droit : activer/désactiver l'overlay OpenAIP (espaces aériens + AD + navaids + points VFR combinés). Visible à partir du zoom 7.
@@ -504,8 +576,9 @@
           <input type="number" id="acft-mtow" class="ad-input mt-1" placeholder="ex: 560" />
         </div>
         <div>
-          <label class="text-xs text-muted">vitesse de croisière (kt, standard aviation)</label>
+          <label class="text-xs text-muted">vitesse de croisière (<span id="acft-vcroisiere-unit">kt</span>)</label>
           <input type="number" id="acft-vcroisiere" class="ad-input mt-1" placeholder="ex: 90" />
+          <p class="text-xs text-muted mt-1" id="acft-vcroisiere-hint">Saisis la valeur dans l'unité active</p>
         </div>
         <div>
           <label class="text-xs text-muted">consommation (L/h)</label>
@@ -540,9 +613,9 @@
         <span class="ml-1">La <strong>vitesse de croisière</strong> et la <strong>consommation</strong> servent à estimer le temps de vol et la conso de chaque segment du trajet. La <strong>capacité réservoir</strong> permet d'alerter si l'autonomie est dépassée.</span>
       </div>
 
-      <!-- ============= MASSE ET CHARGEMENT ============= -->
-      <div class="border-t border-thin pt-4 mt-4">
-        <h3 class="text-sm font-medium uppercase tracking-wide text-muted mb-3 flex items-center gap-2">
+      <!-- ============= MASSE ET CHARGEMENT (sans encadré) ============= -->
+      <div class="pt-4 mt-4">
+        <h3 class="section-title text-sm mb-3 flex items-center gap-2">
           <i data-lucide="scale" class="h-4 w-4"></i>
           masse et chargement
         </h3>
@@ -746,13 +819,47 @@ function updateUnitLabels() {
   const dl = document.getElementById('unit-dist-label');
   if (sl) sl.textContent = SPEED_UNIT === 'kmh' ? 'km/h' : 'kt';
   if (dl) dl.textContent = DIST_UNIT === 'nm' ? 'NM' : 'km';
+  
+  // Mettre à jour le label V croisière dans la fiche ACFT
+  const vcuel = document.getElementById('acft-vcroisiere-unit');
+  if (vcuel) vcuel.textContent = SPEED_UNIT === 'kmh' ? 'km/h' : 'kt';
+  
+  // Mettre à jour le placeholder de l'input V croisière
+  const vci = document.getElementById('acft-vcroisiere');
+  if (vci) {
+    vci.placeholder = SPEED_UNIT === 'kmh' ? 'ex: 165 (90 kt)' : 'ex: 90';
+  }
+  
+  // Hint sous l'input
+  const hint = document.getElementById('acft-vcroisiere-hint');
+  if (hint) {
+    hint.textContent = SPEED_UNIT === 'kmh' 
+      ? 'Saisis en km/h. Conversion auto en kt en interne.' 
+      : 'Standard aviation : kt (nœuds)';
+  }
 }
 
 function toggleSpeedUnit() {
+  // Avant de switcher, convertir la valeur V croisière à l'affichage
+  const vci = document.getElementById('acft-vcroisiere');
+  let currentV = vci ? parseFloat(vci.value) : null;
+  
   SPEED_UNIT = (SPEED_UNIT === 'kt') ? 'kmh' : 'kt';
   localStorage.setItem('autogyrodash_speed_unit', SPEED_UNIT);
   updateUnitLabels();
-  // Re-render tout ce qui dépend des unités
+  
+  // Re-convertir le champ V croisière dans la nouvelle unité
+  if (vci && currentV && !isNaN(currentV)) {
+    // currentV était dans l'ancienne unité
+    if (SPEED_UNIT === 'kmh') {
+      // On vient de kt → multiplier par 1.852
+      vci.value = Math.round(currentV * KT_TO_KMH * 10) / 10;
+    } else {
+      // On vient de km/h → diviser
+      vci.value = Math.round((currentV / KT_TO_KMH) * 10) / 10;
+    }
+  }
+  
   if (typeof renderTrip === 'function') renderTrip();
   if (typeof refreshAdCards === 'function') refreshAdCards();
 }
@@ -1026,7 +1133,13 @@ function loadAcftToForm() {
   document.getElementById('acft-immat').value = a.immat || '';
   document.getElementById('acft-modele').value = a.modele || '';
   document.getElementById('acft-mtow').value = a.mtow || '';
-  document.getElementById('acft-vcroisiere').value = a.vcroisiere || '';
+  // V croisière stockée en kt, affichage selon SPEED_UNIT
+  if (a.vcroisiere) {
+    const displayV = SPEED_UNIT === 'kmh' ? (a.vcroisiere * KT_TO_KMH) : a.vcroisiere;
+    document.getElementById('acft-vcroisiere').value = Math.round(displayV * 10) / 10;
+  } else {
+    document.getElementById('acft-vcroisiere').value = '';
+  }
   document.getElementById('acft-poids-vide').value = a.poidsVide || '';
   document.getElementById('acft-poids-pilote').value = a.poidsPilote || '';
   document.getElementById('acft-poids-pax').value = a.poidsPax || '';
@@ -1052,7 +1165,12 @@ function saveAcft() {
     immat: document.getElementById('acft-immat').value.trim(),
     modele: document.getElementById('acft-modele').value.trim(),
     mtow: parseFloat(document.getElementById('acft-mtow').value) || null,
-    vcroisiere: parseFloat(document.getElementById('acft-vcroisiere').value) || null,
+    vcroisiere: (() => {
+      const v = parseFloat(document.getElementById('acft-vcroisiere').value);
+      if (!v || isNaN(v)) return null;
+      // Toujours stocker en kt (standard aviation)
+      return SPEED_UNIT === 'kmh' ? v / KT_TO_KMH : v;
+    })(),
     poidsVide: parseFloat(document.getElementById('acft-poids-vide').value) || null,
     poidsPilote: parseFloat(document.getElementById('acft-poids-pilote').value) || null,
     poidsPax: parseFloat(document.getElementById('acft-poids-pax').value) || null,
@@ -3270,46 +3388,36 @@ async function loadWeatherFrance() {
   setTimeout(() => weatherFranceMap.invalidateSize(), 100);
 }
 
-// ============= VUE SATELLITE RAINVIEWER (gratuit, sans clé) =============
-let satelliteLayer = null;
+// ============= VUE SATELLITE WINDY (iframe officiel, gratuit, sans clé) =============
+// Windy.com est la référence pilote pour les nuages temps réel.
+// L'embed iframe affiche la carte interactive avec satellite IR/visible.
 let satelliteActive = false;
 
-async function toggleSatelliteView() {
+function toggleSatelliteView() {
   satelliteActive = !satelliteActive;
   const btn = document.getElementById('wf-satellite-toggle');
+  const mapDiv = document.getElementById('weather-france-map');
+  let iframe = document.getElementById('windy-satellite-iframe');
   
   if (satelliteActive) {
     btn.className = 'px-2 py-0.5 rounded bg-black text-white inline-flex items-center gap-1';
-    // Récupérer l'URL de la dernière image satellite RainViewer
-    try {
-      const r = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-      const data = await r.json();
-      if (data.satellite && data.satellite.infrared && data.satellite.infrared.length > 0) {
-        // Prendre l'image satellite la plus récente
-        const latest = data.satellite.infrared[data.satellite.infrared.length - 1];
-        const host = data.host;
-        const url = `${host}${latest.path}/256/{z}/{x}/{y}/0/0_0.png`;
-        
-        satelliteLayer = L.tileLayer(url, {
-          opacity: 0.7,
-          attribution: '© RainViewer (satellite IR)',
-          maxZoom: 11,
-          minZoom: 4
-        });
-        satelliteLayer.addTo(weatherFranceMap);
-        console.log('[Satellite] Couche satellite RainViewer ajoutée:', url);
-      }
-    } catch (e) {
-      console.error('[Satellite] Erreur RainViewer:', e);
-      btn.className = 'px-2 py-0.5 rounded bg-white border inline-flex items-center gap-1';
-      satelliteActive = false;
+    
+    // Créer iframe Windy en overlay sur la carte météo France
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'windy-satellite-iframe';
+      iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;border-radius:8px;z-index:500;';
+      iframe.src = 'https://embed.windy.com/embed2.html?lat=46.5&lon=2.5&detailLat=46.5&detailLon=2.5&width=650&height=450&zoom=5&level=surface&overlay=satellite&product=satellite&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1';
+      iframe.title = 'Windy satellite';
+      mapDiv.style.position = 'relative';
+      mapDiv.appendChild(iframe);
+      console.log('[Satellite] Windy iframe ajoutée');
+    } else {
+      iframe.style.display = 'block';
     }
   } else {
     btn.className = 'px-2 py-0.5 rounded bg-white border inline-flex items-center gap-1';
-    if (satelliteLayer) {
-      weatherFranceMap.removeLayer(satelliteLayer);
-      satelliteLayer = null;
-    }
+    if (iframe) iframe.style.display = 'none';
   }
 }
 
