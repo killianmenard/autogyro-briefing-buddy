@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.3.1 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.3.2 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -146,13 +146,25 @@
 </head>
 <body class="min-h-screen pb-24">
 
-<!-- HEADER -->
+<!-- HEADER : 3 zones (gauche / centre / droite) -->
 <header class="sticky top-0 z-20 border-b border-thin bg-white/95 backdrop-blur">
-  <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
-    <i data-lucide="plane" class="h-5 w-5"></i>
-    <h1 class="text-base font-medium">autogyrodash</h1>
-    <span class="text-xs text-muted pre-mono">v0.3.1</span>
-    <div class="ml-auto flex flex-wrap items-center gap-2">
+  <div class="mx-auto grid max-w-7xl grid-cols-1 sm:grid-cols-3 items-center gap-3 px-4 py-3">
+    <!-- GAUCHE : logo + nom + version -->
+    <div class="flex items-center gap-2 justify-start">
+      <i data-lucide="plane" class="h-5 w-5"></i>
+      <h1 class="text-base font-medium">autogyrodash</h1>
+      <span class="text-xs text-muted pre-mono">v0.3.2</span>
+    </div>
+    
+    <!-- CENTRE : onglets + heure -->
+    <div class="flex items-center justify-center gap-3">
+      <span class="tab-btn active" data-tab="plan">plan de vol</span>
+      <span class="tab-btn" data-tab="acft">fiche acft</span>
+      <span class="text-xs text-muted" id="briefing-time"></span>
+    </div>
+    
+    <!-- DROITE : boutons d'action -->
+    <div class="flex flex-wrap items-center gap-2 justify-end">
       <button id="refresh-weather" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1" title="Rafraîchir METAR/TAF/vent sans toucher au trajet">
         <i data-lucide="refresh-cw" class="h-3 w-3"></i> rafraîchir
       </button>
@@ -162,10 +174,6 @@
       <button id="reset-all" class="text-xs px-2 py-1 rounded border hover:bg-red-50" style="border-color:#FCA5A5;color:#991B1B;" title="Tout réinitialiser (sauf clé OpenAIP)">
         <i data-lucide="trash-2" class="h-3 w-3"></i> reset
       </button>
-      <span class="border-l border-thin mx-1" style="height:20px;"></span>
-      <span class="tab-btn active" data-tab="plan">plan de vol</span>
-      <span class="tab-btn" data-tab="acft">fiche acft</span>
-      <span class="text-xs text-muted ml-2" id="briefing-time"></span>
     </div>
   </div>
 </header>
@@ -177,7 +185,10 @@
   <!-- ============================================== -->
   <section id="tab-plan">
 
-    <!-- Étapes : sélection AD départ / intermédiaire / arrivée + boucle -->
+    <!-- LIGNE 1 : Grid 2 colonnes (Trajet | Météo+TEMSI) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+    <!-- COLONNE GAUCHE : Trajet -->
     <div class="card p-4 space-y-3">
       <h2 class="text-sm font-medium uppercase tracking-wide text-muted">trajet</h2>
 
@@ -225,6 +236,55 @@
         </label>
       </div>
     </div>
+    <!-- /COLONNE GAUCHE -->
+
+    <!-- COLONNE DROITE : Météo France + TEMSI fusionnés -->
+    <div class="card p-4 space-y-3" id="weather-france-section">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <h2 class="text-sm font-medium uppercase tracking-wide text-muted flex items-center gap-2">
+          <i data-lucide="cloud-sun" class="h-4 w-4"></i>
+          météo générale du jour
+          <span id="wf-status" class="pill text-xs" style="background:#F0F0EE;color:#6B6B6B;">non chargée</span>
+        </h2>
+        <button id="wf-load-btn" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1">
+          <i data-lucide="refresh-cw" class="h-3 w-3"></i> charger
+        </button>
+      </div>
+      
+      <!-- Carte météo France (compacte, ouverte par défaut) -->
+      <div id="weather-france-map" style="height: 280px; border-radius: 8px; background: linear-gradient(180deg, #E0F2FE 0%, #DBEAFE 100%); overflow:hidden;"></div>
+      
+      <!-- Switch mode affichage -->
+      <div class="flex items-center gap-2 flex-wrap text-xs">
+        <span class="text-muted">affichage :</span>
+        <button class="wf-mode-btn px-2 py-0.5 rounded bg-black text-white" data-mode="temp">température</button>
+        <button class="wf-mode-btn px-2 py-0.5 rounded bg-white border" data-mode="wind">vent</button>
+        <button class="wf-mode-btn px-2 py-0.5 rounded bg-white border" data-mode="clouds">nuages</button>
+      </div>
+      
+      <!-- Bloc TEMSI fusionné -->
+      <div class="border-t border-thin pt-3 space-y-2">
+        <div class="flex items-center gap-2 text-xs flex-wrap">
+          <i data-lucide="map" class="h-3.5 w-3.5"></i>
+          <span class="font-medium">TEMSI (carte phénomènes officiels)</span>
+          <span class="text-muted">aviation.meteo.fr</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <a href="https://aviation.meteo.fr/login.php" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1.5 rounded-md bg-black px-3 py-1.5 text-xs text-white">
+            <i data-lucide="external-link" class="h-3.5 w-3.5"></i>ouvrir aeroweb
+          </a>
+          <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-thin bg-white px-3 py-1.5 text-xs hover:bg-gray-50">
+            <i data-lucide="camera" class="h-3.5 w-3.5"></i>joindre screenshot TEMSI
+            <input type="file" accept="image/*" class="hidden" id="temsi-input" />
+          </label>
+        </div>
+        <img id="temsi-img" class="hidden w-full rounded-md border border-thin" />
+      </div>
+    </div>
+    <!-- /COLONNE DROITE -->
+
+    </div>
+    <!-- /GRID 2 COLS -->
 
     <!-- Bandeau OpenAIP + CartaBossy -->
     <div id="map-controls" class="card p-3 mt-3 space-y-2">
@@ -348,27 +408,6 @@
       </div>
     </div>
 
-    <!-- TEMSI global (1 fois pour le trajet, pas par AD) -->
-    <details class="card overflow-hidden mt-3" id="temsi-section">
-      <summary class="flex w-full items-center justify-between gap-3 px-4 py-3 text-sm">
-        <span class="flex items-center gap-2"><i data-lucide="map" class="h-4 w-4"></i><span class="font-medium">temsi général (météo du jour)</span></span>
-        <span class="text-xs text-muted accordion-icon"></span>
-      </summary>
-      <div class="border-t border-thin px-4 py-4 space-y-3">
-        <div class="flex items-center gap-2 text-xs"><span class="dot dot-green"></span><span class="text-muted">Officiel Météo France · aviation.meteo.fr</span></div>
-        <div class="flex flex-wrap gap-2">
-          <a href="https://aviation.meteo.fr/login.php" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1.5 rounded-md bg-black px-3 py-1.5 text-xs text-white">
-            <i data-lucide="external-link" class="h-3.5 w-3.5"></i>ouvrir aeroweb
-          </a>
-          <label class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-thin bg-white px-3 py-1.5 text-xs hover:bg-gray-50">
-            <i data-lucide="camera" class="h-3.5 w-3.5"></i>joindre screenshot temsi
-            <input type="file" accept="image/*" class="hidden" id="temsi-input" />
-          </label>
-        </div>
-        <img id="temsi-img" class="hidden w-full rounded-md border border-thin" />
-      </div>
-    </details>
-
     <!-- Fiches détaillées par AD (générées dynamiquement) -->
     <div id="ad-cards" class="space-y-3 mt-3"></div>
 
@@ -466,42 +505,6 @@
       </div>
     </div>
   </section>
-
-    <!-- ============================================== -->
-    <!-- Widget météo France (vue globale style TV)     -->
-    <!-- ============================================== -->
-    <div id="weather-france-section" class="mt-6">
-      <details class="card p-4">
-        <summary class="flex items-center justify-between cursor-pointer">
-          <span class="flex items-center gap-2 text-sm font-medium">
-            <i data-lucide="cloud-sun" class="h-4 w-4"></i>
-            <span>météo France — vue globale du jour</span>
-            <span id="wf-status" class="pill text-xs" style="background:#F0F0EE;color:#6B6B6B;">non chargée</span>
-          </span>
-          <span class="text-xs text-muted">cliquer pour ouvrir</span>
-        </summary>
-        <div class="mt-3 space-y-3">
-          <div class="flex items-center gap-2 flex-wrap">
-            <button id="wf-load-btn" class="text-xs px-3 py-1.5 rounded bg-black text-white hover:opacity-90 inline-flex items-center gap-1">
-              <i data-lucide="refresh-cw" class="h-3 w-3"></i> charger / rafraîchir
-            </button>
-            <div class="flex items-center gap-2 text-xs">
-              <span class="text-muted">affichage :</span>
-              <button class="wf-mode-btn px-2 py-0.5 rounded bg-black text-white" data-mode="temp">température</button>
-              <button class="wf-mode-btn px-2 py-0.5 rounded bg-white border" data-mode="wind">vent</button>
-              <button class="wf-mode-btn px-2 py-0.5 rounded bg-white border" data-mode="clouds">nuages</button>
-            </div>
-          </div>
-          
-          <!-- Carte météo style TV — Leaflet épuré -->
-          <div id="weather-france-map" style="height: 480px; border-radius: 12px; background: linear-gradient(180deg, #E0F2FE 0%, #DBEAFE 100%); overflow:hidden;"></div>
-          
-          <p class="text-xs text-muted">
-            Données Open-Meteo, 15 grandes villes. Cliquer sur "vent"/"nuages" pour basculer l'affichage. Cliquer sur une ville pour les détails complets.
-          </p>
-        </div>
-      </details>
-    </div>
 
 </main>
 
@@ -994,12 +997,15 @@ function refreshOpenaipLayers() {
   layers.openaip.addTo(map);
   console.log('[OpenAIP] Overlay ajouté à la carte ✓');
   
-  // Listener pour tracer les erreurs de chargement de tiles
-  layers.openaip.on('tileerror', (e) => {
-    console.warn('[OpenAIP] tile error:', e.coords, e.error);
-  });
-  layers.openaip.on('tileload', () => {
-    // log silencieux, juste pour confirmer
+  // Tile errors silencieuses : OpenAIP retourne 204/404 hors France ou zoom <7 (comportement normal)
+  // Pas de spam de logs, mais on garde le tracking interne
+  let _tileErrCount = 0;
+  layers.openaip.on('tileerror', () => { _tileErrCount++; });
+  layers.openaip.on('load', () => {
+    if (_tileErrCount > 50) {
+      console.log(`[OpenAIP] ${_tileErrCount} tiles vides ignorées (normal hors France ou zoom <7)`);
+      _tileErrCount = 0;
+    }
   });
 
   // Contrôle de layers en haut à droite (1 seul toggle car endpoint combiné)
@@ -2670,21 +2676,109 @@ onTripChange = function() {
 // WIDGET MÉTÉO FRANCE — Style "carte météo TV"
 // ============================================================
 const FRANCE_CITIES = [
-  { name: 'Lille', lat: 50.63, lon: 3.06 },
-  { name: 'Paris', lat: 48.86, lon: 2.35 },
-  { name: 'Reims', lat: 49.26, lon: 4.03 },
-  { name: 'Strasbourg', lat: 48.58, lon: 7.75 },
-  { name: 'Nantes', lat: 47.22, lon: -1.55 },
-  { name: 'Tours', lat: 47.39, lon: 0.69 },
-  { name: 'Dijon', lat: 47.32, lon: 5.04 },
-  { name: 'Lyon', lat: 45.76, lon: 4.84 },
-  { name: 'Bordeaux', lat: 44.84, lon: -0.58 },
-  { name: 'Limoges', lat: 45.83, lon: 1.26 },
-  { name: 'Clermont-F.', lat: 45.78, lon: 3.08 },
-  { name: 'Toulouse', lat: 43.60, lon: 1.44 },
-  { name: 'Marseille', lat: 43.30, lon: 5.37 },
-  { name: 'Nice', lat: 43.70, lon: 7.27 },
-  { name: 'Ajaccio', lat: 41.93, lon: 8.74 }
+  // TIER 1 : Grandes villes (>100k habitants) - affichage prioritaire
+  { name: 'Paris', lat: 48.8566, lon: 2.3522, major: true },
+  { name: 'Marseille', lat: 43.2965, lon: 5.3698, major: true },
+  { name: 'Lyon', lat: 45.7640, lon: 4.8357, major: true },
+  { name: 'Toulouse', lat: 43.6047, lon: 1.4442, major: true },
+  { name: 'Nice', lat: 43.7102, lon: 7.2620, major: true },
+  { name: 'Nantes', lat: 47.2184, lon: -1.5536, major: true },
+  { name: 'Montpellier', lat: 43.6108, lon: 3.8767, major: true },
+  { name: 'Strasbourg', lat: 48.5734, lon: 7.7521, major: true },
+  { name: 'Bordeaux', lat: 44.8378, lon: -0.5792, major: true },
+  { name: 'Lille', lat: 50.6292, lon: 3.0573, major: true },
+  { name: 'Rennes', lat: 48.1173, lon: -1.6778, major: true },
+  { name: 'Reims', lat: 49.2583, lon: 4.0317, major: true },
+  { name: 'Le Havre', lat: 49.4944, lon: 0.1079, major: true },
+  { name: 'Saint-Étienne', lat: 45.4397, lon: 4.3872, major: true },
+  { name: 'Toulon', lat: 43.1242, lon: 5.9280, major: true },
+  { name: 'Grenoble', lat: 45.1885, lon: 5.7245, major: true },
+  { name: 'Dijon', lat: 47.3220, lon: 5.0415, major: true },
+  { name: 'Angers', lat: 47.4784, lon: -0.5632, major: true },
+  { name: 'Nîmes', lat: 43.8367, lon: 4.3601, major: true },
+  { name: 'Aix-en-Provence', lat: 43.5297, lon: 5.4474, major: true },
+  { name: 'Le Mans', lat: 48.0061, lon: 0.1996, major: true },
+  { name: 'Clermont-Ferrand', lat: 45.7772, lon: 3.0870, major: true },
+  { name: 'Brest', lat: 48.3905, lon: -4.4860, major: true },
+  { name: 'Limoges', lat: 45.8336, lon: 1.2611, major: true },
+  { name: 'Tours', lat: 47.3941, lon: 0.6848, major: true },
+  { name: 'Amiens', lat: 49.8941, lon: 2.2958, major: true },
+  { name: 'Annecy', lat: 45.8992, lon: 6.1294, major: true },
+  { name: 'Perpignan', lat: 42.6886, lon: 2.8946, major: true },
+  { name: 'Metz', lat: 49.1193, lon: 6.1757, major: true },
+  { name: 'Besançon', lat: 47.2378, lon: 6.0241, major: true },
+  { name: 'Orléans', lat: 47.9029, lon: 1.9039, major: true },
+  { name: 'Rouen', lat: 49.4432, lon: 1.0993, major: true },
+  { name: 'Mulhouse', lat: 47.7508, lon: 7.3359, major: true },
+  { name: 'Caen', lat: 49.1829, lon: -0.3707, major: true },
+  { name: 'Nancy', lat: 48.6921, lon: 6.1844, major: true },
+  // TIER 2 : Villes moyennes (50-100k) - affichage secondaire
+  { name: 'Tourcoing', lat: 50.7235, lon: 3.1612 },
+  { name: 'Roubaix', lat: 50.6943, lon: 3.1747 },
+  { name: 'Avignon', lat: 43.9493, lon: 4.8055 },
+  { name: 'Dunkerque', lat: 51.0344, lon: 2.3768 },
+  { name: 'Poitiers', lat: 46.5802, lon: 0.3404 },
+  { name: 'Versailles', lat: 48.8049, lon: 2.1204 },
+  { name: 'Cherbourg', lat: 49.6333, lon: -1.6167 },
+  { name: 'Pau', lat: 43.2951, lon: -0.3708 },
+  { name: 'La Rochelle', lat: 46.1591, lon: -1.1521 },
+  { name: 'Béziers', lat: 43.3450, lon: 3.2154 },
+  { name: 'Antibes', lat: 43.5810, lon: 7.1251 },
+  { name: 'Cannes', lat: 43.5528, lon: 7.0174 },
+  { name: 'Calais', lat: 50.9513, lon: 1.8587 },
+  { name: 'Mérignac', lat: 44.8328, lon: -0.6442 },
+  { name: 'Ajaccio', lat: 41.9192, lon: 8.7386 },
+  { name: 'Saint-Nazaire', lat: 47.2733, lon: -2.2138 },
+  { name: 'Quimper', lat: 47.9971, lon: -4.0975 },
+  { name: 'Valence', lat: 44.9333, lon: 4.8919 },
+  { name: 'La Seyne-sur-Mer', lat: 43.1019, lon: 5.8800 },
+  { name: 'Troyes', lat: 48.2973, lon: 4.0744 },
+  { name: 'Chambéry', lat: 45.5646, lon: 5.9178 },
+  { name: 'Lorient', lat: 47.7482, lon: -3.3702 },
+  { name: 'Niort', lat: 46.3232, lon: -0.4633 },
+  { name: 'Saint-Quentin', lat: 49.8479, lon: 3.2876 },
+  { name: 'Hyères', lat: 43.1199, lon: 6.1280 },
+  { name: 'Beauvais', lat: 49.4297, lon: 2.0808 },
+  { name: 'Meaux', lat: 48.9606, lon: 2.8782 },
+  { name: 'Bastia', lat: 42.7028, lon: 9.4509 },
+  { name: 'Bourges', lat: 47.0810, lon: 2.3989 },
+  { name: 'Bayonne', lat: 43.4929, lon: -1.4748 },
+  { name: 'La Roche-sur-Yon', lat: 46.6705, lon: -1.4267 },
+  { name: 'Albi', lat: 43.9298, lon: 2.1481 },
+  { name: 'Vannes', lat: 47.6582, lon: -2.7600 },
+  { name: 'Châteauroux', lat: 46.8104, lon: 1.6912 },
+  { name: 'Châlons-en-Champagne', lat: 48.9576, lon: 4.3636 },
+  { name: 'Belfort', lat: 47.6379, lon: 6.8629 },
+  { name: 'Évreux', lat: 49.0274, lon: 1.1500 },
+  { name: 'Cholet', lat: 47.0589, lon: -0.8786 },
+  { name: 'Saint-Brieuc', lat: 48.5136, lon: -2.7659 },
+  { name: 'Chartres', lat: 48.4467, lon: 1.4895 },
+  { name: 'Saint-Malo', lat: 48.6492, lon: -2.0260 },
+  { name: 'Bourg-en-Bresse', lat: 46.2057, lon: 5.2257 },
+  { name: 'Laval', lat: 48.0698, lon: -0.7669 },
+  { name: 'Roanne', lat: 46.0367, lon: 4.0689 },
+  { name: 'Arles', lat: 43.6766, lon: 4.6278 },
+  { name: 'Montauban', lat: 44.0181, lon: 1.3556 },
+  { name: 'Tarbes', lat: 43.2329, lon: 0.0782 },
+  { name: 'Agen', lat: 44.2026, lon: 0.6178 },
+  { name: 'Saint-Lô', lat: 49.1158, lon: -1.0892 },
+  { name: 'Périgueux', lat: 45.1839, lon: 0.7218 },
+  { name: 'Auxerre', lat: 47.7980, lon: 3.5740 },
+  { name: 'Vienne', lat: 45.5266, lon: 4.8744 },
+  { name: 'Compiègne', lat: 49.4180, lon: 2.8260 },
+  { name: 'Angoulême', lat: 45.6500, lon: 0.1564 },
+  { name: 'Saintes', lat: 45.7466, lon: -0.6346 },
+  { name: 'Cahors', lat: 44.4475, lon: 1.4408 },
+  { name: 'Béthune', lat: 50.5302, lon: 2.6336 },
+  { name: 'Annemasse', lat: 46.1953, lon: 6.2364 },
+  { name: 'Carcassonne', lat: 43.2130, lon: 2.3491 },
+  { name: 'Cannes', lat: 43.5528, lon: 7.0174 },
+  { name: 'Brive', lat: 45.1591, lon: 1.5337 },
+  { name: 'Évian', lat: 46.4007, lon: 6.5905 },
+  { name: 'Biarritz', lat: 43.4832, lon: -1.5586 },
+  { name: 'Châteaudun', lat: 48.0699, lon: 1.3318 },
+  { name: 'Briançon', lat: 44.9020, lon: 6.6406 },
+  { name: 'Verdun', lat: 49.1599, lon: 5.3838 }
 ];
 
 let weatherFranceMap = null;
@@ -2795,46 +2889,56 @@ function makeWeatherFranceIcon(city, w) {
   const cloudPct = c.cloud_cover;
   const wxIcon = weatherCodeToIcon(c.weather_code);
   const cloudIc = cloudCoverIcon(cloudPct);
+  const isMajor = !!city.major;
+  
+  // Tailles adaptatives : major = gros, secondaire = compact
+  const iconSize = isMajor ? '22px' : '14px';
+  const pillSize = isMajor ? '13px' : '10px';
+  const pillPad = isMajor ? '1px 6px' : '0px 4px';
+  const cityFontSize = isMajor ? '9px' : '0px'; // cache nom pour secondaire (visible au hover/popup)
+  const opacity = isMajor ? '1' : '0.9';
   
   let html;
   if (mode === 'temp') {
-    // Mode TEMPÉRATURE : grosse icône météo + grosse température colorée
     const tColor = tempColor(temp);
     html = `
-      <div style="display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
-        <div style="font-size: 30px; line-height: 1; margin-bottom: 2px;">${wxIcon}</div>
-        <div style="background: white; border: 2px solid ${tColor}; border-radius: 16px; padding: 1px 8px; font-size: 16px; font-weight: 700; color: ${tColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.15); white-space: nowrap; line-height: 1.2;">${temp}°</div>
-        <div style="font-size: 10px; color: #444; font-weight: 600; margin-top: 1px; text-shadow: 0 0 3px white;">${city.name}</div>
+      <div style="display: flex; flex-direction: column; align-items: center; pointer-events: auto; opacity:${opacity};">
+        <div style="font-size: ${iconSize}; line-height: 1; margin-bottom: 1px;">${wxIcon}</div>
+        <div style="background: white; border: 1.5px solid ${tColor}; border-radius: 10px; padding: ${pillPad}; font-size: ${pillSize}; font-weight: 700; color: ${tColor}; box-shadow: 0 1px 2px rgba(0,0,0,0.1); white-space: nowrap; line-height: 1.1;">${temp}°</div>
+        ${isMajor ? `<div style="font-size: ${cityFontSize}; color: #444; font-weight: 600; margin-top: 1px; text-shadow: 0 0 3px white;">${city.name}</div>` : ''}
       </div>
     `;
   } else if (mode === 'wind') {
-    // Mode VENT : flèche directionnelle + vitesse colorée
     const wColor = windColor(windSpd);
     const rot = ((windDir || 0) + 180) % 360;
+    const svgSize = isMajor ? 22 : 14;
     html = `
-      <div style="display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
-        <svg width="28" height="28" viewBox="0 0 24 24" style="transform: rotate(${rot}deg); filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
+      <div style="display: flex; flex-direction: column; align-items: center; pointer-events: auto; opacity:${opacity};">
+        <svg width="${svgSize}" height="${svgSize}" viewBox="0 0 24 24" style="transform: rotate(${rot}deg); filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));">
           <path d="M12 2 L18 12 L13.5 12 L13.5 22 L10.5 22 L10.5 12 L6 12 Z" fill="${wColor}" stroke="white" stroke-width="1"/>
         </svg>
-        <div style="background: white; border: 2px solid ${wColor}; border-radius: 12px; padding: 1px 6px; font-size: 13px; font-weight: 700; color: ${wColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.15); white-space: nowrap; line-height: 1.2; margin-top: 2px;">${windSpd}kt</div>
-        <div style="font-size: 10px; color: #444; font-weight: 600; margin-top: 1px; text-shadow: 0 0 3px white;">${city.name}</div>
+        <div style="background: white; border: 1.5px solid ${wColor}; border-radius: 8px; padding: ${pillPad}; font-size: ${pillSize}; font-weight: 700; color: ${wColor}; box-shadow: 0 1px 2px rgba(0,0,0,0.1); white-space: nowrap; line-height: 1.1; margin-top: 1px;">${windSpd}</div>
+        ${isMajor ? `<div style="font-size: ${cityFontSize}; color: #444; font-weight: 600; margin-top: 1px; text-shadow: 0 0 3px white;">${city.name}</div>` : ''}
       </div>
     `;
   } else {
-    // Mode NUAGES : icône nuage + % couverture
     html = `
-      <div style="display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
-        <div style="font-size: 32px; line-height: 1; margin-bottom: 2px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">${cloudIc}</div>
-        <div style="background: white; border: 2px solid #6B7280; border-radius: 12px; padding: 1px 6px; font-size: 12px; font-weight: 700; color: #374151; box-shadow: 0 2px 4px rgba(0,0,0,0.15); white-space: nowrap; line-height: 1.2;">${cloudPct}%</div>
-        <div style="font-size: 10px; color: #444; font-weight: 600; margin-top: 1px; text-shadow: 0 0 3px white;">${city.name}</div>
+      <div style="display: flex; flex-direction: column; align-items: center; pointer-events: auto; opacity:${opacity};">
+        <div style="font-size: ${iconSize}; line-height: 1; margin-bottom: 1px; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));">${cloudIc}</div>
+        <div style="background: white; border: 1.5px solid #6B7280; border-radius: 8px; padding: ${pillPad}; font-size: ${pillSize}; font-weight: 700; color: #374151; box-shadow: 0 1px 2px rgba(0,0,0,0.1); white-space: nowrap; line-height: 1.1;">${cloudPct}%</div>
+        ${isMajor ? `<div style="font-size: ${cityFontSize}; color: #444; font-weight: 600; margin-top: 1px; text-shadow: 0 0 3px white;">${city.name}</div>` : ''}
       </div>
     `;
   }
   
+  // Taille du marker : major plus grand pour priorité visuelle
+  const size = isMajor ? [60, 60] : [30, 30];
+  const anchor = isMajor ? [30, 30] : [15, 15];
+  
   return L.divIcon({
     html: html,
-    iconSize: [70, 80],
-    iconAnchor: [35, 40],
+    iconSize: size,
+    iconAnchor: anchor,
     className: 'wf-divicon'
   });
 }
@@ -3009,19 +3113,12 @@ function init() {
   });
 
   // ============= WIDGET MÉTÉO FRANCE =============
-  const wfDetails = document.querySelector('#weather-france-section details');
-  if (wfDetails) {
-    wfDetails.addEventListener('toggle', () => {
-      if (wfDetails.open) {
-        initWeatherFranceMap();
-        setTimeout(() => weatherFranceMap && weatherFranceMap.invalidateSize(), 200);
-        // Auto-load au premier ouverture si pas encore chargé
-        if (!weatherFranceData) {
-          setTimeout(() => loadWeatherFrance(), 300);
-        }
-      }
-    });
-  }
+  // Carte directement visible (plus de <details>) → init + auto-load au démarrage
+  initWeatherFranceMap();
+  setTimeout(() => {
+    if (weatherFranceMap) weatherFranceMap.invalidateSize();
+    loadWeatherFrance();
+  }, 500);
   document.getElementById('wf-load-btn').addEventListener('click', loadWeatherFrance);
   
   // Event delegation pour les boutons de mode du widget
