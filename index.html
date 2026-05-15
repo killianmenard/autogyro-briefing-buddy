@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F4F4F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
-<title>autogyrodash v0.2.8 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.2.9 — planification de vol VFR autogire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -79,22 +79,52 @@
   }
   .map-fullscreen #map {
     height: 100vh !important;
+    width: 100vw !important;
     border-radius: 0 !important;
   }
   .map-fullscreen .map-fs-close {
-    position: absolute;
-    top: 12px; right: 12px;
+    position: fixed;
+    top: 12px; left: 12px;
     z-index: 10001;
     background: white;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 15px;
+    font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
   }
+  .map-fullscreen .map-fs-close:hover { background: #F9FAFB; }
   .map-fs-close { display: none; }
-  .map-fullscreen .map-fs-close { display: block; }
+  .map-fullscreen .map-fs-close { display: inline-flex; }
+  
+  /* Boutons zoom Leaflet plus gros en plein écran (mobile-friendly) */
+  .map-fullscreen .leaflet-control-zoom a {
+    width: 44px !important;
+    height: 44px !important;
+    line-height: 44px !important;
+    font-size: 22px !important;
+  }
+  .map-fullscreen .leaflet-control-zoom {
+    margin-top: 80px !important;  /* éviter chevauchement avec bouton fermer */
+    margin-left: 12px !important;
+  }
+  
+  /* Cache le texte de description sous la carte en mode plein écran */
+  .map-fullscreen > p { display: none !important; }
+  
+  /* Sur mobile : padding réduit + texte un peu plus petit pour économiser de la place */
+  @media (max-width: 640px) {
+    body { font-size: 14px; }
+    .card { padding: 10px !important; }
+    #map { height: 320px; }
+    .map-fullscreen .map-fs-close { top: 10px; left: 10px; }
+  }
   
   /* Carte des zones aériennes traversées */
   .airspace-card {
@@ -121,7 +151,7 @@
   <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
     <i data-lucide="plane" class="h-5 w-5"></i>
     <h1 class="text-base font-medium">autogyrodash</h1>
-    <span class="text-xs text-muted pre-mono">v0.2.8</span>
+    <span class="text-xs text-muted pre-mono">v0.2.9</span>
     <div class="ml-auto flex flex-wrap items-center gap-2">
       <span class="tab-btn active" data-tab="plan">plan de vol</span>
       <span class="tab-btn" data-tab="acft">fiche acft</span>
@@ -183,7 +213,15 @@
           <input type="checkbox" id="loop-checkbox" />
           <span>retour au départ (boucle)</span>
         </label>
-        <button id="clear-trip" class="ml-auto text-xs text-muted hover:text-foreground">vider le trajet</button>
+        <div class="ml-auto flex items-center gap-2 flex-wrap">
+          <button id="refresh-weather" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50 inline-flex items-center gap-1" title="Rafraîchir METAR/TAF/vent sans toucher au trajet">
+            <i data-lucide="refresh-cw" class="h-3 w-3"></i> rafraîchir météo
+          </button>
+          <button id="clear-trip" class="text-xs px-2 py-1 rounded border border-thin bg-white hover:bg-gray-50">vider le trajet</button>
+          <button id="reset-all" class="text-xs px-2 py-1 rounded border border-thin hover:bg-red-50" style="border-color:#FCA5A5;color:#991B1B;" title="Tout réinitialiser (sauf clé OpenAIP)">
+            <i data-lucide="trash-2" class="inline h-3 w-3"></i> tout réinitialiser
+          </button>
+        </div>
       </div>
     </div>
 
@@ -233,8 +271,9 @@
 
     <!-- Carte interactive -->
     <div id="map-container" class="card p-2 mt-3">
-      <button class="map-fs-close" id="map-fullscreen-close">
-        <i data-lucide="x" class="inline h-4 w-4"></i> fermer plein écran
+      <button class="map-fs-close" id="map-fullscreen-close" aria-label="Quitter le mode plein écran">
+        <i data-lucide="arrow-left" class="h-5 w-5"></i>
+        <span>quitter</span>
       </button>
       <div id="map"></div>
       <p class="text-xs text-muted mt-2 px-2">
@@ -579,6 +618,36 @@ const STATE = {
   weatherCache: {},
   visibleStops: 1
 };
+
+// ============================================================
+// AIRAC CYCLE — Calcul dynamique du cycle en cours
+// ============================================================
+// Cycles tous les 28 jours. Référence : 2025-12-25 (cycle 2513).
+// Format SIA : "eAIP_DD_MMM_YYYY" + "AIRAC-YYYY-MM-DD"
+function getCurrentAiracCycle() {
+  const reference = new Date('2025-12-25T00:00:00Z'); // Cycle de référence
+  const now = new Date();
+  const msPerDay = 86400000;
+  const daysSince = Math.floor((now - reference) / msPerDay);
+  const cyclesSince = Math.floor(daysSince / 28);
+  const currentCycle = new Date(reference.getTime() + cyclesSince * 28 * msPerDay);
+  
+  const dd = String(currentCycle.getUTCDate()).padStart(2, '0');
+  const yyyy = currentCycle.getUTCFullYear();
+  const mmShort = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][currentCycle.getUTCMonth()];
+  const mmNum = String(currentCycle.getUTCMonth() + 1).padStart(2, '0');
+  
+  return {
+    eAIP: `eAIP_${dd}_${mmShort}_${yyyy}`,   // ex: "eAIP_14_MAY_2026"
+    airac: `AIRAC-${yyyy}-${mmNum}-${dd}`,     // ex: "AIRAC-2026-05-14"
+    date: currentCycle
+  };
+}
+
+function getVacPdfUrl(icao) {
+  const cycle = getCurrentAiracCycle();
+  return `https://www.sia.aviation-civile.gouv.fr/media/dvd/${cycle.eAIP}/Atlas-VAC/PDF_AIPparSSection/VAC/AD/AD-2.${icao}.pdf`;
+}
 
 // ============================================================
 // FICHE ACFT — Persistence localStorage
@@ -1055,7 +1124,7 @@ function fuelStatusBadge(status) {
 
 function renderFuelSection(ad) {
   const fuel = FUEL_DATA[ad.icao];
-  const vacUrl = `https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_19_MAR_2026/Atlas-VAC/PDF_AIPparSSection/VAC/AD/AD-2.${ad.icao}.pdf`;
+  const vacUrl = getVacPdfUrl(ad.icao);
   const aipUrl = `https://www.sia.aviation-civile.gouv.fr/`;
   
   if (!fuel) {
@@ -1114,7 +1183,7 @@ function renderFuelSection(ad) {
 function makeAdCardHtml(ad, role, idx) {
   const roleLabel = role === 'depart' ? 'départ' : role === 'arrivee' ? 'arrivée' : 'étape';
   const roleColor = role === 'depart' ? 'green' : role === 'arrivee' ? 'red' : 'blue';
-  const vacUrl = `https://www.sia.aviation-civile.gouv.fr/media/dvd/eAIP_19_MAR_2026/Atlas-VAC/PDF_AIPparSSection/VAC/AD/AD-2.${ad.icao}.pdf`;
+  const vacUrl = getVacPdfUrl(ad.icao);
   return `
     <div class="card overflow-hidden" data-ad-card="${ad.icao}-${idx}">
       <div class="px-4 py-3 border-b border-thin flex items-center justify-between flex-wrap gap-2">
@@ -1636,6 +1705,97 @@ function toggleMapFullscreen() {
 }
 
 // ============================================================
+// RAFRAÎCHIR MÉTÉO (sans toucher au trajet)
+// ============================================================
+async function refreshWeather() {
+  const btn = document.getElementById('refresh-weather');
+  const trip = computeTrip();
+  if (!trip || trip.points.length === 0) {
+    alert('Aucun trajet planifié. Renseignez au moins un aérodrome.');
+    return;
+  }
+  
+  // Désactiver le bouton et indiquer le rafraîchissement
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="h-3 w-3 animate-spin"></i> rafraîchissement…';
+  lucide.createIcons();
+  
+  // Vider le cache météo
+  STATE.weatherCache = {};
+  
+  // Re-rendre les cartes AD (ce qui re-déclenche loadAdCardWeather pour chaque AD)
+  renderAdCards();
+  
+  // Attendre un peu pour que les fetches se lancent
+  await new Promise(r => setTimeout(r, 800));
+  
+  btn.disabled = false;
+  btn.innerHTML = originalHTML;
+  lucide.createIcons();
+}
+
+// ============================================================
+// RÉINITIALISER TOUT (sauf clé OpenAIP)
+// ============================================================
+function resetAll() {
+  const confirmed = confirm(
+    "⚠️ Tout réinitialiser ?\n\n" +
+    "Ceci va effacer :\n" +
+    "• Trajet planifié\n" +
+    "• Fiche aéronef sauvegardée\n" +
+    "• Notes pilote\n" +
+    "• Cache météo\n" +
+    "• Préférences PDF\n\n" +
+    "La clé OpenAIP sera conservée."
+  );
+  if (!confirmed) return;
+  
+  // Reset STATE
+  STATE.trip = [null, null, null, null, null];
+  STATE.loop = false;
+  STATE.acft = null;
+  STATE.temsiImg = null;
+  STATE.notes = "";
+  STATE.weatherCache = {};
+  STATE.visibleStops = 1;
+  
+  // Vider les inputs trajet
+  for (let i = 0; i < 5; i++) {
+    const input = document.getElementById(`ad-input-${i}`);
+    if (input) input.value = '';
+  }
+  document.querySelector('[data-trip-slot="2"]').classList.add('hidden');
+  document.querySelector('[data-trip-slot="3"]').classList.add('hidden');
+  document.getElementById('add-step-btn').classList.remove('hidden');
+  document.getElementById('loop-checkbox').checked = false;
+  
+  // Vider les inputs ACFT
+  ['acft-immat','acft-model','acft-mtow','acft-vcr','acft-conso','acft-tank','acft-fuel','acft-radio','acft-xpdr'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  
+  // Vider notes + TEMSI
+  const notesEl = document.getElementById('notes-textarea');
+  if (notesEl) notesEl.value = '';
+  const temsiImg = document.getElementById('temsi-img');
+  if (temsiImg) { temsiImg.classList.add('hidden'); temsiImg.src = ''; }
+  
+  // Vider les préférences localStorage SAUF clé OpenAIP et zones aériennes cache
+  const keysToRemove = [
+    'autogyrodash_acft',
+    'autogyrodash_pdf_prefs',
+    'autogyrodash_notes',
+    'autogyrodash_temsi'
+  ];
+  keysToRemove.forEach(k => localStorage.removeItem(k));
+  
+  onTripChange();
+  alert('✓ Application réinitialisée.');
+}
+
+// ============================================================
 // ZONES AÉRIENNES — Détection des zones traversées
 // ============================================================
 const AIRSPACE_TYPES = {
@@ -2006,6 +2166,9 @@ function init() {
     document.getElementById('loop-checkbox').checked = false;
     onTripChange();
   });
+
+  document.getElementById('refresh-weather').addEventListener('click', refreshWeather);
+  document.getElementById('reset-all').addEventListener('click', resetAll);
 
   document.getElementById('save-acft').addEventListener('click', saveAcft);
 
