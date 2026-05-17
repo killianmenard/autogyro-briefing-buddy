@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>autogyrodash v0.4.2 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.4.3 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -457,7 +457,7 @@
       <div class="flex items-center gap-2 header-pill-brand">
         <i data-lucide="plane" class="h-4 w-4"></i>
         <span class="font-semibold text-sm" style="text-transform:none;letter-spacing:0;">autogyrodash</span>
-        <span class="text-xs text-muted pre-mono">v0.4.2</span>
+        <span class="text-xs text-muted pre-mono">v0.4.3</span>
       </div>
       
       <!-- Toggle hamburger : visible seulement sur mobile -->
@@ -2677,19 +2677,14 @@ async function withLightTheme(asyncFn) {
   }
 }
 
-// === CAPTURE CARTE POUR PDF (alignement pixel-perfect via compositing) ===
-// Problème connu : html2canvas + Leaflet → markers/polyline mal alignés avec
-// les tiles à cause des transforms 3D imbriqués. La solution fiable : capture
-// les tiles SEULES via html2canvas, puis dessine markers/polyline manuellement
-// sur le canvas via Canvas 2D API + map.latLngToContainerPoint (alignement parfait).
-//
-// Stratégie complète :
-//   1) Sauvegarder l'état utilisateur (center, zoom, overlays)
-//   2) Cacher overlay OpenAIP + les 447 markers base (encombrent en PDF)
-//   3) Si trajet : fitBounds sur les LATLNGS DU TRAJET (routeLayer, pas markerLayer)
-//   4) invalidateSize + wait tiles
-//   5) html2canvas EXCLUSIVEMENT sur le tile-pane (ignore marker/overlay/tooltip panes)
-//   6) Dessin manuel polyline + markers + labels via Canvas 2D + latLngToContainerPoint
+// === CAPTURE CARTE POUR PDF (v0.4.3 — approche pragmatique) ===
+// Stratégie :
+//   1) Sauvegarder l'état utilisateur (center, zoom)
+//   2) GARDER les overlays OpenAIP visibles (le pilote les veut dans le PDF)
+//   3) Cacher temporairement les 447 markers base (markerLayer) — ils encombrent
+//   4) fitBounds sur les LATLNGS DU TRAJET (routeLayer, pas markerLayer)
+//   5) invalidateSize + wait tiles
+//   6) html2canvas FULL DOM (toutes les couches Leaflet incluses)
 //   7) Restaurer l'état initial
 async function captureMapForPdf() {
   const mapEl = document.getElementById('map');
@@ -2698,185 +2693,74 @@ async function captureMapForPdf() {
   // === 1. Sauvegarder l'état utilisateur ===
   const savedCenter = map.getCenter();
   const savedZoom = map.getZoom();
-  // Sauver les layers OpenAIP actifs (URL contient 'openaip')
-  const overlaysHidden = [];
-  map.eachLayer(layer => {
-    if (layer._url && layer._url.includes('openaip')) {
-      overlaysHidden.push(layer);
-    }
-  });
-  overlaysHidden.forEach(l => map.removeLayer(l));
 
   // === 2. Cacher temporairement les 447 markers base (markerLayer) ===
   // Ils encombrent le PDF, on les retire le temps du screenshot
   const markerLayerWasVisible = (typeof markerLayer !== 'undefined' && markerLayer && map.hasLayer(markerLayer));
   if (markerLayerWasVisible) map.removeLayer(markerLayer);
 
-  // === 3. Récupérer les markers/polyline DU TRAJET (routeLayer) ===
-  const tripCircles = [];   // {latlng, options, tooltipText}
-  const tripPolylines = []; // {latlngs, options}
-  if (typeof routeLayer !== 'undefined' && routeLayer) {
-    routeLayer.eachLayer(layer => {
-      if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
-        tripPolylines.push({ latlngs: layer.getLatLngs(), options: layer.options });
-      } else if (layer instanceof L.CircleMarker) {
-        let tooltipText = null;
-        try {
-          const tt = layer.getTooltip();
-          if (tt) tooltipText = tt.getContent();
-        } catch (e) {}
-        tripCircles.push({ latlng: layer.getLatLng(), options: layer.options, tooltipText });
-      }
-    });
-  }
-
-  // === 4. fitBounds sur les markers DU TRAJET (pas tous les AD) ===
+  // === 3. fitBounds sur les markers DU TRAJET via routeLayer ===
   let fittedToTrip = false;
   try {
-    const tripLatLngs = tripCircles.map(c => c.latlng);
-    if (tripLatLngs.length >= 2) {
-      const bounds = L.latLngBounds(tripLatLngs);
-      map.fitBounds(bounds, { padding: [50, 50], animate: false, maxZoom: 10 });
-      fittedToTrip = true;
-    } else if (tripLatLngs.length === 1) {
-      map.setView(tripLatLngs[0], 10, { animate: false });
-      fittedToTrip = true;
+    if (typeof routeLayer !== 'undefined' && routeLayer) {
+      const tripLatLngs = [];
+      routeLayer.eachLayer(layer => {
+        if (layer instanceof L.CircleMarker && layer.getLatLng) {
+          tripLatLngs.push(layer.getLatLng());
+        }
+      });
+      if (tripLatLngs.length >= 2) {
+        const bounds = L.latLngBounds(tripLatLngs);
+        map.fitBounds(bounds, { padding: [50, 50], animate: false, maxZoom: 10 });
+        fittedToTrip = true;
+      } else if (tripLatLngs.length === 1) {
+        map.setView(tripLatLngs[0], 10, { animate: false });
+        fittedToTrip = true;
+      }
     }
   } catch (e) {
     console.warn('[captureMapForPdf] fitBounds échec:', e);
   }
 
-  // === 5. Scroll + invalidate + wait ===
+  // === 4. Scroll + invalidate + wait tiles ===
   try { mapEl.scrollIntoView({ behavior: 'instant', block: 'center' }); }
   catch (e) { mapEl.scrollIntoView(); }
   try { map.invalidateSize({ animate: false }); } catch (e) {}
-  await new Promise(r => setTimeout(r, 900)); // Wait for tiles after zoom change
+  // Wait pour que les tiles (fond OSM + overlay OpenAIP) finissent de charger
+  await new Promise(r => setTimeout(r, fittedToTrip ? 1100 : 700));
 
-  // === 6. html2canvas EXCLUSIVEMENT sur les tiles (exclut les panes problématiques) ===
-  const scale = 1.5;
-  let tilesCanvas = null;
+  // === 5. Capture html2canvas FULL DOM ===
+  let canvas = null;
   try {
-    tilesCanvas = await html2canvas(mapEl, {
+    canvas = await html2canvas(mapEl, {
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
       logging: false,
-      scale: scale,
+      scale: 1.5,
       ignoreElements: (el) => {
         if (!el.classList) return false;
+        // Ignorer SEULEMENT les contrôles UI (boutons), pas les panes Leaflet
         return el.classList.contains('leaflet-control-zoom') ||
                el.classList.contains('leaflet-control-attribution') ||
                el.classList.contains('leaflet-control-layers') ||
                el.classList.contains('map-fs-close') ||
-               el.classList.contains('map-exit-fullscreen-btn') ||
-               // Panes problématiques : on les redessine nous-même
-               el.classList.contains('leaflet-marker-pane') ||
-               el.classList.contains('leaflet-overlay-pane') ||
-               el.classList.contains('leaflet-tooltip-pane') ||
-               el.classList.contains('leaflet-shadow-pane');
+               el.classList.contains('map-exit-fullscreen-btn');
       }
     });
   } catch (e) {
     console.warn('[captureMapForPdf] html2canvas échec:', e);
   }
 
-  // === 7. Compositing : dessin manuel polyline + markers ===
-  if (tilesCanvas && (tripPolylines.length > 0 || tripCircles.length > 0)) {
-    const ctx = tilesCanvas.getContext('2d');
-
-    // --- Polylines ---
-    tripPolylines.forEach(p => {
-      if (!p.latlngs || p.latlngs.length < 2) return;
-      const points = p.latlngs.map(ll => {
-        // Handle nested arrays (e.g. multi-polyline)
-        const latLng = Array.isArray(ll) ? ll[0] : ll;
-        if (!latLng || latLng.lat === undefined) return null;
-        const cp = map.latLngToContainerPoint(latLng);
-        return { x: cp.x * scale, y: cp.y * scale };
-      }).filter(p => p !== null);
-      if (points.length < 2) return;
-      ctx.save();
-      ctx.strokeStyle = p.options.color || '#000';
-      ctx.lineWidth = (p.options.weight || 2) * scale;
-      ctx.globalAlpha = (p.options.opacity != null) ? p.options.opacity : 1;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      if (p.options.dashArray) {
-        const dashes = String(p.options.dashArray).split(/[\s,]+/).map(n => parseFloat(n) * scale).filter(n => !isNaN(n));
-        if (dashes.length > 0) ctx.setLineDash(dashes);
-      }
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
-      ctx.stroke();
-      ctx.restore();
-    });
-
-    // --- Circle markers ---
-    tripCircles.forEach(c => {
-      const cp = map.latLngToContainerPoint(c.latlng);
-      const x = cp.x * scale;
-      const y = cp.y * scale;
-      const r = (c.options.radius || 8) * scale;
-      const borderW = (c.options.weight || 2) * scale;
-
-      ctx.save();
-      // Fill (couleur)
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, 2 * Math.PI);
-      ctx.fillStyle = c.options.fillColor || c.options.color || '#3B82F6';
-      ctx.globalAlpha = (c.options.fillOpacity != null) ? c.options.fillOpacity : 1;
-      ctx.fill();
-      // Border (blanche)
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, 2 * Math.PI);
-      ctx.lineWidth = borderW;
-      ctx.strokeStyle = c.options.color || '#ffffff';
-      ctx.globalAlpha = (c.options.opacity != null) ? c.options.opacity : 1;
-      ctx.stroke();
-      ctx.restore();
-
-      // Tooltip label (code OACI) au-dessus du marker
-      if (c.tooltipText) {
-        const text = String(c.tooltipText).replace(/<[^>]+>/g, '').trim();
-        if (text) {
-          ctx.save();
-          ctx.font = `bold ${11 * scale}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          const metrics = ctx.measureText(text);
-          const padX = 4 * scale;
-          const padY = 2 * scale;
-          const textW = metrics.width;
-          const textH = 11 * scale;
-          const labelY = y - r - (10 * scale); // 10px au-dessus du marker (= offset Leaflet)
-          // Rectangle de fond (style tooltip Leaflet permanent)
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-          ctx.strokeStyle = 'rgba(150, 150, 150, 0.6)';
-          ctx.lineWidth = 0.5 * scale;
-          ctx.beginPath();
-          ctx.rect(x - textW/2 - padX, labelY - textH - padY, textW + 2*padX, textH + 2*padY);
-          ctx.fill();
-          ctx.stroke();
-          // Texte
-          ctx.fillStyle = '#000';
-          ctx.fillText(text, x, labelY);
-          ctx.restore();
-        }
-      }
-    });
-  }
-
-  // === 8. Restaurer l'état initial ===
+  // === 6. Restaurer l'état initial ===
   try {
-    overlaysHidden.forEach(l => l.addTo(map));
     if (markerLayerWasVisible && typeof markerLayer !== 'undefined') markerLayer.addTo(map);
     if (fittedToTrip) map.setView(savedCenter, savedZoom, { animate: false });
   } catch (e) {
     console.warn('[captureMapForPdf] restore état échec:', e);
   }
 
-  return tilesCanvas;
+  return canvas;
 }
 
 // === LIEN CLIQUABLE PDF AVEC ZONE TAP ÉLARGIE (iPhone friendly) ===
@@ -3011,7 +2895,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  autogyrodash v0.4.2`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  autogyrodash v0.4.3`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;
