@@ -2653,9 +2653,111 @@ function refreshAdCards() {
   uniquePoints.forEach((ad, i) => loadAdCardWeather(ad, i));
 }
 
+
 // ============================================================
-// PDF GÉNÉRATION
+// PDF GÉNÉRATION — v0.4.0
+// Style refondu : bandeaux noirs uppercase + encadrés gris fin
+// (cohérent avec le dashboard)
 // ============================================================
+
+// === HELPERS PDF (style dashboard) ===
+const PDF_STYLE = {
+  margin: 12,
+  pageW: 210,
+  pageH: 297,
+  colDark: [26, 26, 26],
+  colLight: [245, 245, 242],
+  colBorder: [220, 220, 218],
+  colTextMuted: [110, 110, 110],
+  colWarn: [180, 50, 0],
+  colOk: [25, 130, 50],
+  fontSize: { h1: 14, h2: 10, h3: 9, body: 9, small: 7.5, micro: 7 }
+};
+
+// Bandeau de section : rectangle noir avec texte uppercase blanc
+function pdfSectionTitle(pdf, text, y, opts = {}) {
+  const { margin, pageW, colDark } = PDF_STYLE;
+  const h = 7;
+  pdf.setFillColor(...colDark);
+  pdf.rect(margin, y, pageW - 2 * margin, h, 'F');
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(PDF_STYLE.fontSize.h2);
+  pdf.setTextColor(255);
+  pdf.text(text.toUpperCase(), margin + 3, y + h - 2);
+  // Reset
+  pdf.setTextColor(0);
+  return y + h + 2;
+}
+
+// Sous-titre : texte uppercase, petite barre noire à gauche
+function pdfSubTitle(pdf, text, y) {
+  const { margin } = PDF_STYLE;
+  pdf.setFillColor(...PDF_STYLE.colDark);
+  pdf.rect(margin, y - 3, 1.5, 4.5, 'F');
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(PDF_STYLE.fontSize.h3);
+  pdf.setTextColor(0);
+  pdf.text(text.toUpperCase(), margin + 3, y);
+  return y + 4;
+}
+
+// Encadré gris clair avec bordure : pour bloquer un groupe de données
+// fn(innerY) → retourne innerY final, on calcule la box autour
+function pdfBox(pdf, y, contentFn, opts = {}) {
+  const { margin, pageW, colBorder } = PDF_STYLE;
+  const padX = 3, padY = 3;
+  const innerY = y + padY + 2.5;
+  // Mesure : on dessine d'abord le contenu pour mesurer la hauteur
+  const finalY = contentFn(innerY);
+  const boxH = (finalY - y) + padY - 1;
+  // Maintenant on dessine la bordure par-dessus (jsPDF supporte stroke après fill)
+  pdf.setDrawColor(...colBorder);
+  pdf.setLineWidth(0.2);
+  pdf.rect(margin, y, pageW - 2 * margin, boxH, 'S');
+  return y + boxH + 3;
+}
+
+// Item key-value sur une ligne (label en gras court + valeur)
+function pdfKV(pdf, label, value, y, opts = {}) {
+  const { margin } = PDF_STYLE;
+  const lblWidth = opts.labelWidth || 35;
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(PDF_STYLE.fontSize.body);
+  pdf.setTextColor(0);
+  pdf.text(`${label} :`, margin + 3, y);
+  pdf.setFont('helvetica', 'normal');
+  pdf.text(String(value), margin + 3 + lblWidth, y);
+  return y + 4.5;
+}
+
+// Page break si pas assez de place
+function ensureSpace(pdf, y, needed) {
+  const { pageH, margin } = PDF_STYLE;
+  if (y + needed > pageH - margin - 8) {
+    pdf.addPage();
+    return margin;
+  }
+  return y;
+}
+
+// Force le thème clair pendant la génération PDF, puis le restaure
+async function withLightTheme(asyncFn) {
+  const html = document.documentElement;
+  const wasDark = html.classList.contains('dark');
+  if (wasDark) {
+    html.classList.remove('dark');
+    // Attendre 2 frames pour que le browser re-paint complètement
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise(r => setTimeout(r, 100));
+  }
+  try {
+    return await asyncFn();
+  } finally {
+    if (wasDark) html.classList.add('dark');
+  }
+}
+
+// === GÉNÉRATEUR PRINCIPAL ===
 async function _doGeneratePdf(opts) {
   const btn = document.getElementById('pdf-btn');
   const btnText = document.getElementById('pdf-btn-text');
@@ -2664,268 +2766,414 @@ async function _doGeneratePdf(opts) {
   btnText.textContent = 'génération en cours…';
 
   try {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pageW = 210, pageH = 297;
-    const margin = 12;
-    let y = margin;
+    // Fix #6 : forcer le thème clair pendant la génération (html2canvas + lisibilité PDF)
+    await withLightTheme(async () => {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const { margin, pageW, pageH } = PDF_STYLE;
+      let y = margin;
 
-    // ============= EN-TÊTE =============
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(16);
-    pdf.text('Briefing pré-vol VFR', margin, y);
-    y += 7;
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(9);
-    const now = new Date();
-    pdf.text(`Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`, margin, y);
-    y += 8;
-    pdf.setDrawColor(200);
-    pdf.line(margin, y, pageW - margin, y);
-    y += 6;
-
-    // ============= FICHE ACFT =============
-    if (STATE.acft && opts.acft) {
+      // ============= EN-TÊTE =============
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(11);
-      pdf.text('Aéronef', margin, y);
-      y += 5;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
-      const acftLines = [];
-      if (STATE.acft.immat) acftLines.push(`Immatriculation : ${STATE.acft.immat}`);
-      if (STATE.acft.modele) acftLines.push(`Modèle : ${STATE.acft.modele}`);
-      if (STATE.acft.mtow) acftLines.push(`MTOW : ${STATE.acft.mtow} kg`);
-      if (STATE.acft.vcroisiere) acftLines.push(`Vitesse croisière : ${STATE.acft.vcroisiere} kt`);
-      if (STATE.acft.conso) acftLines.push(`Consommation : ${STATE.acft.conso} L/h`);
-      if (STATE.acft.reservoir) acftLines.push(`Réservoir : ${STATE.acft.reservoir} L`);
-      if (STATE.acft.carburant) acftLines.push(`Carburant : ${STATE.acft.carburant}`);
-      if (STATE.acft.radio) acftLines.push(`Radio : ${STATE.acft.radio}`);
-      if (STATE.acft.transpondeur) acftLines.push(`Transpondeur : ${STATE.acft.transpondeur}`);
-      acftLines.forEach(line => {
-        pdf.text(line, margin, y);
-        y += 4.5;
-      });
-      y += 3;
-    }
-
-    // ============= TRAJET =============
-    const trip = computeTrip();
-    if (opts.trip) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(11);
-    pdf.text('Trajet', margin, y);
-    y += 5;
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(9);
-
-    const tripDesc = trip.points.map(p => p.icao).join(' → ') + (STATE.loop ? '' : '');
-    pdf.text(tripDesc, margin, y);
-    y += 5;
-
-    trip.segments.forEach(s => {
-      let line = `  ${s.from.icao} → ${s.to.icao} : ${Math.round(s.distKm)} km / ${Math.round(s.distNm)} NM / cap ${s.bearing}°`;
-      if (s.timeMin) line += ` / ${fmtMinutes(s.timeMin)}`;
-      if (s.fuelL) line += ` / ${s.fuelL.toFixed(1)} L`;
-      pdf.text(line, margin, y);
-      y += 4.5;
-    });
-
-    y += 2;
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(`Total : ${Math.round(trip.totalDist)} km`, margin, y);
-    if (trip.totalTimeMin) {
-      pdf.text(` · ${fmtMinutes(trip.totalTimeMin)}`, margin + 32, y);
-    }
-    if (trip.totalFuelL) {
-      pdf.text(` · ${trip.totalFuelL.toFixed(1)} L`, margin + 65, y);
-    }
-    y += 6;
-
-    if (trip.autonomieMin && trip.totalTimeMin > trip.autonomieMin) {
-      pdf.setTextColor(180, 0, 0);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`⚠ Temps de vol > autonomie (${fmtMinutes(trip.autonomieMin)}) — avitaillement requis`, margin, y);
+      pdf.setFontSize(PDF_STYLE.fontSize.h1);
       pdf.setTextColor(0);
+      pdf.text('BRIEFING PRÉ-VOL VFR', margin, y + 3);
+      // Ligne sous le titre
+      pdf.setDrawColor(...PDF_STYLE.colDark);
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, y + 5, pageW - margin, y + 5);
+      y += 9;
+      // Date + version (en gris)
       pdf.setFont('helvetica', 'normal');
-      y += 6;
-    }
-    y += 3;
-    } // fin if opts.trip
+      pdf.setFontSize(PDF_STYLE.fontSize.small);
+      pdf.setTextColor(...PDF_STYLE.colTextMuted);
+      const now = new Date();
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  autogyrodash v0.4.0`;
+      pdf.text(dateStr, margin, y);
+      pdf.setTextColor(0);
+      y += 8;
 
-    // ============= CARTE (screenshot) =============
-    if (opts.map) {
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(11);
-    pdf.text('Carte', margin, y);
-    y += 5;
-
-    try {
-      const mapEl = document.getElementById('map');
-      const mapCanvas = await html2canvas(mapEl, { useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
-      const mapImg = mapCanvas.toDataURL('image/png');
-      const mapW = pageW - 2 * margin;
-      const mapH = mapW * (mapCanvas.height / mapCanvas.width);
-      if (y + mapH > pageH - margin) {
-        pdf.addPage();
-        y = margin;
-      }
-      pdf.addImage(mapImg, 'PNG', margin, y, mapW, mapH);
-      y += mapH + 5;
-    } catch (e) {
-      console.warn("Map screenshot failed", e);
-    }
-    } // fin if opts.map
-
-    // Préparer uniquePoints (utilisé par météo ET logistique)
-    const uniquePoints = [];
-    const _seen = new Set();
-    trip.points.forEach(p => {
-      if (!_seen.has(p.icao)) { uniquePoints.push(p); _seen.add(p.icao); }
-    });
-
-    // ============= MÉTÉO PAR AD =============
-    if (opts.weather) {
-    pdf.addPage();
-    y = margin;
-
-    for (const ad of uniquePoints) {
-      if (y > pageH - 60) { pdf.addPage(); y = margin; }
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(11);
-      pdf.text(`${ad.icao} · ${ad.name}`, margin, y);
-      y += 5;
-
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(8);
-
-      const cache = STATE.weatherCache[ad.icao];
-      if (cache?.metar) {
-        pdf.text(`METAR (station ${ad.metarStation}) :`, margin, y); y += 4;
-        if (cache.metar.rawOb) {
-          const lines = pdf.splitTextToSize(cache.metar.rawOb, pageW - 2 * margin);
-          pdf.text(lines, margin, y); y += lines.length * 3.5;
-        }
-        if (cache.metar.rawTaf) {
-          y += 1;
-          pdf.text('TAF :', margin, y); y += 4;
-          const lines = pdf.splitTextToSize(cache.metar.rawTaf, pageW - 2 * margin);
-          pdf.text(lines, margin, y); y += lines.length * 3.5;
-        }
-        if (cache.metar.fltCat) {
-          y += 1;
-          pdf.text(`Catégorie : ${cache.metar.fltCat}`, margin, y); y += 4;
-        }
-      } else {
-        pdf.text('METAR : non disponible', margin, y); y += 4;
-      }
-
-      if (cache?.wind?.current) {
-        y += 1;
-        const c = cache.wind.current;
-        const h = cache.wind.hourly;
-        pdf.text('Vent (open-meteo) :', margin, y); y += 4;
-        const layers = [
-          ['Surface', c.wind_direction_10m, c.wind_speed_10m, c.wind_gusts_10m],
-          ['80m', c.wind_direction_80m, c.wind_speed_80m, null],
-          ['120m', c.wind_direction_120m, c.wind_speed_120m, null],
-          ['950hPa (1640ft)', h.wind_direction_950hPa[0], h.wind_speed_950hPa[0], null],
-          ['925hPa (2480ft)', h.wind_direction_925hPa[0], h.wind_speed_925hPa[0], null]
-        ];
-        layers.forEach(([lbl, dir, spd, gust]) => {
-          let l = `  ${lbl}: ${Math.round(dir)}° ${degToCompass(dir)} / ${Math.round(spd)} kt`;
-          if (gust) l += ` (raf. ${Math.round(gust)})`;
-          pdf.text(l, margin, y); y += 4;
+      // ============= FICHE ACFT =============
+      if (STATE.acft && opts.acft) {
+        y = ensureSpace(pdf, y, 45);
+        y = pdfSectionTitle(pdf, 'Aéronef', y);
+        y = pdfBox(pdf, y, (yy) => {
+          let iy = yy;
+          const a = STATE.acft;
+          if (a.nickname) iy = pdfKV(pdf, 'Nom', a.nickname, iy);
+          if (a.immat) iy = pdfKV(pdf, 'Immatriculation', a.immat, iy);
+          if (a.modele) iy = pdfKV(pdf, 'Modèle', a.modele, iy);
+          if (a.mtow) iy = pdfKV(pdf, 'MTOW', `${a.mtow} kg`, iy);
+          if (a.vcroisiere) iy = pdfKV(pdf, 'V croisière', `${a.vcroisiere} kt`, iy);
+          if (a.conso) iy = pdfKV(pdf, 'Conso', `${a.conso} L/h`, iy);
+          if (a.reservoir) iy = pdfKV(pdf, 'Réservoir', `${a.reservoir} L`, iy);
+          if (a.carburant) iy = pdfKV(pdf, 'Carburant', a.carburant, iy);
+          if (a.radio) iy = pdfKV(pdf, 'Radio', a.radio, iy);
+          if (a.transpondeur) iy = pdfKV(pdf, 'Transpondeur', a.transpondeur, iy);
+          return iy;
         });
       }
 
-      y += 4;
-    }
+      // ============= TRAJET =============
+      const trip = computeTrip();
+      if (opts.trip) {
+        y = ensureSpace(pdf, y, 50);
+        y = pdfSectionTitle(pdf, 'Trajet', y);
 
-    } // fin if opts.weather
+        // Encadré résumé : route + totaux
+        y = pdfBox(pdf, y, (yy) => {
+          let iy = yy;
+          const tripDesc = trip.points.map(p => p.icao).join(' → ');
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(PDF_STYLE.fontSize.body);
+          pdf.text(tripDesc, margin + 3, iy);
+          iy += 5;
+          // Totaux
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(PDF_STYLE.fontSize.body);
+          let totalsParts = [`Total : ${Math.round(trip.totalDist)} km`];
+          if (trip.totalTimeMin) totalsParts.push(fmtMinutes(trip.totalTimeMin));
+          if (trip.totalFuelL) totalsParts.push(`${trip.totalFuelL.toFixed(1)} L`);
+          pdf.text(totalsParts.join('  ·  '), margin + 3, iy);
+          iy += 4.5;
+          return iy;
+        });
 
-    // ============= LOGISTIQUE (CARBURANTS PAR AD) =============
-    if (opts.fuel) {
-    for (const ad of uniquePoints) {
-      const fuel = FUEL_DATA[ad.icao];
-      if (!fuel) continue;
-      if (y > pageH - 40) { pdf.addPage(); y = margin; }
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(10);
-      pdf.text(`Logistique ${ad.icao}`, margin, y); y += 4;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(8);
-      const fuelLine = `  Avgas 100LL: ${fuel.fuel_100ll === true ? 'oui' : fuel.fuel_100ll === false ? 'non' : '?'} · UL91: ${fuel.fuel_ul91 === true ? 'oui' : fuel.fuel_ul91 === false ? 'non' : '?'} · SP98: ${fuel.fuel_sp98 === true ? 'oui' : fuel.fuel_sp98 === false ? 'non' : '?'}`;
-      pdf.text(fuelLine, margin, y); y += 3.5;
-      if (fuel.phone) { pdf.text(`  Tel: ${fuel.phone}`, margin, y); y += 3.5; }
-      if (fuel.hours) { pdf.text(`  Hor: ${fuel.hours}`, margin, y); y += 3.5; }
-      if (fuel.notes) {
-        const lines = pdf.splitTextToSize(`  ${fuel.notes}`, pageW - 2 * margin);
-        pdf.text(lines, margin, y);
-        y += lines.length * 3.5;
-      }
-      y += 2;
-    }
-    } // fin if opts.fuel
+        // Détail des segments
+        if (trip.segments.length > 0) {
+          y = ensureSpace(pdf, y, 8 + trip.segments.length * 5);
+          y = pdfSubTitle(pdf, 'Segments', y + 1);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(PDF_STYLE.fontSize.body);
+          trip.segments.forEach(s => {
+            let line = `${s.from.icao} → ${s.to.icao}   ${Math.round(s.distKm)} km / ${Math.round(s.distNm)} NM   cap ${s.bearing}°`;
+            if (s.timeMin) line += `   ${fmtMinutes(s.timeMin)}`;
+            if (s.fuelL) line += `   ${s.fuelL.toFixed(1)} L`;
+            pdf.text(line, margin + 4, y);
+            y += 4.5;
+          });
+          y += 1;
+        }
 
-    // ============= ZONES AÉRIENNES (avec filtre individuel) =============
-    if (opts.airspaces && opts.selectedAirspaces && opts.selectedAirspaces.length > 0) {
-      if (y > pageH - 40) { pdf.addPage(); y = margin; }
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(11);
-      pdf.text('Zones aériennes traversées', margin, y);
-      y += 5;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(8);
-      
-      for (const as of opts.selectedAirspaces) {
-        if (y > pageH - 30) { pdf.addPage(); y = margin; }
-        const typeInfo = AIRSPACE_TYPES[as.type] || { label: 'OTHER', short: '?' };
-        const altLow = formatAltitude(as.lowerLimit);
-        const altHigh = formatAltitude(as.upperLimit);
-        const hours = formatHoursOfOperation(as.hoursOfOperation);
-        
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(`[${typeInfo.short}] ${as.name}`, margin, y); y += 4;
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(`  Type : ${typeInfo.label}`, margin, y); y += 3.5;
-        pdf.text(`  Altitudes : ${altLow} → ${altHigh}`, margin, y); y += 3.5;
-        pdf.text(`  Horaires : ${hours}`, margin, y); y += 3.5;
+        // Alerte autonomie (fix #10 : remplace ⚠ par [ATTENTION])
+        if (trip.autonomieMin && trip.totalTimeMin > trip.autonomieMin) {
+          y = ensureSpace(pdf, y, 10);
+          pdf.setFillColor(255, 235, 230);
+          pdf.setDrawColor(...PDF_STYLE.colWarn);
+          pdf.setLineWidth(0.3);
+          pdf.rect(margin, y, pageW - 2 * margin, 7, 'FD');
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(PDF_STYLE.fontSize.body);
+          pdf.setTextColor(...PDF_STYLE.colWarn);
+          pdf.text(`[ATTENTION] Temps de vol > autonomie (${fmtMinutes(trip.autonomieMin)}) - avitaillement requis`, margin + 3, y + 4.5);
+          pdf.setTextColor(0);
+          y += 10;
+        }
         y += 2;
       }
-      y += 3;
-    }
 
-    const notes = document.getElementById('notes-textarea').value.trim();
-    if (notes && opts.notes) {
-      if (y > pageH - 30) { pdf.addPage(); y = margin; }
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(11);
-      pdf.text('Notes pilote', margin, y); y += 5;
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
-      const lines = pdf.splitTextToSize(notes, pageW - 2 * margin);
-      pdf.text(lines, margin, y);
-      y += lines.length * 4.5;
-    }
+      // ============= CARTE (screenshot) =============
+      if (opts.map) {
+        y = ensureSpace(pdf, y, 90);
+        y = pdfSectionTitle(pdf, 'Carte aéronautique', y);
 
-    // ============= FOOTER DISCLAIMER =============
-    pdf.setFontSize(7);
-    pdf.setTextColor(120);
-    pdf.text("Données indicatives. Le pilote reste seul responsable de la vérification des informations officielles (SIA, METAR/TAF, NOTAM, AZBA) avant le vol.",
-      margin, pageH - 6, { maxWidth: pageW - 2 * margin });
+        try {
+          const mapEl = document.getElementById('map');
+          // Fix #6 : on est déjà en mode clair grâce à withLightTheme
+          const mapCanvas = await html2canvas(mapEl, {
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false
+          });
+          const mapImg = mapCanvas.toDataURL('image/png');
+          const maxW = pageW - 2 * margin;
+          const mapW = maxW;
+          const mapH = mapW * (mapCanvas.height / mapCanvas.width);
+          // Trace une fine bordure autour de la carte
+          pdf.setDrawColor(...PDF_STYLE.colBorder);
+          pdf.setLineWidth(0.2);
+          pdf.rect(margin, y, mapW, mapH, 'S');
+          pdf.addImage(mapImg, 'PNG', margin, y, mapW, mapH);
+          y += mapH + 4;
+        } catch (e) {
+          // Fix #8 : toast au lieu de console.warn silencieux
+          console.warn("Map screenshot failed", e);
+          showToast('Carte non incluse dans le PDF (échec capture)', 'warn', 4000);
+          // Note dans le PDF lui-même
+          pdf.setFont('helvetica', 'italic');
+          pdf.setFontSize(PDF_STYLE.fontSize.small);
+          pdf.setTextColor(...PDF_STYLE.colTextMuted);
+          pdf.text('[Capture de carte indisponible]', margin + 3, y + 4);
+          pdf.setTextColor(0);
+          y += 8;
+        }
+      }
 
-    // SAVE
-    const filename = `briefing_${trip.points.map(p => p.icao).join('-')}_${now.toISOString().slice(0,10)}.pdf`;
-    pdf.save(filename);
+      // Préparer uniquePoints (utilisé par météo ET logistique)
+      const uniquePoints = [];
+      const _seen = new Set();
+      trip.points.forEach(p => {
+        if (!_seen.has(p.icao)) { uniquePoints.push(p); _seen.add(p.icao); }
+      });
+
+      // ============= MÉTÉO PAR AD =============
+      if (opts.weather && uniquePoints.length > 0) {
+        pdf.addPage();
+        y = margin;
+        y = pdfSectionTitle(pdf, 'Météo par aérodrome', y);
+
+        for (const ad of uniquePoints) {
+          y = ensureSpace(pdf, y, 55);
+          // Sous-titre AD + lien VAC SIA cliquable (fix #7)
+          y = pdfSubTitle(pdf, `${ad.icao}  ·  ${ad.name}`, y);
+
+          // Lien VAC SIA sous le sous-titre, en bleu cliquable
+          const vacUrl = getVacPdfUrl(ad.icao);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(PDF_STYLE.fontSize.small);
+          pdf.setTextColor(20, 80, 200);
+          const linkLabel = 'Ouvrir la fiche VAC SIA officielle';
+          pdf.textWithLink(linkLabel, margin + 3, y, { url: vacUrl });
+          // Souligner le lien
+          const linkW = pdf.getTextWidth(linkLabel);
+          pdf.setDrawColor(20, 80, 200);
+          pdf.setLineWidth(0.15);
+          pdf.line(margin + 3, y + 0.7, margin + 3 + linkW, y + 0.7);
+          pdf.setTextColor(0);
+          y += 4;
+
+          y = pdfBox(pdf, y, (yy) => {
+            let iy = yy;
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(PDF_STYLE.fontSize.small);
+
+            const cache = STATE.weatherCache[ad.icao];
+            if (cache?.metar) {
+              pdf.setFont('helvetica', 'bold');
+              let metarHeader = `METAR (station ${ad.metarStation})`;
+              // Polish #11 : timestamp si dispo
+              if (cache.metar.reportTime) {
+                const reportDate = new Date(cache.metar.reportTime);
+                if (!isNaN(reportDate.getTime())) {
+                  const ageMin = Math.round((Date.now() - reportDate.getTime()) / 60000);
+                  metarHeader += `  -  émis il y a ${ageMin} min`;
+                }
+              }
+              pdf.text(metarHeader, margin + 3, iy);
+              iy += 3.5;
+              pdf.setFont('courier', 'normal');
+              if (cache.metar.rawOb) {
+                const lines = pdf.splitTextToSize(cache.metar.rawOb, pageW - 2 * margin - 6);
+                pdf.text(lines, margin + 3, iy);
+                iy += lines.length * 3.5;
+              }
+              if (cache.metar.rawTaf) {
+                iy += 1;
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('TAF', margin + 3, iy);
+                iy += 3.5;
+                pdf.setFont('courier', 'normal');
+                const lines = pdf.splitTextToSize(cache.metar.rawTaf, pageW - 2 * margin - 6);
+                pdf.text(lines, margin + 3, iy);
+                iy += lines.length * 3.5;
+              }
+              pdf.setFont('helvetica', 'normal');
+              if (cache.metar.fltCat) {
+                iy += 1;
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('Catégorie de vol :', margin + 3, iy);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text(cache.metar.fltCat, margin + 3 + 30, iy);
+                iy += 3.5;
+              }
+            } else {
+              pdf.setFont('helvetica', 'italic');
+              pdf.setTextColor(...PDF_STYLE.colTextMuted);
+              pdf.text('METAR non disponible', margin + 3, iy);
+              pdf.setTextColor(0);
+              iy += 3.5;
+            }
+
+            if (cache?.wind?.current) {
+              iy += 2;
+              pdf.setFont('helvetica', 'bold');
+              pdf.text('Vent (open-meteo)', margin + 3, iy);
+              iy += 3.5;
+              const c = cache.wind.current;
+              const h = cache.wind.hourly;
+              const layers = [
+                ['Surface', c.wind_direction_10m, c.wind_speed_10m, c.wind_gusts_10m],
+                ['80 m', c.wind_direction_80m, c.wind_speed_80m, null],
+                ['120 m', c.wind_direction_120m, c.wind_speed_120m, null],
+                ['950 hPa (~1640 ft)', h.wind_direction_950hPa[0], h.wind_speed_950hPa[0], null],
+                ['925 hPa (~2480 ft)', h.wind_direction_925hPa[0], h.wind_speed_925hPa[0], null]
+              ];
+              pdf.setFont('helvetica', 'normal');
+              layers.forEach(([lbl, dir, spd, gust]) => {
+                let l = `${lbl.padEnd(20, ' ')}  ${Math.round(dir)}° ${degToCompass(dir)}  ${Math.round(spd)} kt`;
+                if (gust) l += `  (raf. ${Math.round(gust)} kt)`;
+                pdf.text(l, margin + 4, iy);
+                iy += 3.5;
+              });
+            }
+
+            return iy;
+          });
+        }
+
+        // Lien Aeroweb TEMSI cliquable (fix #7 bis)
+        y = ensureSpace(pdf, y, 10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(PDF_STYLE.fontSize.small);
+        pdf.setTextColor(20, 80, 200);
+        const aerowebLabel = 'Ouvrir Aeroweb (TEMSI, vent altitude, SIGMET)';
+        const aerowebUrl = 'https://aviation.meteo.fr/login.php';
+        pdf.textWithLink(aerowebLabel, margin, y, { url: aerowebUrl });
+        const aerowebW = pdf.getTextWidth(aerowebLabel);
+        pdf.setDrawColor(20, 80, 200);
+        pdf.setLineWidth(0.15);
+        pdf.line(margin, y + 0.7, margin + aerowebW, y + 0.7);
+        pdf.setTextColor(0);
+        y += 5;
+      }
+
+      // ============= LOGISTIQUE (CARBURANTS PAR AD) =============
+      if (opts.fuel) {
+        // Vérifier qu'il y a des données fuel à afficher
+        const hasFuelData = uniquePoints.some(ad => FUEL_DATA[ad.icao]);
+        if (hasFuelData) {
+          y = ensureSpace(pdf, y, 30);
+          y = pdfSectionTitle(pdf, 'Logistique aérodromes', y);
+
+          for (const ad of uniquePoints) {
+            const fuel = FUEL_DATA[ad.icao];
+            if (!fuel) continue;
+            y = ensureSpace(pdf, y, 25);
+            y = pdfSubTitle(pdf, ad.icao, y);
+            y = pdfBox(pdf, y, (yy) => {
+              let iy = yy;
+              const yesNo = (v) => v === true ? 'oui' : v === false ? 'non' : '?';
+              pdf.setFont('helvetica', 'normal');
+              pdf.setFontSize(PDF_STYLE.fontSize.small);
+              const fuelLine = `Avgas 100LL : ${yesNo(fuel.fuel_100ll)}     UL91 : ${yesNo(fuel.fuel_ul91)}     SP98 : ${yesNo(fuel.fuel_sp98)}`;
+              pdf.text(fuelLine, margin + 3, iy);
+              iy += 4;
+              if (fuel.phone) {
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('Tel :', margin + 3, iy);
+                pdf.setFont('helvetica', 'normal');
+                // Lien cliquable tel:
+                pdf.setTextColor(20, 80, 200);
+                pdf.textWithLink(fuel.phone, margin + 3 + 8, iy, { url: `tel:${fuel.phone.replace(/\s/g, '')}` });
+                pdf.setTextColor(0);
+                iy += 4;
+              }
+              if (fuel.hours) {
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('Horaires :', margin + 3, iy);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text(fuel.hours, margin + 3 + 16, iy);
+                iy += 4;
+              }
+              if (fuel.notes) {
+                const lines = pdf.splitTextToSize(fuel.notes, pageW - 2 * margin - 6);
+                pdf.text(lines, margin + 3, iy);
+                iy += lines.length * 3.5;
+              }
+              return iy;
+            });
+          }
+        }
+      }
+
+      // ============= ZONES AÉRIENNES (avec filtre individuel) =============
+      if (opts.airspaces && opts.selectedAirspaces && opts.selectedAirspaces.length > 0) {
+        y = ensureSpace(pdf, y, 30);
+        y = pdfSectionTitle(pdf, 'Zones aériennes traversées', y);
+        for (const as of opts.selectedAirspaces) {
+          y = ensureSpace(pdf, y, 22);
+          const typeInfo = AIRSPACE_TYPES[as.type] || { label: 'OTHER', short: '?' };
+          y = pdfBox(pdf, y, (yy) => {
+            let iy = yy;
+            // Header zone : type en pastille + nom
+            pdf.setFillColor(...PDF_STYLE.colDark);
+            pdf.rect(margin + 3, iy - 3, 8, 4, 'F');
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(PDF_STYLE.fontSize.micro);
+            pdf.setTextColor(255);
+            pdf.text(typeInfo.short, margin + 4.5, iy);
+            pdf.setTextColor(0);
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(PDF_STYLE.fontSize.body);
+            pdf.text(as.name, margin + 13, iy);
+            iy += 4.5;
+
+            const altLow = formatAltitude(as.lowerLimit);
+            const altHigh = formatAltitude(as.upperLimit);
+            const hours = formatHoursOfOperation(as.hoursOfOperation);
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(PDF_STYLE.fontSize.small);
+            pdf.text(`Type : ${typeInfo.label}`, margin + 3, iy);
+            iy += 3.5;
+            pdf.text(`Altitudes : ${altLow} → ${altHigh}`, margin + 3, iy);
+            iy += 3.5;
+            pdf.text(`Horaires : ${hours}`, margin + 3, iy);
+            iy += 3.5;
+            return iy;
+          });
+        }
+      }
+
+      // ============= NOTES PILOTE =============
+      const notes = document.getElementById('notes-textarea').value.trim();
+      if (notes && opts.notes) {
+        y = ensureSpace(pdf, y, 30);
+        y = pdfSectionTitle(pdf, 'Notes pilote', y);
+        y = pdfBox(pdf, y, (yy) => {
+          let iy = yy;
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(PDF_STYLE.fontSize.body);
+          const lines = pdf.splitTextToSize(notes, pageW - 2 * margin - 6);
+          pdf.text(lines, margin + 3, iy);
+          iy += lines.length * 4.5;
+          return iy;
+        });
+      }
+
+      // ============= FOOTER DISCLAIMER (sur chaque page) =============
+      const totalPages = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(PDF_STYLE.fontSize.micro);
+        pdf.setTextColor(...PDF_STYLE.colTextMuted);
+        // Ligne de séparation footer
+        pdf.setDrawColor(...PDF_STYLE.colBorder);
+        pdf.setLineWidth(0.2);
+        pdf.line(margin, pageH - 10, pageW - margin, pageH - 10);
+        // Pagination à droite, disclaimer à gauche
+        pdf.text(`Page ${i} / ${totalPages}`, pageW - margin, pageH - 6, { align: 'right' });
+        pdf.text("Données indicatives - le pilote reste seul responsable de la vérification SIA / METAR / TAF / NOTAM / AZBA avant le vol.",
+          margin, pageH - 6, { maxWidth: pageW - 2 * margin - 25 });
+        pdf.setTextColor(0);
+      }
+
+      // SAVE
+      const filename = `briefing_${trip.points.map(p => p.icao).join('-')}_${now.toISOString().slice(0,10)}.pdf`;
+      pdf.save(filename);
+      showToast(`PDF généré (${totalPages} page${totalPages > 1 ? 's' : ''})`, 'ok', 3000);
+    }); // fin withLightTheme
   } catch (e) {
+    // Fix #9 : toast au lieu d'alert()
     console.error("PDF generation failed", e);
-    alert("Erreur génération PDF : " + e.message);
+    showToast(`Erreur génération PDF : ${e.message}`, 'err', 6000);
   } finally {
     btnText.textContent = originalText;
     btn.disabled = false;
   }
 }
+
 
 // ============================================================
 // PDF MODAL & GENERATION
