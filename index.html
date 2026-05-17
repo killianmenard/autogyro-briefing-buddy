@@ -2660,6 +2660,91 @@ function refreshAdCards() {
 // (cohérent avec le dashboard)
 // ============================================================
 
+// Force le thème clair pendant la génération PDF, puis le restaure
+async function withLightTheme(asyncFn) {
+  const html = document.documentElement;
+  const wasDark = html.classList.contains('dark');
+  if (wasDark) {
+    html.classList.remove('dark');
+    // Attendre 2 frames pour que le browser re-paint complètement
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise(r => setTimeout(r, 100));
+  }
+  try {
+    return await asyncFn();
+  } finally {
+    if (wasDark) html.classList.add('dark');
+  }
+}
+
+// === CAPTURE CARTE POUR PDF (Leaflet + html2canvas, alignement fiable) ===
+// Le problème classique : Leaflet utilise `transform: translate3d(...)` pour
+// positionner tiles, markers et polylines. html2canvas se plante si les tiles
+// ne sont pas chargées, ou si la carte n'est pas dans le viewport. Fix :
+// 1) scroll la carte dans le viewport, 2) invalidateSize(), 3) wait tiles,
+// 4) ignore les contrôles (zoom + fullscreen) qui ont des transforms 3D parasites.
+async function captureMapForPdf() {
+  const mapEl = document.getElementById('map');
+  if (!mapEl) return null;
+
+  // 1. Scroll la carte dans le viewport (sinon html2canvas peut capturer du vide)
+  try { mapEl.scrollIntoView({ behavior: 'instant', block: 'center' }); }
+  catch (e) { mapEl.scrollIntoView(); /* fallback Safari ancien */ }
+
+  // 2. Force Leaflet à recalculer la layout
+  if (typeof map !== 'undefined' && map) {
+    try { map.invalidateSize({ animate: false }); } catch (e) {}
+  }
+
+  // 3. Attendre que toutes les tiles visibles soient chargées (max 1.5s)
+  await new Promise(r => setTimeout(r, 600));
+
+  // 4. Screenshot avec options optimisées
+  try {
+    const canvas = await html2canvas(mapEl, {
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      scale: 1.5, // Compromis qualité/poids pour PDF A4
+      // Ignorer les contrôles Leaflet (transforms 3D parasites)
+      ignoreElements: (el) => {
+        if (!el.classList) return false;
+        return el.classList.contains('leaflet-control-zoom') ||
+               el.classList.contains('leaflet-control-attribution') ||
+               el.classList.contains('map-fs-close') ||
+               el.classList.contains('map-exit-fullscreen-btn') ||
+               el.classList.contains('leaflet-control-layers');
+      }
+    });
+    return canvas;
+  } catch (e) {
+    console.warn('[captureMapForPdf] échec:', e);
+    return null;
+  }
+}
+
+// === LIEN CLIQUABLE PDF AVEC ZONE TAP ÉLARGIE (iPhone friendly) ===
+// pdf.textWithLink crée une annotation autour du bounding box du texte (étroit).
+// Sur iPhone, taper précisément sur une ligne fine de 9pt est galère.
+// Solution : on dessine le texte + souligne + on définit une zone link
+// rectangulaire de 5mm de haut (≈ 14pt), bien plus facile à tap.
+function pdfClickableLink(pdf, label, x, y, url) {
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(PDF_STYLE.fontSize.small);
+  pdf.setTextColor(20, 80, 200);
+  pdf.text(label, x, y);
+  const w = pdf.getTextWidth(label);
+  // Souligne le texte
+  pdf.setDrawColor(20, 80, 200);
+  pdf.setLineWidth(0.15);
+  pdf.line(x, y + 0.7, x + w, y + 0.7);
+  // Zone cliquable explicite : 5mm de haut, débordant de 1mm en haut/bas/côté
+  pdf.link(x - 1, y - 3.5, w + 2, 5, { url });
+  pdf.setTextColor(0);
+  return w;
+}
+
 // === HELPERS PDF (style dashboard) ===
 const PDF_STYLE = {
   margin: 12,
@@ -2738,23 +2823,6 @@ function ensureSpace(pdf, y, needed) {
     return margin;
   }
   return y;
-}
-
-// Force le thème clair pendant la génération PDF, puis le restaure
-async function withLightTheme(asyncFn) {
-  const html = document.documentElement;
-  const wasDark = html.classList.contains('dark');
-  if (wasDark) {
-    html.classList.remove('dark');
-    // Attendre 2 frames pour que le browser re-paint complètement
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    await new Promise(r => setTimeout(r, 100));
-  }
-  try {
-    return await asyncFn();
-  } finally {
-    if (wasDark) html.classList.add('dark');
-  }
 }
 
 // === GÉNÉRATEUR PRINCIPAL ===
@@ -2877,15 +2945,9 @@ async function _doGeneratePdf(opts) {
         y = ensureSpace(pdf, y, 90);
         y = pdfSectionTitle(pdf, 'Carte aéronautique', y);
 
-        try {
-          const mapEl = document.getElementById('map');
-          // Fix #6 : on est déjà en mode clair grâce à withLightTheme
-          const mapCanvas = await html2canvas(mapEl, {
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            logging: false
-          });
+        // Utilise le helper dédié (scroll + invalidateSize + wait + ignore controls)
+        const mapCanvas = await captureMapForPdf();
+        if (mapCanvas) {
           const mapImg = mapCanvas.toDataURL('image/png');
           const maxW = pageW - 2 * margin;
           const mapW = maxW;
@@ -2896,9 +2958,8 @@ async function _doGeneratePdf(opts) {
           pdf.rect(margin, y, mapW, mapH, 'S');
           pdf.addImage(mapImg, 'PNG', margin, y, mapW, mapH);
           y += mapH + 4;
-        } catch (e) {
+        } else {
           // Fix #8 : toast au lieu de console.warn silencieux
-          console.warn("Map screenshot failed", e);
           showToast('Carte non incluse dans le PDF (échec capture)', 'warn', 4000);
           // Note dans le PDF lui-même
           pdf.setFont('helvetica', 'italic');
@@ -2928,19 +2989,9 @@ async function _doGeneratePdf(opts) {
           // Sous-titre AD + lien VAC SIA cliquable (fix #7)
           y = pdfSubTitle(pdf, `${ad.icao}  ·  ${ad.name}`, y);
 
-          // Lien VAC SIA sous le sous-titre, en bleu cliquable
+          // Lien VAC SIA sous le sous-titre, en bleu cliquable avec zone tap large (iPhone friendly)
           const vacUrl = getVacPdfUrl(ad.icao);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setFontSize(PDF_STYLE.fontSize.small);
-          pdf.setTextColor(20, 80, 200);
-          const linkLabel = 'Ouvrir la fiche VAC SIA officielle';
-          pdf.textWithLink(linkLabel, margin + 3, y, { url: vacUrl });
-          // Souligner le lien
-          const linkW = pdf.getTextWidth(linkLabel);
-          pdf.setDrawColor(20, 80, 200);
-          pdf.setLineWidth(0.15);
-          pdf.line(margin + 3, y + 0.7, margin + 3 + linkW, y + 0.7);
-          pdf.setTextColor(0);
+          pdfClickableLink(pdf, 'Ouvrir la fiche VAC SIA officielle', margin + 3, y, vacUrl);
           y += 4;
 
           y = pdfBox(pdf, y, (yy) => {
@@ -3022,19 +3073,9 @@ async function _doGeneratePdf(opts) {
           });
         }
 
-        // Lien Aeroweb TEMSI cliquable (fix #7 bis)
+        // Lien Aeroweb TEMSI cliquable (fix #7 bis) avec zone tap large
         y = ensureSpace(pdf, y, 10);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(PDF_STYLE.fontSize.small);
-        pdf.setTextColor(20, 80, 200);
-        const aerowebLabel = 'Ouvrir Aeroweb (TEMSI, vent altitude, SIGMET)';
-        const aerowebUrl = 'https://aviation.meteo.fr/login.php';
-        pdf.textWithLink(aerowebLabel, margin, y, { url: aerowebUrl });
-        const aerowebW = pdf.getTextWidth(aerowebLabel);
-        pdf.setDrawColor(20, 80, 200);
-        pdf.setLineWidth(0.15);
-        pdf.line(margin, y + 0.7, margin + aerowebW, y + 0.7);
-        pdf.setTextColor(0);
+        pdfClickableLink(pdf, 'Ouvrir Aeroweb (TEMSI, vent altitude, SIGMET)', margin, y, 'https://aviation.meteo.fr/login.php');
         y += 5;
       }
 
@@ -3061,12 +3102,10 @@ async function _doGeneratePdf(opts) {
               iy += 4;
               if (fuel.phone) {
                 pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(PDF_STYLE.fontSize.small);
                 pdf.text('Tel :', margin + 3, iy);
-                pdf.setFont('helvetica', 'normal');
-                // Lien cliquable tel:
-                pdf.setTextColor(20, 80, 200);
-                pdf.textWithLink(fuel.phone, margin + 3 + 8, iy, { url: `tel:${fuel.phone.replace(/\s/g, '')}` });
-                pdf.setTextColor(0);
+                // Lien cliquable tel: avec zone tap large
+                pdfClickableLink(pdf, fuel.phone, margin + 3 + 8, iy, `tel:${fuel.phone.replace(/\s/g, '')}`);
                 iy += 4;
               }
               if (fuel.hours) {
@@ -3162,7 +3201,12 @@ async function _doGeneratePdf(opts) {
       // SAVE
       const filename = `briefing_${trip.points.map(p => p.icao).join('-')}_${now.toISOString().slice(0,10)}.pdf`;
       pdf.save(filename);
-      showToast(`PDF généré (${totalPages} page${totalPages > 1 ? 's' : ''})`, 'ok', 3000);
+      // Toast de succès
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const msg = isIos
+        ? `PDF généré (${totalPages} pages) — sur iPhone, ouvre dans Fichiers pour activer les liens cliquables`
+        : `PDF généré (${totalPages} page${totalPages > 1 ? 's' : ''})`;
+      showToast(msg, 'ok', isIos ? 7000 : 3000);
     }); // fin withLightTheme
   } catch (e) {
     // Fix #9 : toast au lieu d'alert()
