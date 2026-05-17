@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>autogyrodash v0.4.0 — planification de vol VFR autogire</title>
+<title>autogyrodash v0.4.1 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -457,7 +457,7 @@
       <div class="flex items-center gap-2 header-pill-brand">
         <i data-lucide="plane" class="h-4 w-4"></i>
         <span class="font-semibold text-sm" style="text-transform:none;letter-spacing:0;">autogyrodash</span>
-        <span class="text-xs text-muted pre-mono">v0.4.0</span>
+        <span class="text-xs text-muted pre-mono">v0.4.1</span>
       </div>
       
       <!-- Toggle hamburger : visible seulement sur mobile -->
@@ -2677,51 +2677,94 @@ async function withLightTheme(asyncFn) {
   }
 }
 
-// === CAPTURE CARTE POUR PDF (Leaflet + html2canvas, alignement fiable) ===
-// Le problème classique : Leaflet utilise `transform: translate3d(...)` pour
-// positionner tiles, markers et polylines. html2canvas se plante si les tiles
-// ne sont pas chargées, ou si la carte n'est pas dans le viewport. Fix :
-// 1) scroll la carte dans le viewport, 2) invalidateSize(), 3) wait tiles,
-// 4) ignore les contrôles (zoom + fullscreen) qui ont des transforms 3D parasites.
+// === CAPTURE CARTE POUR PDF (Leaflet + html2canvas, alignement + cadrage fiable) ===
+// Stratégie :
+//   1) Sauvegarder l'état utilisateur (center, zoom, overlay OpenAIP)
+//   2) Désactiver l'overlay OpenAIP (encombre, pas pertinent en PDF briefing)
+//   3) Si on a un trajet : fitBounds() sur les markers du trajet avec padding
+//   4) Forcer invalidateSize + attendre 600ms pour stabilisation tiles
+//   5) html2canvas avec ignore des contrôles Leaflet
+//   6) Restaurer l'état initial (center, zoom, overlay)
 async function captureMapForPdf() {
   const mapEl = document.getElementById('map');
-  if (!mapEl) return null;
+  if (!mapEl || typeof map === 'undefined' || !map) return null;
 
-  // 1. Scroll la carte dans le viewport (sinon html2canvas peut capturer du vide)
-  try { mapEl.scrollIntoView({ behavior: 'instant', block: 'center' }); }
-  catch (e) { mapEl.scrollIntoView(); /* fallback Safari ancien */ }
+  // === 1. Sauvegarder l'état utilisateur ===
+  const savedCenter = map.getCenter();
+  const savedZoom = map.getZoom();
+  // Sauver les layers OpenAIP actifs (pour les ré-ajouter après)
+  const overlaysHidden = [];
+  map.eachLayer(layer => {
+    // Détecte les tile layers OpenAIP (URL contient 'openaip')
+    if (layer._url && layer._url.includes('openaip')) {
+      overlaysHidden.push(layer);
+    }
+  });
+  overlaysHidden.forEach(l => map.removeLayer(l));
 
-  // 2. Force Leaflet à recalculer la layout
-  if (typeof map !== 'undefined' && map) {
-    try { map.invalidateSize({ animate: false }); } catch (e) {}
+  // === 2. Cadrer sur le trajet si on a des markers ===
+  // Cherche les markers actifs du trajet dans markerLayer (cf. code app)
+  let fittedToTrip = false;
+  try {
+    if (typeof markerLayer !== 'undefined' && markerLayer) {
+      const tripMarkers = [];
+      markerLayer.eachLayer(m => {
+        if (m.getLatLng) tripMarkers.push(m.getLatLng());
+      });
+      if (tripMarkers.length >= 2) {
+        const bounds = L.latLngBounds(tripMarkers);
+        map.fitBounds(bounds, { padding: [40, 40], animate: false, maxZoom: 10 });
+        fittedToTrip = true;
+      } else if (tripMarkers.length === 1) {
+        map.setView(tripMarkers[0], 10, { animate: false });
+        fittedToTrip = true;
+      }
+    }
+  } catch (e) {
+    console.warn('[captureMapForPdf] fitBounds échec:', e);
   }
 
-  // 3. Attendre que toutes les tiles visibles soient chargées (max 1.5s)
-  await new Promise(r => setTimeout(r, 600));
+  // === 3. Scroll dans le viewport + invalidateSize ===
+  try { mapEl.scrollIntoView({ behavior: 'instant', block: 'center' }); }
+  catch (e) { mapEl.scrollIntoView(); }
+  try { map.invalidateSize({ animate: false }); } catch (e) {}
 
-  // 4. Screenshot avec options optimisées
+  // === 4. Attendre la stabilisation des tiles (zoom changé → reload) ===
+  await new Promise(r => setTimeout(r, fittedToTrip ? 900 : 600));
+
+  // === 5. Capture ===
+  let canvas = null;
   try {
-    const canvas = await html2canvas(mapEl, {
+    canvas = await html2canvas(mapEl, {
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
       logging: false,
-      scale: 1.5, // Compromis qualité/poids pour PDF A4
-      // Ignorer les contrôles Leaflet (transforms 3D parasites)
+      scale: 1.5,
       ignoreElements: (el) => {
         if (!el.classList) return false;
         return el.classList.contains('leaflet-control-zoom') ||
                el.classList.contains('leaflet-control-attribution') ||
+               el.classList.contains('leaflet-control-layers') ||
                el.classList.contains('map-fs-close') ||
-               el.classList.contains('map-exit-fullscreen-btn') ||
-               el.classList.contains('leaflet-control-layers');
+               el.classList.contains('map-exit-fullscreen-btn');
       }
     });
-    return canvas;
   } catch (e) {
-    console.warn('[captureMapForPdf] échec:', e);
-    return null;
+    console.warn('[captureMapForPdf] html2canvas échec:', e);
   }
+
+  // === 6. Restaurer l'état initial (overlay + zoom) ===
+  try {
+    overlaysHidden.forEach(l => l.addTo(map));
+    if (fittedToTrip) {
+      map.setView(savedCenter, savedZoom, { animate: false });
+    }
+  } catch (e) {
+    console.warn('[captureMapForPdf] restore état échec:', e);
+  }
+
+  return canvas;
 }
 
 // === LIEN CLIQUABLE PDF AVEC ZONE TAP ÉLARGIE (iPhone friendly) ===
@@ -2856,7 +2899,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  autogyrodash v0.4.0`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  autogyrodash v0.4.1`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;
@@ -2891,7 +2934,7 @@ async function _doGeneratePdf(opts) {
         // Encadré résumé : route + totaux
         y = pdfBox(pdf, y, (yy) => {
           let iy = yy;
-          const tripDesc = trip.points.map(p => p.icao).join(' → ');
+          const tripDesc = trip.points.map(p => p.icao).join(' -> ');
           pdf.setFont('helvetica', 'bold');
           pdf.setFontSize(PDF_STYLE.fontSize.body);
           pdf.text(tripDesc, margin + 3, iy);
@@ -2914,7 +2957,7 @@ async function _doGeneratePdf(opts) {
           pdf.setFont('helvetica', 'normal');
           pdf.setFontSize(PDF_STYLE.fontSize.body);
           trip.segments.forEach(s => {
-            let line = `${s.from.icao} → ${s.to.icao}   ${Math.round(s.distKm)} km / ${Math.round(s.distNm)} NM   cap ${s.bearing}°`;
+            let line = `${s.from.icao} -> ${s.to.icao}   ${Math.round(s.distKm)} km / ${Math.round(s.distNm)} NM   cap ${s.bearing}°`;
             if (s.timeMin) line += `   ${fmtMinutes(s.timeMin)}`;
             if (s.fuelL) line += `   ${s.fuelL.toFixed(1)} L`;
             pdf.text(line, margin + 4, y);
@@ -3155,7 +3198,7 @@ async function _doGeneratePdf(opts) {
             pdf.setFontSize(PDF_STYLE.fontSize.small);
             pdf.text(`Type : ${typeInfo.label}`, margin + 3, iy);
             iy += 3.5;
-            pdf.text(`Altitudes : ${altLow} → ${altHigh}`, margin + 3, iy);
+            pdf.text(`Altitudes : ${altLow} -> ${altHigh}`, margin + 3, iy);
             iy += 3.5;
             pdf.text(`Horaires : ${hours}`, margin + 3, iy);
             iy += 3.5;
