@@ -9,7 +9,7 @@
  * - Pass-through (no-cache) : appels API live (METAR, vent, météo). Toujours réseau.
  *   Le cache de fraîcheur des données est géré dans l'app via localStorage (TTL court).
  */
-const VERSION = 'v0.4.3';
+const VERSION = 'v0.4.4';
 const CACHE_STATIC = `autogyrodash-static-${VERSION}`;
 const CACHE_TILES = `autogyrodash-tiles-${VERSION}`;
 
