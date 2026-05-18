@@ -1,19 +1,12 @@
 /* ============================================================
-   AutogyroDash — extensions v0.6.3
+   AutogyroDash — extensions v0.6.4
    ------------------------------------------------------------
-   Nouveau dans v0.6.3 :
-     - Toggle satellite REFAIT : pilule à gauche du label
-       "affichage" dans la barre météo. ON cache temp/vent/nuages,
-       OFF les restaure.
-     - Plein écran météo : overlay top-left avec tous les boutons
-       modes visibles et tappables.
-     - Brief pré-vol restructuré :
-         [AZBA] [NOTAM]    (2 colonnes desktop)
-         [Météo] [Windy]   (2 colonnes desktop)
-         [Trajet]          (pleine largeur)
-     - Dashboard max-width 90vw.
-     - Fiche ACFT : suppression redondance immat,
-       indicatif radio dans l'espace vide à côté.
+   Nouveau dans v0.6.4 (hotfix v0.6.3) :
+     - FIX CRITIQUE : navigation tabs cassée (tab-plan
+       display:block !important empêchait .hidden)
+     - FIX CRITIQUE : blocs AZBA/NOTAM/météo collés à gauche
+       (tab-plan natif en grid 2 cols → forcé en flex column)
+     - Hard override des classes .hidden sur tous les tabs
    ============================================================ */
 
 (async function() {
@@ -59,9 +52,9 @@
   }
 
   try {
-    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.3');
+    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.4');
     document.querySelectorAll('span.text-xs.pre-mono').forEach(s => {
-      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.3';
+      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.4';
     });
   } catch (e) {}
 
@@ -250,7 +243,7 @@
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🌤️ Météo aviation</h3><p class="text-xs">METAR/TAF : <strong>aviationweather.gov</strong>. Visuel : <strong>Windy.com</strong>.</p></div>
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🛡️ Espaces aériens</h3><p class="text-xs">Source : <strong>OpenAIP</strong>.</p></div>
       </div>
-      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.3</div>
+      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.4</div>
     `;
   }
   function setupResourcesNav() {
@@ -828,19 +821,29 @@ body > header, body header { max-width: 100% !important; }
   .vfr-row-2cols { grid-template-columns: 1fr; }
 }
 
-/* === Bloc Trajet en pleine largeur === */
-#tab-plan {
-  display: block !important;
+/* === FIX v0.6.4 : tab-plan en flex column UNIQUEMENT quand visible === */
+/* :not(.hidden) garantit que la classe hidden cache toujours le tab */
+#tab-plan:not(.hidden) {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
 }
 #tab-plan > * {
-  width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
 }
-/* Le bloc trajet (qui contient les inputs ad-input ou clear-trip) prend toute la largeur */
+/* Bloc trajet pleine largeur */
 #tab-plan .card:has(input[id^="ad-input"]),
 #tab-plan .card:has(#clear-trip),
 #tab-plan .card:has(#loop-checkbox) {
   width: 100% !important;
-  grid-column: 1 / -1 !important;
+}
+/* Sécurité : on s'assure que les autres tabs gardent leur display original quand cachés */
+#tab-acft.hidden, #tab-history.hidden, #tab-resources.hidden, #tab-params.hidden, #tab-sources.hidden {
+  display: none !important;
+}
+#tab-plan.hidden {
+  display: none !important;
 }
 
 /* === Pas de gradient en mode nuit === */
@@ -880,7 +883,7 @@ html.dark .map-fullscreen-wf #sat-toggle-pill {
   // BOOT
   // ============================================================
   if (typeof showToast === 'function') {
-    showToast('✓ v0.6.3 chargé', 'ok', 3000);
+    showToast('✓ v0.6.4 chargé', 'ok', 3000);
   }
-  console.log('[Extensions v0.6.3] Intégration terminée');
+  console.log('[Extensions v0.6.4] Intégration terminée');
 })();
