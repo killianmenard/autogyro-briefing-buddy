@@ -1,18 +1,15 @@
 /* ============================================================
-   AutogyroDash — BASULM integration v0.5.2
+   AutogyroDash — BASULM integration v0.5.3
    ------------------------------------------------------------
-   v0.5.0 baseline : markers + toggle + autocomplete + fiche
-   v0.5.1 : légende, popup détails, toggle blocs, sources tab,
-            dropdown unités, thème icon, mention VAC
-   v0.5.2 fixes :
-     - FIX CRITIQUE : pas de wrap details du map-container
-       (restaure OpenAIP overlay + bouton plein écran)
-     - "Autre" renommé "Divers / spécifique" + couleur jaune
-     - Puce orange hors toggle retirée (légende seule)
-     - Desktop : zones aériennes + résumé en 2 colonnes
-     - Mobile : onglet "paramètres" agrégeant tous les contrôles
-       (unités, thème, refresh, vider, reset, clé OpenAIP)
-     - Pilule mobile simplifiée : juste navigation entre pages
+   v0.5.0/0.5.1/0.5.2 : voir historique GitHub
+   v0.5.3 fixes :
+     - METAR/TAF brut : white-space pre-wrap pour wrap mobile
+     - OpenAIP : refresh forcé au boot + bouton recharger
+     - Pilule épurée : cache unités/thème/actions sur desktop
+       (tout est dans Paramètres) + centre les 4 tabs
+     - Mobile fullscreen carte : 1 seul bouton "quitter"
+     - Mobile tabs en colonne (sélecteur :has(.tab-btn))
+     - Heure UTC temps réel (setInterval 1s)
    ============================================================ */
 
 (async function() {
@@ -77,16 +74,15 @@
     isBasulm: true, basulm: p, metarStation: null
   }));
 
-  console.log('[BASULM v0.5.2] ' + PLATFORMS.length + ' plateformes ULM chargées');
+  console.log('[BASULM v0.5.3] ' + PLATFORMS.length + ' plateformes ULM chargées');
 
   try {
-    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.5.2');
+    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.5.3');
     document.querySelectorAll('span.text-xs.pre-mono').forEach(s => {
-      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.5.2';
+      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.5.3';
     });
   } catch (e) {}
 
-  // Catégories — "autre" renommé en "Divers / spécifique" + jaune ambré
   const CAT_STYLE = {
     baseulm:      { color: '#EA580C', fill: '#FB923C', icon: '🛩️', label: 'Base ULM' },
     aerodrome:    { color: '#7C3AED', fill: '#A78BFA', icon: '✈️', label: 'Aérodrome privé' },
@@ -109,6 +105,20 @@
   const COUNTS = PLATFORMS.reduce((acc, p) => {
     const t = p.basulm.t; acc[t] = (acc[t] || 0) + 1; return acc;
   }, {});
+
+  // ============ HORLOGE UTC TEMPS RÉEL =========================
+  // v0.5.3 : remplace l'heure FR statique par UTC qui s'actualise toutes les secondes
+  function updateUtcClock() {
+    const el = document.getElementById('briefing-time');
+    if (!el) return;
+    const now = new Date();
+    const h = String(now.getUTCHours()).padStart(2, '0');
+    const m = String(now.getUTCMinutes()).padStart(2, '0');
+    const s = String(now.getUTCSeconds()).padStart(2, '0');
+    el.textContent = `${h}:${m}:${s}Z`;
+  }
+  updateUtcClock();
+  setInterval(updateUtcClock, 1000);
 
   // ============ MARKERS + POPUP ===============================
   const basulmLayer = L.layerGroup();
@@ -176,8 +186,27 @@
   });
   if (basulmVisible) basulmLayer.addTo(map);
 
+  // ============ FORCE OPENAIP RE-INIT (v0.5.3) =================
+  // Workaround : sur certains devices iOS, refreshOpenaipLayers()
+  // appelé par initMap() ne monte pas l'overlay. On force un retry
+  // ici, après basulm.json chargé et DOM stable.
+  function forceOpenaipReload() {
+    try {
+      if (typeof getOpenaipKey === 'function' && getOpenaipKey()
+          && typeof refreshOpenaipLayers === 'function') {
+        refreshOpenaipLayers();
+        if (typeof map !== 'undefined' && map) {
+          setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 200);
+        }
+        console.log('[BASULM v0.5.3] OpenAIP overlay force-reloaded');
+      }
+    } catch (e) {
+      console.warn('[BASULM v0.5.3] forceOpenaipReload error', e);
+    }
+  }
+  setTimeout(forceOpenaipReload, 400);
+
   // ============ TOGGLE BASULM + LÉGENDE ========================
-  // CORRECTION : retiré la puce orange à côté du titre (légende seule)
   const mapControls = document.getElementById('map-controls');
   if (mapControls) {
     const wrapper = document.createElement('div');
@@ -390,11 +419,7 @@
     if (window.lucide) window.lucide.createIcons();
   }
 
-  // ============ TOGGLE BLOCS (PAS MAP-CONTAINER) ===============
-  // FIX CRITIQUE v0.5.2 : on NE wrap PAS le map-container
-  // (sinon getElementById('map-container') retourne null après wrap
-  //  → toggleMapFullscreen() casse → bouton plein écran KO + OpenAIP
-  //  ne s'affiche pas correctement)
+  // ============ WRAP DETAILS POUR LES BLOCS ===================
   function wrapInDetails(el, title, open = true) {
     if (!el || el.dataset.wrapped === '1') return null;
     const details = document.createElement('details');
@@ -421,13 +446,11 @@
   }
 
   function makeBlocksToggleable() {
-    // Zones aériennes
     const airspaces = document.getElementById('airspaces-section');
     if (airspaces && airspaces.dataset.wrapped !== '1') {
       const inner = airspaces.querySelector('.card');
       if (inner) { wrapInDetails(inner, 'Zones aériennes traversées', true); airspaces.dataset.wrapped = '1'; }
     }
-    // Résumé du trajet
     const tripSummary = document.getElementById('trip-summary');
     if (tripSummary && tripSummary.dataset.wrapped !== '1') {
       const inner = tripSummary.querySelector('.card');
@@ -471,20 +494,15 @@
   makeBlocksToggleable();
 
   // ============ LAYOUT 2 COLONNES DESKTOP ======================
-  // Zones aériennes + Résumé du trajet côte à côte sur lg+
   function reflow2ColLayout() {
     const airspaces = document.getElementById('airspaces-section');
     const tripSummary = document.getElementById('trip-summary');
     if (!airspaces || !tripSummary) return;
     if (airspaces.parentNode !== tripSummary.parentNode) return;
     if (airspaces.parentNode.dataset.reflowed === '1') return;
-
     const wrapper = document.createElement('div');
     wrapper.className = 'grid grid-cols-1 lg:grid-cols-2 gap-4 mt-3';
-    wrapper.dataset.reflowedWrapper = '1';
-    // Insère le wrapper avant airspaces
     airspaces.parentNode.insertBefore(wrapper, airspaces);
-    // Retire mt-3 sur les sections (puisque c'est sur le wrapper)
     airspaces.classList.remove('mt-3');
     tripSummary.classList.remove('mt-3');
     wrapper.appendChild(airspaces);
@@ -494,42 +512,12 @@
   reflow2ColLayout();
 
   // ============ ONGLET "SOURCES" ===============================
-  function addSourcesTab() {
-    const acftTab = document.querySelector('.tab-btn[data-tab="acft"]');
-    if (!acftTab || document.querySelector('.tab-btn[data-tab="sources"]')) return;
-    const tab = document.createElement('span');
-    tab.className = 'tab-btn';
-    tab.dataset.tab = 'sources';
-    tab.textContent = 'sources';
-    acftTab.parentNode.insertBefore(tab, acftTab.nextSibling);
-
-    const main = document.querySelector('main');
-    if (!main) return;
-    const section = document.createElement('section');
-    section.id = 'tab-sources';
-    section.className = 'hidden';
-    section.innerHTML = buildSourcesHtml();
-    main.appendChild(section);
-
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      tab.classList.add('active');
-      hideAllTabs();
-      section.classList.remove('hidden');
-      closeMobileMenu();
-    });
-    document.querySelectorAll('.tab-btn[data-tab="plan"], .tab-btn[data-tab="acft"]').forEach(b => {
-      b.addEventListener('click', () => section.classList.add('hidden'));
-    });
-  }
-
   function hideAllTabs() {
     document.getElementById('tab-plan')?.classList.add('hidden');
     document.getElementById('tab-acft')?.classList.add('hidden');
     document.getElementById('tab-sources')?.classList.add('hidden');
     document.getElementById('tab-params')?.classList.add('hidden');
   }
-
   function closeMobileMenu() {
     const pill = document.querySelector('.header-pill');
     const mobileBtn = document.getElementById('mobile-menu-toggle');
@@ -543,6 +531,33 @@
     }
   }
 
+  function addSourcesTab() {
+    const acftTab = document.querySelector('.tab-btn[data-tab="acft"]');
+    if (!acftTab || document.querySelector('.tab-btn[data-tab="sources"]')) return;
+    const tab = document.createElement('span');
+    tab.className = 'tab-btn';
+    tab.dataset.tab = 'sources';
+    tab.textContent = 'sources';
+    acftTab.parentNode.insertBefore(tab, acftTab.nextSibling);
+    const main = document.querySelector('main');
+    if (!main) return;
+    const section = document.createElement('section');
+    section.id = 'tab-sources';
+    section.className = 'hidden';
+    section.innerHTML = buildSourcesHtml();
+    main.appendChild(section);
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      tab.classList.add('active');
+      hideAllTabs();
+      section.classList.remove('hidden');
+      closeMobileMenu();
+    });
+    document.querySelectorAll('.tab-btn[data-tab="plan"], .tab-btn[data-tab="acft"]').forEach(b => {
+      b.addEventListener('click', () => section.classList.add('hidden'));
+    });
+  }
+
   function buildSourcesHtml() {
     return `
       <div class="card p-4 space-y-4">
@@ -551,59 +566,52 @@
         <div class="space-y-3 text-sm">
           <div class="muted-bg p-3 rounded">
             <h3 class="font-semibold text-sm mb-1">✈️ Aérodromes officiels (447)</h3>
-            <p class="text-xs">Source : <strong>DGAC</strong> via PIAF (Portail d'Information Aéronautique Français).</p>
+            <p class="text-xs">Source : <strong>DGAC</strong> via PIAF.</p>
             <a href="https://piaf.stac.aviation-civile.gouv.fr/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">piaf.stac.aviation-civile.gouv.fr</a>
           </div>
           <div class="muted-bg p-3 rounded">
             <h3 class="font-semibold text-sm mb-1">🛩 Plateformes ULM (${PLATFORMS.length})</h3>
-            <p class="text-xs">Source : <strong>BASULM</strong> — Fédération Française d'ULM (FFPLUM).</p>
+            <p class="text-xs">Source : <strong>BASULM</strong> — FFPLUM.</p>
             <a href="https://basulm.ffplum.fr" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">basulm.ffplum.fr</a>
-            <p class="text-xs text-muted mt-1">Bases ULM, aérodromes privés, altisurfaces, hydrosurfaces, plateformes paramoteur.</p>
           </div>
           <div class="muted-bg p-3 rounded">
             <h3 class="font-semibold text-sm mb-1">📋 Cartes VAC / AIP</h3>
-            <p class="text-xs">Source : <strong>SIA</strong> (Service de l'Information Aéronautique). Liens directs construits selon le cycle AIRAC en cours.</p>
+            <p class="text-xs">Source : <strong>SIA</strong>. Liens construits selon cycle AIRAC.</p>
             <a href="https://www.sia.aviation-civile.gouv.fr/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">sia.aviation-civile.gouv.fr</a>
-            <p class="text-xs text-muted mt-1">⚠️ Pas de carte VAC officielle pour les plateformes BASULM (non publiées par la DGAC).</p>
+            <p class="text-xs text-muted mt-1">⚠️ Pas de carte VAC pour les plateformes BASULM (non publiées par DGAC).</p>
           </div>
           <div class="muted-bg p-3 rounded">
             <h3 class="font-semibold text-sm mb-1">🌤️ Météo aviation</h3>
-            <p class="text-xs">METAR / TAF : <strong>aviationweather.gov</strong> (NOAA, gratuit, via proxy CORS).<br>
-            Vent multi-niveaux : <strong>Open-Meteo</strong> (modèle ECMWF, gratuit).</p>
+            <p class="text-xs">METAR/TAF : <strong>aviationweather.gov</strong> (NOAA, gratuit).<br>Vent multi-niveaux : <strong>Open-Meteo</strong> (ECMWF, gratuit).</p>
             <a href="https://aviationweather.gov/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">aviationweather.gov</a> · 
             <a href="https://open-meteo.com/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">open-meteo.com</a>
           </div>
           <div class="muted-bg p-3 rounded">
-            <h3 class="font-semibold text-sm mb-1">📡 TEMSI (phénomènes significatifs)</h3>
-            <p class="text-xs">Source : <strong>Aeroweb</strong> de Météo France (compte gratuit requis).</p>
+            <h3 class="font-semibold text-sm mb-1">📡 TEMSI</h3>
+            <p class="text-xs">Source : <strong>Aeroweb</strong> de Météo France (compte gratuit).</p>
             <a href="https://aviation.meteo.fr/login.php" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">aviation.meteo.fr</a>
           </div>
           <div class="muted-bg p-3 rounded">
             <h3 class="font-semibold text-sm mb-1">🛡️ Espaces aériens</h3>
-            <p class="text-xs">Source : <strong>OpenAIP</strong> (clé API gratuite). Détection automatique des zones traversées (TMA, CTR, R, D, P, ATZ...).</p>
+            <p class="text-xs">Source : <strong>OpenAIP</strong> (clé API gratuite).</p>
             <a href="https://www.openaip.net/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">openaip.net</a>
           </div>
           <div class="muted-bg p-3 rounded">
             <h3 class="font-semibold text-sm mb-1">🗺️ Fonds de carte</h3>
-            <p class="text-xs">OpenStreetMap (carte aéronautique) · CartoDB Positron (météo France).</p>
-            <a href="https://www.openstreetmap.org/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">openstreetmap.org</a>
+            <p class="text-xs">OpenStreetMap · CartoDB Positron.</p>
           </div>
           <div class="muted-bg p-3 rounded">
             <h3 class="font-semibold text-sm mb-1">📡 Vue satellite</h3>
-            <p class="text-xs">Source : <strong>Windy.com</strong> (iframe embed, gratuit).</p>
-            <a href="https://www.windy.com/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">windy.com</a>
+            <p class="text-xs">Source : <strong>Windy.com</strong> (iframe gratuit).</p>
           </div>
         </div>
         <div class="border-t border-thin pt-3 mt-4">
           <h3 class="font-semibold text-sm mb-2">⚠️ Avertissement</h3>
-          <p class="text-xs text-muted">
-            AutogyroDash est un outil d'aide à la planification VFR. Les données affichées sont indicatives et peuvent contenir des erreurs ou des informations obsolètes. 
-            <strong>Le pilote reste seul responsable de la vérification de toutes les informations officielles avant chaque vol</strong> (cartes VAC à jour, NOTAM, AZBA, METAR/TAF, état des plateformes...).
-          </p>
-          <p class="text-xs text-muted mt-2">Aucune donnée pilote n'est envoyée à un serveur. Tout est stocké localement dans le navigateur (localStorage).</p>
+          <p class="text-xs text-muted">AutogyroDash est un outil d'aide à la planification VFR. <strong>Le pilote reste seul responsable de la vérification de toutes les informations officielles avant chaque vol</strong> (cartes VAC à jour, NOTAM, AZBA, METAR/TAF...).</p>
+          <p class="text-xs text-muted mt-2">Aucune donnée pilote n'est envoyée à un serveur. Tout est stocké localement dans le navigateur.</p>
         </div>
         <div class="text-xs text-muted text-center pt-2">
-          AutogyroDash v0.5.2 · <a href="https://github.com/killianmenard/autogyro-briefing-buddy" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">code source GitHub</a>
+          AutogyroDash v0.5.3 · <a href="https://github.com/killianmenard/autogyro-briefing-buddy" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">code source GitHub</a>
         </div>
       </div>
     `;
@@ -611,7 +619,6 @@
   addSourcesTab();
 
   // ============ ONGLET "PARAMÈTRES" ============================
-  // Agrège : unités, thème, actions (refresh/clear/reset), clé OpenAIP
   function addParamsTab() {
     const sourcesTab = document.querySelector('.tab-btn[data-tab="sources"]');
     if (!sourcesTab || document.querySelector('.tab-btn[data-tab="params"]')) return;
@@ -640,7 +647,6 @@
     document.querySelectorAll('.tab-btn[data-tab="plan"], .tab-btn[data-tab="acft"], .tab-btn[data-tab="sources"]').forEach(b => {
       b.addEventListener('click', () => section.classList.add('hidden'));
     });
-
     setupParamsHandlers();
   }
 
@@ -650,7 +656,6 @@
         <h2 class="section-title text-sm">paramètres de l'interface</h2>
         <p class="text-xs text-muted">Toutes les options de personnalisation et actions sont regroupées ici.</p>
 
-        <!-- UNITÉS -->
         <div class="muted-bg p-3 rounded">
           <h3 class="text-sm font-semibold mb-2">📏 Unités d'affichage</h3>
           <div class="space-y-2">
@@ -671,30 +676,31 @@
           </div>
         </div>
 
-        <!-- THÈME -->
         <div class="muted-bg p-3 rounded">
           <h3 class="text-sm font-semibold mb-2">🎨 Thème</h3>
           <div class="flex gap-2 mb-2">
-            <button class="p-theme-btn flex-1 px-3 py-2 rounded border" data-val="auto" style="border-color:var(--border);font-size:13px;">📱 Auto (suit iOS/système)</button>
+            <button class="p-theme-btn flex-1 px-3 py-2 rounded border" data-val="auto" style="border-color:var(--border);font-size:13px;">📱 Auto (système)</button>
             <button class="p-theme-btn flex-1 px-3 py-2 rounded border" data-val="light" style="border-color:var(--border);font-size:13px;">☀️ Clair</button>
             <button class="p-theme-btn flex-1 px-3 py-2 rounded border" data-val="dark" style="border-color:var(--border);font-size:13px;">🌙 Sombre</button>
           </div>
-          <p class="text-xs text-muted">En mode auto, l'app suit le réglage clair/sombre de ton appareil et bascule automatiquement.</p>
+          <p class="text-xs text-muted">En mode auto, l'app suit le réglage clair/sombre de ton appareil.</p>
         </div>
 
-        <!-- OPENAIP -->
         <div class="muted-bg p-3 rounded">
           <h3 class="text-sm font-semibold mb-2">🛡️ Clé API OpenAIP</h3>
-          <p class="text-xs text-muted mb-2">Permet d'afficher les espaces aériens (TMA, CTR, R, D, P, ATZ...) sur la carte. <a href="https://app.openaip.net/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">Profile → API Clients</a> sur OpenAIP.</p>
+          <p class="text-xs text-muted mb-2">Permet d'afficher les espaces aériens sur la carte. <a href="https://app.openaip.net/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">Profile → API Clients</a>.</p>
           <div class="flex gap-2 flex-wrap">
             <input type="text" id="p-openaip-input" class="ad-input flex-1" style="min-width:200px;" placeholder="Colle ta clé OpenAIP..." />
             <button id="p-openaip-save" class="px-3 py-2 rounded bg-black text-white" style="font-size:13px;">Enregistrer</button>
             <button id="p-openaip-clear" class="px-3 py-2 rounded border" style="border-color:var(--border);font-size:13px;">Effacer</button>
           </div>
           <div id="p-openaip-status" class="text-xs mt-2"></div>
+          <button id="p-openaip-reload" class="mt-2 w-full px-3 py-2 rounded border bg-white hover:bg-gray-50" style="border-color:var(--border);font-size:13px;color:var(--foreground);">
+            🔄 Recharger l'overlay des espaces aériens
+          </button>
+          <p class="text-xs text-muted mt-1">Si les zones (TMA, CTR, etc.) ne s'affichent pas, force le rechargement ici.</p>
         </div>
 
-        <!-- ACTIONS -->
         <div class="muted-bg p-3 rounded">
           <h3 class="text-sm font-semibold mb-2">⚡ Actions rapides</h3>
           <div class="space-y-2">
@@ -710,30 +716,26 @@
           </div>
         </div>
 
-        <!-- INFOS APP -->
         <div class="text-xs text-muted text-center pt-2 border-t border-thin">
-          Version v0.5.2 · <a href="#" id="p-link-sources" class="text-blue-600 hover:underline">voir les sources</a>
+          Version v0.5.3 · <a href="#" id="p-link-sources" class="text-blue-600 hover:underline">voir les sources</a>
         </div>
       </div>
     `;
   }
 
   function refreshParamsState() {
-    // Speed
     document.querySelectorAll('.p-speed-btn').forEach(b => {
       const active = b.dataset.val === (typeof SPEED_UNIT !== 'undefined' ? SPEED_UNIT : 'kt');
       b.style.background = active ? 'var(--foreground)' : 'var(--card)';
       b.style.color = active ? 'var(--bg)' : 'var(--foreground)';
       b.style.fontWeight = active ? '600' : '400';
     });
-    // Dist
     document.querySelectorAll('.p-dist-btn').forEach(b => {
       const active = b.dataset.val === (typeof DIST_UNIT !== 'undefined' ? DIST_UNIT : 'nm');
       b.style.background = active ? 'var(--foreground)' : 'var(--card)';
       b.style.color = active ? 'var(--bg)' : 'var(--foreground)';
       b.style.fontWeight = active ? '600' : '400';
     });
-    // Theme
     const isManual = localStorage.getItem(THEME_MANUAL_KEY) === '1';
     const isDark = document.documentElement.classList.contains('dark');
     let activeTheme = 'auto';
@@ -744,14 +746,13 @@
       b.style.color = active ? 'var(--bg)' : 'var(--foreground)';
       b.style.fontWeight = active ? '600' : '400';
     });
-    // OpenAIP key state
     const key = (typeof getOpenaipKey === 'function') ? getOpenaipKey() : '';
     const inp = document.getElementById('p-openaip-input');
     const status = document.getElementById('p-openaip-status');
     if (inp) inp.value = key || '';
     if (status) {
       if (key) {
-        status.innerHTML = '<span style="color:#15803D;">✓ Clé enregistrée — espaces aériens affichés sur la carte.</span>';
+        status.innerHTML = '<span style="color:#15803D;">✓ Clé enregistrée — espaces aériens affichés.</span>';
       } else {
         status.innerHTML = '<span style="color:#92400E;">⚠ Aucune clé — les espaces aériens ne s\'affichent pas.</span>';
       }
@@ -759,23 +760,18 @@
   }
 
   function setupParamsHandlers() {
-    // Speed buttons
     document.body.addEventListener('click', e => {
       const speedBtn = e.target.closest('.p-speed-btn');
       if (speedBtn) {
         const val = speedBtn.dataset.val;
-        if (typeof SPEED_UNIT !== 'undefined' && SPEED_UNIT !== val && typeof toggleSpeedUnit === 'function') {
-          toggleSpeedUnit();
-        }
+        if (typeof SPEED_UNIT !== 'undefined' && SPEED_UNIT !== val && typeof toggleSpeedUnit === 'function') toggleSpeedUnit();
         refreshParamsState();
         return;
       }
       const distBtn = e.target.closest('.p-dist-btn');
       if (distBtn) {
         const val = distBtn.dataset.val;
-        if (typeof DIST_UNIT !== 'undefined' && DIST_UNIT !== val && typeof toggleDistUnit === 'function') {
-          toggleDistUnit();
-        }
+        if (typeof DIST_UNIT !== 'undefined' && DIST_UNIT !== val && typeof toggleDistUnit === 'function') toggleDistUnit();
         refreshParamsState();
         return;
       }
@@ -783,9 +779,7 @@
       if (themeBtn) {
         const val = themeBtn.dataset.val;
         if (val === 'auto') {
-          // Reset manual override
           localStorage.removeItem(THEME_MANUAL_KEY);
-          // Apply system pref now
           const mq = window.matchMedia('(prefers-color-scheme: dark)');
           if (typeof applyTheme === 'function') applyTheme(mq.matches ? 'dark' : 'light');
           if (typeof showToast === 'function') showToast('Thème : sync système activé', 'ok', 2500);
@@ -797,8 +791,6 @@
         return;
       }
     });
-
-    // OpenAIP save/clear
     document.body.addEventListener('click', e => {
       if (e.target.id === 'p-openaip-save') {
         const inp = document.getElementById('p-openaip-input');
@@ -819,7 +811,11 @@
           refreshParamsState();
         }
       }
-      // Actions
+      // NOUVEAU v0.5.3 : bouton recharger overlay
+      if (e.target.id === 'p-openaip-reload') {
+        forceOpenaipReload();
+        if (typeof showToast === 'function') showToast('Overlay OpenAIP rechargé', 'ok', 2500);
+      }
       if (e.target.id === 'p-refresh') {
         if (typeof refreshWeather === 'function') refreshWeather();
       }
@@ -837,93 +833,10 @@
   }
   addParamsTab();
 
-  // ============ FERMETURE MENU MOBILE SUR TAB CLICK ============
-  // Quand un onglet est cliqué sur mobile, fermer automatiquement le hamburger
+  // ============ FERMETURE MENU MOBILE SUR TAB ==================
   document.querySelectorAll('.tab-btn').forEach(b => {
     b.addEventListener('click', () => closeMobileMenu());
   });
-
-  // ============ DROPDOWN UNITÉS (DESKTOP) ======================
-  function setupUnitsDropdown() {
-    const speedBtn = document.getElementById('unit-speed-toggle');
-    const distBtn = document.getElementById('unit-dist-toggle');
-    if (!speedBtn || !distBtn) return;
-    speedBtn.style.display = 'none';
-    distBtn.style.display = 'none';
-
-    const wrapper = document.createElement('div');
-    wrapper.dataset.unitsWrapper = '1';
-    wrapper.style.cssText = 'position:relative;display:inline-block;';
-    const btn = document.createElement('button');
-    btn.id = 'units-dropdown-btn';
-    btn.className = 'header-unit-btn';
-    btn.title = 'Changer les unités';
-    btn.style.minWidth = '95px';
-    btn.innerHTML = `
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-      <span id="units-dropdown-label">kt · NM</span>
-    `;
-    wrapper.appendChild(btn);
-
-    const panel = document.createElement('div');
-    panel.style.cssText = `display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px;min-width:180px;z-index:1500;box-shadow:0 4px 12px rgba(0,0,0,0.15);`;
-    panel.innerHTML = `
-      <div style="margin-bottom:8px;">
-        <div style="font-size:10px;color:var(--muted-foreground);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Vitesse</div>
-        <div style="display:flex;gap:4px;">
-          <button class="u-opt" data-kind="speed" data-val="kt" style="flex:1;padding:5px 8px;border-radius:4px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--foreground);">kt</button>
-          <button class="u-opt" data-kind="speed" data-val="kmh" style="flex:1;padding:5px 8px;border-radius:4px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--foreground);">km/h</button>
-        </div>
-      </div>
-      <div>
-        <div style="font-size:10px;color:var(--muted-foreground);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Distance</div>
-        <div style="display:flex;gap:4px;">
-          <button class="u-opt" data-kind="dist" data-val="nm" style="flex:1;padding:5px 8px;border-radius:4px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--foreground);">NM</button>
-          <button class="u-opt" data-kind="dist" data-val="km" style="flex:1;padding:5px 8px;border-radius:4px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--foreground);">km</button>
-        </div>
-      </div>
-    `;
-    wrapper.appendChild(panel);
-    speedBtn.parentNode.insertBefore(wrapper, speedBtn);
-
-    function updateLabel() {
-      const lbl = document.getElementById('units-dropdown-label');
-      if (!lbl) return;
-      const s = (typeof SPEED_UNIT !== 'undefined') ? (SPEED_UNIT === 'kmh' ? 'km/h' : 'kt') : 'kt';
-      const d = (typeof DIST_UNIT !== 'undefined') ? (DIST_UNIT === 'km' ? 'km' : 'NM') : 'NM';
-      lbl.textContent = `${s} · ${d}`;
-      panel.querySelectorAll('.u-opt').forEach(b => {
-        const kind = b.dataset.kind, val = b.dataset.val;
-        const active = (kind === 'speed' && val === (typeof SPEED_UNIT !== 'undefined' ? SPEED_UNIT : 'kt'))
-                    || (kind === 'dist' && val === (typeof DIST_UNIT !== 'undefined' ? DIST_UNIT : 'nm'));
-        b.style.background = active ? 'var(--foreground)' : 'var(--card)';
-        b.style.color = active ? 'var(--bg)' : 'var(--foreground)';
-        b.style.fontWeight = active ? '600' : '400';
-      });
-    }
-    updateLabel();
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-    });
-    document.addEventListener('click', e => {
-      if (!wrapper.contains(e.target)) panel.style.display = 'none';
-    });
-    panel.querySelectorAll('.u-opt').forEach(opt => {
-      opt.addEventListener('click', e => {
-        e.stopPropagation();
-        const kind = opt.dataset.kind, val = opt.dataset.val;
-        if (kind === 'speed' && typeof SPEED_UNIT !== 'undefined' && SPEED_UNIT !== val) {
-          if (typeof toggleSpeedUnit === 'function') toggleSpeedUnit();
-        } else if (kind === 'dist' && typeof DIST_UNIT !== 'undefined' && DIST_UNIT !== val) {
-          if (typeof toggleDistUnit === 'function') toggleDistUnit();
-        }
-        updateLabel();
-        if (typeof refreshParamsState === 'function') refreshParamsState();
-      });
-    });
-  }
-  setupUnitsDropdown();
 
   // ============ THÈME ICÔNE + SYNC iOS =========================
   function setupThemeIconAndSync() {
@@ -934,7 +847,6 @@
     themeBtn.style.minWidth = '36px';
     themeBtn.style.width = '36px';
     themeBtn.style.padding = '0';
-
     if (typeof toggleTheme === 'function') {
       const _orig = toggleTheme;
       window.toggleTheme = function() {
@@ -946,7 +858,6 @@
       themeBtn.parentNode.replaceChild(newBtn, themeBtn);
       newBtn.addEventListener('click', () => window.toggleTheme());
     }
-
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     function applySys() {
       if (localStorage.getItem(THEME_MANUAL_KEY) === '1') return;
@@ -960,40 +871,111 @@
   }
   setupThemeIconAndSync();
 
-  // ============ CSS MOBILE : pilule simplifiée =================
-  const mobileCss = document.createElement('style');
-  mobileCss.textContent = `
+  // ============ CSS INJECTION GLOBALE v0.5.3 ===================
+  const v053Css = document.createElement('style');
+  v053Css.id = 'basulm-v0_5_3-css';
+  v053Css.textContent = `
+/* === Wrap METAR/TAF brut (mobile + desktop) === */
+pre.pre-mono,
+pre {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  overflow-x: hidden !important;
+}
+
+/* === Épure pilule desktop : cache unités/thème/actions (tout est dans Paramètres) === */
+@media (min-width: 769px) {
+  .header-pill .header-unit-btn,
+  .header-pill .header-action-btn,
+  .header-pill #theme-toggle,
+  .header-pill [data-units-wrapper] {
+    display: none !important;
+  }
+  /* Cacher tous les dividers (plus rien à séparer) */
+  .header-pill > .divider,
+  .header-pill-extras > .divider {
+    display: none !important;
+  }
+  /* Centrer les 4 tabs */
+  .header-pill {
+    justify-content: center !important;
+  }
+  .header-pill-extras {
+    justify-content: center !important;
+    flex: 1 !important;
+  }
+  /* Espacement plus généreux entre les tabs */
+  .header-pill-extras > div:first-of-type {
+    gap: 16px !important;
+  }
+}
+
+/* === Mobile : pilule simplifiée + tabs en colonne === */
 @media (max-width: 768px) {
-  /* Sur mobile, dans la pilule, ne garder QUE la navigation (tabs + heure) */
+  /* Cacher tous les contrôles non-tabs */
   .header-pill-extras .header-unit-btn,
   .header-pill-extras .header-action-btn,
   .header-pill-extras #theme-toggle,
   .header-pill-extras [data-units-wrapper] {
     display: none !important;
   }
-  /* Cacher les dividers entre les contrôles */
+  /* Cacher tous les dividers sauf le premier (séparation brand/tabs) */
   .header-pill-extras > .divider:nth-of-type(n+2) {
     display: none !important;
   }
-  /* Réorganiser la zone tabs en flex column pour lisibilité */
-  .header-pill.menu-open .header-pill-extras > div:first-of-type {
+  /* TABS EN COLONNE : nouveau sélecteur :has() (Safari 15.4+) */
+  .header-pill.menu-open .header-pill-extras > div:has(.tab-btn) {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 4px !important;
+    width: 100% !important;
   }
-  .header-pill.menu-open .header-pill-extras .tab-btn {
-    padding: 10px 12px !important;
+  /* Fallback si :has() non supporté : on cible le 2e div */
+  .header-pill.menu-open .header-pill-extras > div:nth-of-type(2) {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 4px !important;
+    width: 100% !important;
+  }
+  /* Style des tabs en mode menu mobile */
+  .header-pill.menu-open .tab-btn {
+    padding: 12px 16px !important;
     border-radius: 6px !important;
     background: var(--muted) !important;
-    text-align: center;
+    text-align: center !important;
+    font-size: 14px !important;
+    border-bottom: none !important;
   }
-  .header-pill.menu-open .header-pill-extras .tab-btn.active {
+  .header-pill.menu-open .tab-btn.active {
     background: var(--foreground) !important;
     color: var(--bg) !important;
+    font-weight: 600 !important;
+  }
+  /* Heure visible mais discrète sous les tabs */
+  .header-pill.menu-open #briefing-time {
+    text-align: center !important;
+    margin-top: 4px !important;
+    padding: 4px !important;
+    font-size: 11px !important;
+    opacity: 0.7;
   }
 }
+
+/* === Carte plein écran : 1 SEUL bouton "quitter" (cacher le top-right redondant) === */
+.map-fullscreen #map-exit-fs-btn,
+.map-fullscreen-wf #wf-exit-fs-btn {
+  display: none !important;
+}
+/* S'assurer que le bouton "quitter" top-left soit bien visible et tappable mobile */
+.map-fullscreen .map-fs-close {
+  min-height: 44px !important;
+  padding: 10px 18px !important;
+  font-size: 15px !important;
+}
   `;
-  document.head.appendChild(mobileCss);
+  document.head.appendChild(v053Css);
 
   // ============ COPYRIGHT FOOTER ================================
   const mainEl = document.querySelector('main');
@@ -1013,7 +995,7 @@
 
   // ============ TOAST BOOT ======================================
   if (typeof showToast === 'function') {
-    showToast(`✓ ${PLATFORMS.length} plateformes ULM · v0.5.2`, 'ok', 3000);
+    showToast(`✓ ${PLATFORMS.length} plateformes ULM · v0.5.3`, 'ok', 3000);
   }
-  console.log('[BASULM v0.5.2] Intégration terminée');
+  console.log('[BASULM v0.5.3] Intégration terminée');
 })();
