@@ -1,7 +1,7 @@
 /* ============================================================
-   AutogyroDash — extensions v0.6.9
+   AutogyroDash — extensions v0.6.10
    ------------------------------------------------------------
-   Nouveau dans v0.6.9 (hotfix v0.6.5 — 4 correctifs ciblés) :
+   Nouveau dans v0.6.10 (hotfix v0.6.5 — 4 correctifs ciblés) :
      A. Fusion overlays-carte + map en un seul bloc
         "Carte des aérodromes" avec un header + un chevron unique
      B. Chevrons toggle UNIFORMES : tous au même style et même
@@ -51,7 +51,7 @@
   }
   await waitForAppReady();
 
-  console.log('[Extensions v0.6.9] Boot...');
+  console.log('[Extensions v0.6.10] Boot...');
 
   function escapeHtml(s) {
     if (s === null || s === undefined) return '';
@@ -77,9 +77,9 @@
   }
 
   try {
-    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.9');
+    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.10');
     document.querySelectorAll('span.text-xs.pre-mono').forEach(s => {
-      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.9';
+      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.10';
     });
   } catch (e) {}
 
@@ -268,7 +268,7 @@
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🌤️ Météo aviation</h3><p class="text-xs">METAR/TAF : <strong>aviationweather.gov</strong>. Visuel : <strong>Windy.com</strong>.</p></div>
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🛡️ Espaces aériens</h3><p class="text-xs">Source : <strong>OpenAIP</strong>.</p></div>
       </div>
-      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.9</div>
+      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.10</div>
     `;
   }
   function setupResourcesNav() {
@@ -495,10 +495,10 @@
       }
       if (!inserted) return;
 
-      console.log('[Satellite v0.6.9] Toggle inséré en première position ✓');
+      console.log('[Satellite v0.6.10] Toggle inséré en première position ✓');
 
       let satOn = false;
-      // 🔥 v0.6.9 : tracker explicitement l'état du satellite natif
+      // 🔥 v0.6.10 : tracker explicitement l'état du satellite natif
       // pour pouvoir le synchroniser dans les 2 sens (activation + désactivation).
       // Bug v0.6.7 : on cliquait sur satelliteBtn pour activer mais JAMAIS
       // pour désactiver → l'iframe Windy restait collée à l'écran.
@@ -540,7 +540,7 @@
           modeBtns.forEach(b => { b.style.display = b.dataset.origDisplay || ''; });
           if (affichageLabel) affichageLabel.style.display = affichageLabel.dataset.origDisplay || '';
 
-          // 🔥 v0.6.9 : DÉSACTIVER explicitement le satellite natif
+          // 🔥 v0.6.10 : DÉSACTIVER explicitement le satellite natif
           if (nativeSatActive) clickSatelliteNative();
 
           // Reset mode au "temp" par défaut
@@ -936,7 +936,7 @@
       wfRowZonesNotes.appendChild(notesBlock);
     }
 
-    // Ordre final souhaité (v0.6.9 — AZBA/NOTAM passe après zones aériennes)
+    // Ordre final souhaité (v0.6.10 — AZBA/NOTAM passe après zones aériennes)
     //   1. Trajet
     //   2. wfRowWeather (Météo générale | Windy)
     //   3. mapControls + mapContainer (fusionnés via mergeMapBlocksIntoOneCard)
@@ -960,7 +960,7 @@
       planTab.appendChild(node);
     });
 
-    // 🔥 v0.6.9 : masquer wf-row-azba-notam tant que pas de trajet validé
+    // 🔥 v0.6.10 : masquer wf-row-azba-notam tant que pas de trajet validé
     // (similaire au comportement natif de #airspaces-section et #trip-summary)
     if (wfRowAzbaNotam) {
       const trip = (typeof computeTrip === 'function') ? computeTrip() : null;
@@ -978,10 +978,10 @@
     makeNativeBlockCollapsible(tripSummary, 'resume-trajet', 'résumé du trajet');
     // Note : on NE plie PAS #map-container (Leaflet casserait)
 
-    // 🔥 FIX #A v0.6.9 : Fusion overlays-carte + map-container en "Carte des aérodromes"
+    // 🔥 FIX #A v0.6.10 : Fusion overlays-carte + map-container en "Carte des aérodromes"
     mergeMapBlocksIntoOneCard();
 
-    // 🔥 FIX #B v0.6.9 : Harmoniser les chevrons des <details> natifs
+    // 🔥 FIX #B v0.6.10 : Harmoniser les chevrons des <details> natifs
     harmonizeDetailsChevrons();
 
     // Réinvalider les cartes Leaflet après reorganisation (display:flex peut perturber)
@@ -992,7 +992,7 @@
   }
 
   // ============================================================
-  // 🔥 FIX #A v0.6.9 — FUSION overlays-carte + map-container
+  // 🔥 FIX #A v0.6.10 — FUSION overlays-carte + map-container
   // En un seul bloc "Carte des aérodromes" avec UN header + UN chevron
   // ============================================================
   function mergeMapBlocksIntoOneCard() {
@@ -1076,11 +1076,11 @@
       apply();
     });
 
-    console.log('[v0.6.9] Carte aérodromes fusionnée ✓');
+    console.log('[v0.6.10] Carte aérodromes fusionnée ✓');
   }
 
   // ============================================================
-  // 🔥 FIX #B v0.6.9 — HARMONISATION DES CHEVRONS NATIFS
+  // 🔥 FIX #B v0.6.10 — HARMONISATION DES CHEVRONS NATIFS
   // Remplace les <i lucide chevron-down> et .accordion-icon
   // par un chevron uniforme au même style que les autres
   // ============================================================
@@ -1089,7 +1089,7 @@
       const summary = det.querySelector('summary');
       if (!summary) return;
 
-      // 🔥 FIX v0.6.9 : skip les sous-<details> imbriqués pour ne pas
+      // 🔥 FIX v0.6.10 : skip les sous-<details> imbriqués pour ne pas
       // doubler avec leurs chevrons natifs (légende BASULM, logistique fiches AD)
       if (det.parentElement?.closest('details')) return;
       if (det.closest('#map-controls, #map-container, #ad-cards, #aerodromes-merged-wrapper #map-controls')) return;
@@ -1137,14 +1137,14 @@
   function makeNativeBlockCollapsible(el, key, _label) {
     if (!el) return;
 
-    // 🔥 v0.6.9 : si `el` contient une seule .card enfant direct,
+    // 🔥 v0.6.10 : si `el` contient une seule .card enfant direct,
     // opérer sur cette .card au lieu de `el` (cas #trip-summary et #airspaces-section)
     let target = el;
     if (el.children.length === 1 && el.firstElementChild?.classList?.contains('card')) {
       target = el.firstElementChild;
     }
 
-    // 🔥 NETTOYAGE IDEMPOTENT v0.6.9 :
+    // 🔥 NETTOYAGE IDEMPOTENT v0.6.10 :
     // Avant toute redécoration, on vire toute trace de décoration précédente
     // pour garantir l'absence de doublons même si la fonction est appelée
     // plusieurs fois sur le même bloc.
@@ -1283,7 +1283,7 @@
     }
   }
 
-  // 🔥 v0.6.9 : toggle visibilité de wf-row-azba-notam selon trajet validé
+  // 🔥 v0.6.10 : toggle visibilité de wf-row-azba-notam selon trajet validé
   function updateAzbaNotamVisibility() {
     const wfRowAzbaNotam = document.getElementById('wf-row-azba-notam');
     if (!wfRowAzbaNotam) return;
@@ -1406,7 +1406,7 @@ body > header, body header { max-width: 100% !important; }
   gap: 14px;
   align-items: stretch;
 }
-/* 🔥 FIX #C v0.6.9 : sur la row Zones aériennes | Notes Pilote,
+/* 🔥 FIX #C v0.6.10 : sur la row Zones aériennes | Notes Pilote,
    ne pas étirer les blocs à la même hauteur — la liste a son propre scroll */
 #wf-row-zones-notes {
   align-items: start !important;
@@ -1478,7 +1478,7 @@ html.dark body[data-fullscreen-active] .wf-mode-line {
   color: var(--foreground) !important;
 }
 
-/* === 🔥 CHEVRON UNIFIÉ v0.6.9 ===
+/* === 🔥 CHEVRON UNIFIÉ v0.6.10 ===
    Tous les chevrons (blocs custom + blocs natifs + <details>)
    utilisent la même classe .unified-chevron pour un rendu identique */
 .unified-chevron {
@@ -1516,7 +1516,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   display: none !important;
 }
 
-/* === 🔥 FIX #C v0.6.9 — Zones aériennes scroll interne ===
+/* === 🔥 FIX #C v0.6.10 — Zones aériennes scroll interne ===
    On NE met PAS max-height sur la .card complète (ça forçait le <p>
    d'avertissement final à déborder visuellement).
    Le scroll interne se fait uniquement sur la liste #airspaces-list. */
@@ -1549,7 +1549,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
 /* === Container map-container pleine largeur === */
 #map-container { width: 100% !important; }
 
-/* === Carte aérodromes fusionnée (v0.6.9) ===
+/* === Carte aérodromes fusionnée (v0.6.10) ===
    On supprime le .card sur les enfants pour éviter double encadrement */
 #aerodromes-merged-wrapper #map-controls,
 #aerodromes-merged-wrapper #map-container {
@@ -1571,7 +1571,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   document.head.appendChild(v065Css);
 
   // ============================================================
-  // 🔥 FIX #4 v0.6.9 — METAR RAPIDE
+  // 🔥 FIX #4 v0.6.10 — METAR RAPIDE
   // Override de window.fetchMetar pour :
   //   - Race parallèle entre les 3 proxies (Promise.any au lieu de séquentiel)
   //   - Timeout réduit à 5s par proxy (au lieu de 8s)
@@ -1677,24 +1677,24 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
         }
       };
 
-      console.log('[METAR v0.6.9] fetchMetar patché : Promise.any + 5s + stale-while-revalidate ✓');
+      console.log('[METAR v0.6.10] fetchMetar patché : Promise.any + 5s + stale-while-revalidate ✓');
     }
     _tryPatch();
   })();
 
   // ============================================================
-  // 🌤️ FOND CIEL + NUAGES v0.6.9 (mode jour uniquement)
+  // 🌤️ FOND CIEL + NUAGES v0.6.10 (mode jour uniquement)
   // SVG inline en data URL = 0 fichier à héberger, vectoriel, ~1 KB.
   // Les .card restent opaques pour passer par-dessus avec un léger
   // box-shadow pour les faire "flotter". Mode nuit inchangé.
   // ============================================================
   const skyBgCss = document.createElement('style');
-  skyBgCss.id = 'extensions-v0_6_9-sky-bg';
+  skyBgCss.id = 'extensions-v0_6_10-sky-bg';
   skyBgCss.textContent = `
 html:not(.dark) body {
-  background-color: #4DC2F1;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 120' width='200' height='120'><g fill='white'><ellipse cx='40' cy='38' rx='22' ry='7'/><circle cx='30' cy='34' r='8'/><circle cx='42' cy='30' r='10'/><circle cx='54' cy='34' r='8'/><ellipse cx='140' cy='38' rx='22' ry='7'/><circle cx='130' cy='34' r='8'/><circle cx='142' cy='30' r='10'/><circle cx='154' cy='34' r='8'/><ellipse cx='90' cy='92' rx='22' ry='7'/><circle cx='80' cy='88' r='8'/><circle cx='92' cy='84' r='10'/><circle cx='104' cy='88' r='8'/><ellipse cx='190' cy='92' rx='22' ry='7'/><circle cx='180' cy='88' r='8'/><circle cx='192' cy='84' r='10'/><circle cx='204' cy='88' r='8'/><ellipse cx='-10' cy='92' rx='22' ry='7'/><circle cx='-20' cy='88' r='8'/><circle cx='-8' cy='84' r='10'/><circle cx='4' cy='88' r='8'/></g></svg>");
-  background-size: 200px 120px;
+  background-color: #71CCEE;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 170' width='280' height='170'><g fill='white'><ellipse cx='50' cy='45' rx='20' ry='6'/><circle cx='42' cy='42' r='7'/><circle cx='52' cy='38' r='9'/><circle cx='62' cy='42' r='7'/><ellipse cx='210' cy='45' rx='20' ry='6'/><circle cx='202' cy='42' r='7'/><circle cx='212' cy='38' r='9'/><circle cx='222' cy='42' r='7'/><ellipse cx='130' cy='125' rx='20' ry='6'/><circle cx='122' cy='122' r='7'/><circle cx='132' cy='118' r='9'/><circle cx='142' cy='122' r='7'/><ellipse cx='-10' cy='125' rx='20' ry='6'/><circle cx='-18' cy='122' r='7'/><circle cx='-8' cy='118' r='9'/><circle cx='2' cy='122' r='7'/><ellipse cx='290' cy='125' rx='20' ry='6'/><circle cx='282' cy='122' r='7'/><circle cx='292' cy='118' r='9'/><circle cx='302' cy='122' r='7'/></g></svg>");
+  background-size: 280px 170px;
   background-repeat: repeat;
   background-attachment: fixed;
 }
@@ -1705,15 +1705,23 @@ html:not(.dark) .card {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* Le header pilule (top nav) : effet "verre dépoli" pour la lisibilité */
+/* 🔥 v0.6.10 : Header pilule SANS flou, fond blanc opaque + ombre,
+   passe AU-DESSUS du fond nuages sans backdrop-filter */
 html:not(.dark) body > header {
   background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
-html:not(.dark) body > header > * {
-  /* Les enfants gardent leur fond ; le wrapper devient transparent */
+html:not(.dark) body > header > nav,
+html:not(.dark) body > header > .header-pill,
+html:not(.dark) body > header > div {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-/* Sécurité : les éléments .vfr-block-* (AZBA/NOTAM/TEMSI) restent lisibles */
+/* Sécurité : les éléments .vfr-block-* restent lisibles */
 html:not(.dark) .vfr-block-azba,
 html:not(.dark) .vfr-block-notam,
 html:not(.dark) .vfr-block-temsi {
@@ -1724,14 +1732,440 @@ html:not(.dark) .vfr-block-temsi {
 html:not(.dark) #aerodromes-merged-wrapper {
   background-color: #ffffff !important;
 }
+
+/* 🔥 v0.6.10 : footer (Sources / Données indicatives) dans une pilule blanche */
+html:not(.dark) .v0610-footer-pill {
+  background-color: #ffffff !important;
+  border-radius: 14px;
+  padding: 12px 20px;
+  margin: 16px auto;
+  max-width: 90vw;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
   `;
   document.head.appendChild(skyBgCss);
+
+  // ============================================================
+  // 🔥 v0.6.10 — FIX #1 : Légende météo France décalée à droite
+  // des contrôles Leaflet (+/- et plein écran)
+  // ============================================================
+  const fixLegendCss = document.createElement('style');
+  fixLegendCss.id = 'extensions-v0_6_10-legend';
+  fixLegendCss.textContent = `
+.map-fullscreen-wf .wf-mode-line,
+body[data-fullscreen-active] .wf-mode-line {
+  position: fixed !important;
+  top: 70px !important;
+  left: 70px !important;  /* décalé pour passer à droite des +/- et plein écran */
+  right: auto !important;
+  z-index: 100000 !important;
+}
+/* Légende en mode normal (carte intégrée) : décalée aussi */
+.weather-france-section .wf-mode-line,
+#weather-france-section .wf-mode-line {
+  margin-left: 60px;
+}
+  `;
+  document.head.appendChild(fixLegendCss);
+
+  // ============================================================
+  // 🔥 v0.6.10 — FIX #2 : RECONSTRUCTION RADICALE des sections
+  // #airspaces-section et #trip-summary pour éliminer DÉFINITIVEMENT
+  // les doublons de titre. On wipe la card et on reconstruit avec :
+  //   - UN seul header custom (titre + badge + chevron unifié à droite)
+  //   - Un .v0610-content qui contient le reste, pliable
+  // Les éléments natifs (airspaces-list, airspaces-count, filtres...)
+  // sont PRÉSERVÉS (move pas clone) → les références getElementById
+  // du code natif restent valides.
+  // ============================================================
+  function rebuildAirspacesSectionV0610() {
+    const section = document.getElementById('airspaces-section');
+    if (!section) return;
+    let card = section.querySelector(':scope > .card');
+    if (!card) return;
+    if (card.dataset.v0610Rebuilt === '1') return; // 1 seule fois
+
+    // Snapshot des éléments à préserver
+    const airspacesCount = card.querySelector('#airspaces-count');
+    const airspacesLoading = card.querySelector('#airspaces-loading');
+    const airspacesList = card.querySelector('#airspaces-list');
+    // Le filtre altitude : div.muted-bg avec les inputs
+    const altFilterDiv = card.querySelector('.muted-bg') || card.querySelector('div:has(input[type="number"])');
+    // L'avertissement final
+    const advisoryP = card.querySelector('p.text-xs.text-muted, p.text-muted');
+
+    // Wipe complètement la card
+    while (card.firstChild) card.removeChild(card.firstChild);
+    card.dataset.v0610Rebuilt = '1';
+
+    // Header unifié
+    const header = document.createElement('div');
+    header.className = 'v0610-unified-header';
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;';
+    const titleEl = document.createElement('h2');
+    titleEl.style.cssText = 'font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0;display:flex;align-items:center;gap:6px;color:var(--foreground);';
+    titleEl.innerHTML = '<i data-lucide="shield-alert" class="inline h-4 w-4"></i> <span>zones aériennes traversées</span>';
+    header.appendChild(titleEl);
+
+    const rightWrap = document.createElement('div');
+    rightWrap.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    if (airspacesCount) rightWrap.appendChild(airspacesCount);
+    const chevron = document.createElement('button');
+    chevron.className = 'unified-chevron v0610-aspc-chev';
+    chevron.type = 'button';
+    chevron.title = 'plier / déplier';
+    chevron.innerHTML = '▼';
+    rightWrap.appendChild(chevron);
+    header.appendChild(rightWrap);
+
+    card.appendChild(header);
+
+    // Content wrapper pliable
+    const content = document.createElement('div');
+    content.className = 'v0610-content';
+    content.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:10px;';
+    if (altFilterDiv) content.appendChild(altFilterDiv);
+    if (airspacesLoading) content.appendChild(airspacesLoading);
+    if (airspacesList) content.appendChild(airspacesList);
+    if (advisoryP) content.appendChild(advisoryP);
+    card.appendChild(content);
+
+    // Re-render lucide icon
+    if (window.lucide?.createIcons) {
+      try { window.lucide.createIcons(); } catch(e) {}
+    }
+
+    // Wire toggle (persisté)
+    const prefs = loadCollapsePrefs();
+    let collapsed = prefs['zones-aer'] === true;
+    function apply() {
+      if (collapsed) {
+        content.style.display = 'none';
+        chevron.classList.add('collapsed');
+      } else {
+        content.style.display = 'flex';
+        chevron.classList.remove('collapsed');
+      }
+    }
+    apply();
+    chevron.addEventListener('click', (e) => {
+      e.stopPropagation();
+      collapsed = !collapsed;
+      saveCollapsePref('zones-aer', collapsed);
+      apply();
+    });
+
+    console.log('[v0.6.10] airspaces-section rebuild ✓');
+  }
+
+  function rebuildTripSummaryV0610() {
+    const section = document.getElementById('trip-summary');
+    if (!section) return;
+    let card = section.querySelector(':scope > .card');
+    if (!card) return;
+    if (card.dataset.v0610Rebuilt === '1') return;
+
+    // Préserver les éléments avec id
+    const tripSegments = card.querySelector('#trip-segments');
+    const totalsRow = card.querySelector('.border-t, .grid-cols-3') || card.querySelector('div.grid');
+    const fuelWarning = card.querySelector('#fuel-warning');
+
+    // Wipe
+    while (card.firstChild) card.removeChild(card.firstChild);
+    card.dataset.v0610Rebuilt = '1';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'v0610-unified-header';
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;';
+    const titleEl = document.createElement('h2');
+    titleEl.style.cssText = 'font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0;color:var(--foreground);';
+    titleEl.textContent = 'résumé du trajet';
+    header.appendChild(titleEl);
+    const chevron = document.createElement('button');
+    chevron.className = 'unified-chevron v0610-tsum-chev';
+    chevron.type = 'button';
+    chevron.title = 'plier / déplier';
+    chevron.innerHTML = '▼';
+    header.appendChild(chevron);
+    card.appendChild(header);
+
+    // Content
+    const content = document.createElement('div');
+    content.className = 'v0610-content';
+    content.style.cssText = 'display:flex;flex-direction:column;gap:12px;margin-top:10px;';
+    if (tripSegments) content.appendChild(tripSegments);
+    if (totalsRow) content.appendChild(totalsRow);
+    if (fuelWarning) content.appendChild(fuelWarning);
+    card.appendChild(content);
+
+    // Wire toggle
+    const prefs = loadCollapsePrefs();
+    let collapsed = prefs['resume-trajet'] === true;
+    function apply() {
+      if (collapsed) {
+        content.style.display = 'none';
+        chevron.classList.add('collapsed');
+      } else {
+        content.style.display = 'flex';
+        chevron.classList.remove('collapsed');
+      }
+    }
+    apply();
+    chevron.addEventListener('click', (e) => {
+      e.stopPropagation();
+      collapsed = !collapsed;
+      saveCollapsePref('resume-trajet', collapsed);
+      apply();
+    });
+
+    console.log('[v0.6.10] trip-summary rebuild ✓');
+  }
+
+  // Lancer les rebuilds après un petit délai pour laisser le DOM s'installer
+  setTimeout(() => {
+    rebuildAirspacesSectionV0610();
+    rebuildTripSummaryV0610();
+  }, 600);
+  // Retry au cas où ils n'étaient pas prêts
+  setTimeout(() => {
+    rebuildAirspacesSectionV0610();
+    rebuildTripSummaryV0610();
+  }, 2000);
+
+  // ============================================================
+  // 🔥 v0.6.10 — FIX #3 : PRÉSERVATION DU SCROLL dans #airspaces-list
+  // Quand le code natif rebuild la liste (updateAirspacesOnRoute),
+  // le scrollTop revient à 0. On capture la position de scroll en live
+  // et on la restaure quand un mutation se produit.
+  // ============================================================
+  function setupAirspacesScrollPreservation() {
+    const list = document.getElementById('airspaces-list');
+    if (!list || list.dataset.v0610ScrollHook === '1') return;
+    list.dataset.v0610ScrollHook = '1';
+
+    let savedScroll = 0;
+    list.addEventListener('scroll', () => {
+      if (list.scrollTop > 0) savedScroll = list.scrollTop;
+    }, { passive: true });
+
+    const obs = new MutationObserver(() => {
+      if (savedScroll > 0 && list.scrollTop === 0) {
+        // Le DOM vient de changer et le scroll est reset → restaurer
+        requestAnimationFrame(() => {
+          list.scrollTop = savedScroll;
+        });
+      }
+    });
+    obs.observe(list, { childList: true, subtree: false });
+    console.log('[v0.6.10] airspaces-list scroll preservation ✓');
+  }
+  setTimeout(setupAirspacesScrollPreservation, 800);
+  setTimeout(setupAirspacesScrollPreservation, 2500);
+
+  // ============================================================
+  // 🔥 v0.6.10 — FIX #7 : Wrap les textes du footer (Sources /
+  // Données indicatives) dans une pilule blanche pour lisibilité
+  // sur le fond nuages.
+  // ============================================================
+  function wrapFooterTextsInPill() {
+    // Le footer natif a "Aérodromes : DGAC..." et "Données indicatives..."
+    // On cherche le texte du footer
+    const allText = document.querySelectorAll('div, p');
+    const candidates = [];
+    allText.forEach(el => {
+      const txt = (el.textContent || '').trim();
+      if (txt.startsWith('Aérodromes :') && txt.includes('DGAC') && el.children.length < 12 && !el.closest('.v0610-footer-pill')) {
+        candidates.push(el);
+      }
+    });
+    candidates.forEach(el => {
+      // Trouver le wrapper parent qui contient le bloc "données indicatives" juste après
+      let wrapper = el;
+      // Si le parent contient aussi "Données indicatives", on prend le parent
+      const parent = el.parentElement;
+      if (parent && parent.textContent.includes('Données indicatives')) {
+        wrapper = parent;
+      }
+      if (wrapper.closest('.v0610-footer-pill')) return;
+      // Encapsuler dans une pilule
+      const pill = document.createElement('div');
+      pill.className = 'v0610-footer-pill';
+      wrapper.parentNode.insertBefore(pill, wrapper);
+      pill.appendChild(wrapper);
+    });
+  }
+  setTimeout(wrapFooterTextsInPill, 700);
+  setTimeout(wrapFooterTextsInPill, 2500);
+
+  // ============================================================
+  // 🔥 v0.6.10 — FIX #8 : ANIMATIONS AU CHANGEMENT DE TAB
+  // Mini overlay avion qui glisse de bas-gauche en diagonale + 
+  // fade-slide-in du contenu du tab. Style "Apple smooth".
+  // ============================================================
+  const animCss = document.createElement('style');
+  animCss.id = 'extensions-v0_6_10-anim';
+  animCss.textContent = `
+@keyframes v0610PlaneWoosh {
+  0% { transform: translate(-100px, 100vh) rotate(-45deg); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(60vw, -100px) rotate(-45deg); opacity: 0; }
+}
+@keyframes v0610TabFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.v0610-plane-overlay {
+  position: fixed;
+  z-index: 999999;
+  bottom: 0;
+  left: 0;
+  font-size: 42px;
+  pointer-events: none;
+  animation: v0610PlaneWoosh 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  color: #1e40af;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+.v0610-tab-anim {
+  animation: v0610TabFadeIn 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+/* Boutons et tabs : feedback tactile au clic (effet ripple subtil) */
+.v0610-tactile {
+  transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+}
+.v0610-tactile:active {
+  transform: scale(0.97);
+}
+  `;
+  document.head.appendChild(animCss);
+
+  function showPlaneOverlay() {
+    const plane = document.createElement('div');
+    plane.className = 'v0610-plane-overlay';
+    plane.innerHTML = '✈️';
+    plane.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(plane);
+    setTimeout(() => plane.remove(), 800);
+  }
+
+  function setupTabAnimations() {
+    // Chercher les tabs natifs du header
+    const tabButtons = document.querySelectorAll('button[data-tab], .tab-btn, nav button');
+    tabButtons.forEach(btn => {
+      if (btn.dataset.v0610AnimWired === '1') return;
+      btn.dataset.v0610AnimWired = '1';
+      btn.classList.add('v0610-tactile');
+      btn.addEventListener('click', () => {
+        // Lance l'animation avion
+        showPlaneOverlay();
+        // Anime le tab content qui devient visible après un court délai
+        setTimeout(() => {
+          const visibleTab = document.querySelector('[id^="tab-"]:not(.hidden)');
+          if (visibleTab) {
+            visibleTab.classList.remove('v0610-tab-anim');
+            // Force reflow puis ajoute la classe pour relancer l'animation
+            void visibleTab.offsetWidth;
+            visibleTab.classList.add('v0610-tab-anim');
+          }
+        }, 50);
+      });
+    });
+
+    // Tactile sur d'autres boutons interactifs (cards cliquables, etc.)
+    document.querySelectorAll('button:not(.v0610-tactile), .unified-chevron:not(.v0610-tactile)').forEach(b => {
+      // Skip si déjà tagué ou si c'est un input radio/checkbox déguisé
+      if (b.dataset.v0610AnimWired === '1') return;
+      b.dataset.v0610AnimWired = '1';
+      b.classList.add('v0610-tactile');
+    });
+  }
+  setTimeout(setupTabAnimations, 500);
+  // Re-tenter au cas où des éléments arrivent plus tard
+  setTimeout(setupTabAnimations, 2000);
+  setInterval(setupTabAnimations, 4000);
+
+  // ============================================================
+  // 🔥 v0.6.10 — FIX #9 : Étendre le filtre harmonizeDetailsChevrons
+  // pour ignorer les <details> dans les fiches AD (DÉPART/ARRIVÉE/ÉTAPE)
+  // qui ne devraient pas recevoir mon chevron unifié.
+  // On override la fonction existante pour ajouter ces exclusions.
+  // ============================================================
+  if (typeof harmonizeDetailsChevrons === 'function') {
+    const _origHarmonize = harmonizeDetailsChevrons;
+    window.harmonizeDetailsChevrons = function() {
+      document.querySelectorAll('details:not([data-chevron-harmonized])').forEach(det => {
+        const summary = det.querySelector('summary');
+        if (!summary) return;
+
+        // Skip si imbriqué dans un autre <details>
+        if (det.parentElement?.closest('details')) {
+          det.dataset.chevronHarmonized = '1';
+          return;
+        }
+        // Skip si dans des sous-blocs où le natif gère déjà
+        if (det.closest('#map-controls, #map-container, #ad-cards, #aerodromes-merged-wrapper, .ad-card, [data-ad-card]')) {
+          det.dataset.chevronHarmonized = '1';
+          return;
+        }
+        // Skip si le summary contient un lien VAC SIA ou texte "carte vac"
+        if (summary.querySelector('a[href*="VAC"], a[href*="vac"], a[href*="sia"]')) {
+          det.dataset.chevronHarmonized = '1';
+          return;
+        }
+        const summaryText = (summary.textContent || '').trim().toLowerCase();
+        if (/^[▶▼►◀]/.test(summary.textContent.trim())) {
+          det.dataset.chevronHarmonized = '1';
+          return;
+        }
+        if (summaryText.includes('carte vac') ||
+            summaryText.includes('départ ') || summaryText.includes('depart ') ||
+            summaryText.includes('arrivée ') || summaryText.includes('arrivee ') ||
+            summaryText.includes('étape ') || summaryText.includes('etape ')) {
+          det.dataset.chevronHarmonized = '1';
+          return;
+        }
+
+        // Sinon, comportement normal (réutilise la logique existante via marquage manuel)
+        det.dataset.chevronHarmonized = '1';
+
+        summary.querySelectorAll('.toggle-chevron, .accordion-icon, [data-lucide="chevron-down"]').forEach(el => {
+          el.style.display = 'none';
+        });
+
+        if (summary.querySelector('.unified-chevron')) return;
+
+        const ch = document.createElement('span');
+        ch.className = 'unified-chevron details-chevron';
+        ch.innerHTML = '▼';
+        if (!det.open) ch.classList.add('collapsed');
+
+        const rightWrapper = Array.from(summary.children).find(c => {
+          const cs = window.getComputedStyle(c);
+          return cs.display === 'flex' && c !== summary.firstElementChild;
+        });
+        if (rightWrapper) {
+          rightWrapper.appendChild(ch);
+        } else {
+          summary.appendChild(ch);
+        }
+
+        det.addEventListener('toggle', () => {
+          if (det.open) ch.classList.remove('collapsed');
+          else ch.classList.add('collapsed');
+        });
+      });
+    };
+    // Cleanup parasites déjà ajoutés sur fiches AD
+    document.querySelectorAll('#ad-cards details .unified-chevron, .ad-card .unified-chevron').forEach(c => c.remove());
+    // Re-run avec le nouveau filtre
+    window.harmonizeDetailsChevrons();
+  }
 
   // ============================================================
   // BOOT
   // ============================================================
   if (typeof showToast === 'function') {
-    showToast('✓ v0.6.9 chargé', 'ok', 3000);
+    showToast('✓ v0.6.10 chargé', 'ok', 3000);
   }
-  console.log('[Extensions v0.6.9] Intégration terminée');
+  console.log('[Extensions v0.6.10] Intégration terminée');
 })();
