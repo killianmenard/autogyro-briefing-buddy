@@ -1,7 +1,7 @@
 /* ============================================================
-   AutogyroDash — extensions v0.6.14
+   AutogyroDash — extensions v0.6.15
    ------------------------------------------------------------
-   Nouveau dans v0.6.14 (hotfix v0.6.5 — 4 correctifs ciblés) :
+   Nouveau dans v0.6.15 (hotfix v0.6.5 — 4 correctifs ciblés) :
      A. Fusion overlays-carte + map en un seul bloc
         "Carte des aérodromes" avec un header + un chevron unique
      B. Chevrons toggle UNIFORMES : tous au même style et même
@@ -51,7 +51,7 @@
   }
   await waitForAppReady();
 
-  console.log('[Extensions v0.6.14] Boot...');
+  console.log('[Extensions v0.6.15] Boot...');
 
   function escapeHtml(s) {
     if (s === null || s === undefined) return '';
@@ -77,9 +77,9 @@
   }
 
   try {
-    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.14');
+    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.15');
     document.querySelectorAll('span.text-xs.pre-mono').forEach(s => {
-      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.14';
+      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.15';
     });
   } catch (e) {}
 
@@ -268,7 +268,7 @@
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🌤️ Météo aviation</h3><p class="text-xs">METAR/TAF : <strong>aviationweather.gov</strong>. Visuel : <strong>Windy.com</strong>.</p></div>
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🛡️ Espaces aériens</h3><p class="text-xs">Source : <strong>OpenAIP</strong>.</p></div>
       </div>
-      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.14</div>
+      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.15</div>
     `;
   }
   function setupResourcesNav() {
@@ -495,10 +495,10 @@
       }
       if (!inserted) return;
 
-      console.log('[Satellite v0.6.14] Toggle inséré en première position ✓');
+      console.log('[Satellite v0.6.15] Toggle inséré en première position ✓');
 
       let satOn = false;
-      // 🔥 v0.6.14 : tracker explicitement l'état du satellite natif
+      // 🔥 v0.6.15 : tracker explicitement l'état du satellite natif
       // pour pouvoir le synchroniser dans les 2 sens (activation + désactivation).
       // Bug v0.6.7 : on cliquait sur satelliteBtn pour activer mais JAMAIS
       // pour désactiver → l'iframe Windy restait collée à l'écran.
@@ -540,7 +540,7 @@
           modeBtns.forEach(b => { b.style.display = b.dataset.origDisplay || ''; });
           if (affichageLabel) affichageLabel.style.display = affichageLabel.dataset.origDisplay || '';
 
-          // 🔥 v0.6.14 : DÉSACTIVER explicitement le satellite natif
+          // 🔥 v0.6.15 : DÉSACTIVER explicitement le satellite natif
           if (nativeSatActive) clickSatelliteNative();
 
           // Reset mode au "temp" par défaut
@@ -936,7 +936,7 @@
       wfRowZonesNotes.appendChild(notesBlock);
     }
 
-    // Ordre final souhaité (v0.6.14 — AZBA/NOTAM passe après zones aériennes)
+    // Ordre final souhaité (v0.6.15 — AZBA/NOTAM passe après zones aériennes)
     //   1. Trajet
     //   2. wfRowWeather (Météo générale | Windy)
     //   3. mapControls + mapContainer (fusionnés via mergeMapBlocksIntoOneCard)
@@ -960,7 +960,7 @@
       planTab.appendChild(node);
     });
 
-    // 🔥 v0.6.14 : masquer wf-row-azba-notam tant que pas de trajet validé
+    // 🔥 v0.6.15 : masquer wf-row-azba-notam tant que pas de trajet validé
     // (similaire au comportement natif de #airspaces-section et #trip-summary)
     if (wfRowAzbaNotam) {
       const trip = (typeof computeTrip === 'function') ? computeTrip() : null;
@@ -972,7 +972,7 @@
       }
     }
 
-    // 🔥 v0.6.14 : DÉSACTIVÉ — makeNativeBlockCollapsible cassait l'affichage
+    // 🔥 v0.6.15 : DÉSACTIVÉ — makeNativeBlockCollapsible cassait l'affichage
     // de #airspaces-section et #trip-summary (wrap natif + content invisible).
     // Remplacé par addAbsoluteChevronToCard() qui pose juste un chevron en
     // position absolute sans toucher au DOM natif.
@@ -980,10 +980,10 @@
     // makeNativeBlockCollapsible(tripSummary, 'resume-trajet', 'résumé du trajet');
     // Note : on NE plie PAS #map-container (Leaflet casserait)
 
-    // 🔥 FIX #A v0.6.14 : Fusion overlays-carte + map-container en "Carte des aérodromes"
+    // 🔥 FIX #A v0.6.15 : Fusion overlays-carte + map-container en "Carte des aérodromes"
     mergeMapBlocksIntoOneCard();
 
-    // 🔥 FIX #B v0.6.14 : Harmoniser les chevrons des <details> natifs
+    // 🔥 FIX #B v0.6.15 : Harmoniser les chevrons des <details> natifs
     harmonizeDetailsChevrons();
 
     // Réinvalider les cartes Leaflet après reorganisation (display:flex peut perturber)
@@ -994,7 +994,7 @@
   }
 
   // ============================================================
-  // 🔥 FIX #A v0.6.14 — FUSION overlays-carte + map-container
+  // 🔥 FIX #A v0.6.15 — FUSION overlays-carte + map-container
   // En un seul bloc "Carte des aérodromes" avec UN header + UN chevron
   // ============================================================
   function mergeMapBlocksIntoOneCard() {
@@ -1078,11 +1078,11 @@
       apply();
     });
 
-    console.log('[v0.6.14] Carte aérodromes fusionnée ✓');
+    console.log('[v0.6.15] Carte aérodromes fusionnée ✓');
   }
 
   // ============================================================
-  // 🔥 FIX #B v0.6.14 — HARMONISATION DES CHEVRONS NATIFS
+  // 🔥 FIX #B v0.6.15 — HARMONISATION DES CHEVRONS NATIFS
   // Remplace les <i lucide chevron-down> et .accordion-icon
   // par un chevron uniforme au même style que les autres
   // ============================================================
@@ -1091,7 +1091,7 @@
       const summary = det.querySelector('summary');
       if (!summary) return;
 
-      // 🔥 FIX v0.6.14 : skip les sous-<details> imbriqués pour ne pas
+      // 🔥 FIX v0.6.15 : skip les sous-<details> imbriqués pour ne pas
       // doubler avec leurs chevrons natifs (légende BASULM, logistique fiches AD)
       if (det.parentElement?.closest('details')) return;
       if (det.closest('#map-controls, #map-container, #ad-cards, #aerodromes-merged-wrapper #map-controls')) return;
@@ -1139,14 +1139,14 @@
   function makeNativeBlockCollapsible(el, key, _label) {
     if (!el) return;
 
-    // 🔥 v0.6.14 : si `el` contient une seule .card enfant direct,
+    // 🔥 v0.6.15 : si `el` contient une seule .card enfant direct,
     // opérer sur cette .card au lieu de `el` (cas #trip-summary et #airspaces-section)
     let target = el;
     if (el.children.length === 1 && el.firstElementChild?.classList?.contains('card')) {
       target = el.firstElementChild;
     }
 
-    // 🔥 NETTOYAGE IDEMPOTENT v0.6.14 :
+    // 🔥 NETTOYAGE IDEMPOTENT v0.6.15 :
     // Avant toute redécoration, on vire toute trace de décoration précédente
     // pour garantir l'absence de doublons même si la fonction est appelée
     // plusieurs fois sur le même bloc.
@@ -1240,7 +1240,7 @@
     if (!document.getElementById('vfr-checks-wrapper-v065')) {
       injectBriefBlocksV065();
     } else {
-      // 🔥 v0.6.14 : appels makeNativeBlockCollapsible désactivés (cassaient l'affichage)
+      // 🔥 v0.6.15 : appels makeNativeBlockCollapsible désactivés (cassaient l'affichage)
       // Remplacés par addAbsoluteChevronToCard via applyChevronsV0611 (non-destructif)
       if (typeof applyChevronsV0611 === 'function') {
         try { applyChevronsV0611(); } catch (e) {}
@@ -1285,7 +1285,7 @@
     }
   }
 
-  // 🔥 v0.6.14 : toggle visibilité de wf-row-azba-notam selon trajet validé
+  // 🔥 v0.6.15 : toggle visibilité de wf-row-azba-notam selon trajet validé
   function updateAzbaNotamVisibility() {
     const wfRowAzbaNotam = document.getElementById('wf-row-azba-notam');
     if (!wfRowAzbaNotam) return;
@@ -1293,6 +1293,18 @@
     const hasValidTrip = trip && trip.points && trip.points.length >= 2;
     if (hasValidTrip) wfRowAzbaNotam.classList.remove('hidden');
     else wfRowAzbaNotam.classList.add('hidden');
+  }
+
+  // 🔥 v0.6.15 : toggle visibilité de #airspaces-section selon trajet validé
+  // (le natif le fait déjà mais on force par défense — pas de sens d'afficher
+  //  zones aériennes traversées sans trajet à analyser)
+  function updateAirspacesVisibility() {
+    const sec = document.getElementById('airspaces-section');
+    if (!sec) return;
+    const trip = (typeof computeTrip === 'function') ? computeTrip() : null;
+    const hasValidTrip = trip && trip.points && trip.points.length >= 2;
+    if (hasValidTrip) sec.classList.remove('hidden');
+    else sec.classList.add('hidden');
   }
 
   // Hook dans onTripChange : on chaîne sans casser les hooks existants
@@ -1308,10 +1320,14 @@
     setTimeout(updateWeatherFranceZoom, 100);
     // Masquer/afficher AZBA/NOTAM selon le trajet
     setTimeout(updateAzbaNotamVisibility, 50);
+    // Masquer/afficher Zones aériennes selon le trajet
+    setTimeout(updateAirspacesVisibility, 50);
   };
   // Appel initial différé pour s'assurer que weatherFranceMap est prête
   setTimeout(updateWeatherFranceZoom, 1500);
   setTimeout(updateAzbaNotamVisibility, 1500);
+  setTimeout(updateAirspacesVisibility, 1500);
+  setTimeout(updateAirspacesVisibility, 3000);
 
   // ============================================================
   // RENAME OPENAIP OVERLAY (inchangé v0.6.4)
@@ -1408,9 +1424,9 @@ body > header, body header { max-width: 100% !important; }
   gap: 14px;
   align-items: stretch;
 }
-/* 🔥 FIX #C v0.6.14 : sur la row Zones aériennes | Notes Pilote,
+/* 🔥 FIX #C v0.6.15 : sur la row Zones aériennes | Notes Pilote,
    ne pas étirer les blocs à la même hauteur — la liste a son propre scroll */
-/* 🔥 v0.6.14 : Sur la row Zones aériennes | Notes Pilote,
+/* 🔥 v0.6.15 : Sur la row Zones aériennes | Notes Pilote,
    on remet stretch pour que les 2 blocs aient des proportions harmonisées.
    Le scroll interne de la liste reste actif. */
 #wf-row-zones-notes {
@@ -1487,7 +1503,7 @@ html.dark body[data-fullscreen-active] .wf-mode-line {
   color: var(--foreground) !important;
 }
 
-/* === 🔥 CHEVRON UNIFIÉ v0.6.14 ===
+/* === 🔥 CHEVRON UNIFIÉ v0.6.15 ===
    Tous les chevrons (blocs custom + blocs natifs + <details>)
    utilisent la même classe .unified-chevron pour un rendu identique */
 .unified-chevron {
@@ -1525,7 +1541,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   display: none !important;
 }
 
-/* === 🔥 FIX #C v0.6.14 — Zones aériennes scroll interne ===
+/* === 🔥 FIX #C v0.6.15 — Zones aériennes scroll interne ===
    On NE met PAS max-height sur la .card complète (ça forçait le <p>
    d'avertissement final à déborder visuellement).
    Le scroll interne se fait uniquement sur la liste #airspaces-list. */
@@ -1558,7 +1574,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
 /* === Container map-container pleine largeur === */
 #map-container { width: 100% !important; }
 
-/* === Carte aérodromes fusionnée (v0.6.14) ===
+/* === Carte aérodromes fusionnée (v0.6.15) ===
    On supprime le .card sur les enfants pour éviter double encadrement */
 #aerodromes-merged-wrapper #map-controls,
 #aerodromes-merged-wrapper #map-container {
@@ -1580,7 +1596,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   document.head.appendChild(v065Css);
 
   // ============================================================
-  // 🔥 v0.6.14 — FIX METAR : cleanup cache pollué + timeout wrapper
+  // 🔥 v0.6.15 — FIX METAR : cleanup cache pollué + timeout wrapper
   // L'override v0.6.8 stockait au format {data, ts} alors que le natif
   // attend le METAR directement. On nettoie/répare au boot.
   // En plus, on wrap fetchMetar avec un timeout global de 12s pour
@@ -1608,7 +1624,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
         }
       });
       if (fixed > 0 || removed > 0) {
-        console.log(`[v0.6.14] METAR cache cleanup : ${fixed} repaired, ${removed} removed ✓`);
+        console.log(`[v0.6.15] METAR cache cleanup : ${fixed} repaired, ${removed} removed ✓`);
       }
     } catch (e) {}
   })();
@@ -1633,7 +1649,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
           return null;
         }
       };
-      console.log('[METAR v0.6.14] timeout-wrapped (12s max) ✓');
+      console.log('[METAR v0.6.15] timeout-wrapped (12s max) ✓');
     }
     _tryPatch();
   })();
@@ -1736,7 +1752,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
         }
       };
 
-      console.log('[METAR v0.6.14] fetchMetar patché : Promise.any + 5s + stale-while-revalidate ✓');
+      console.log('[METAR v0.6.15] fetchMetar patché : Promise.any + 5s + stale-while-revalidate ✓');
     }
     _tryPatch();
   })();
@@ -1744,7 +1760,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   // Fin de l'ancien patch METAR désactivé.
 
   // ============================================================
-  // 🌤️ FOND CIEL + NUAGES v0.6.14 (mode jour uniquement)
+  // 🌤️ FOND CIEL + NUAGES v0.6.15 (mode jour uniquement)
   // SVG inline en data URL = 0 fichier à héberger, vectoriel, ~1 KB.
   // Les .card restent opaques pour passer par-dessus avec un léger
   // box-shadow pour les faire "flotter". Mode nuit inchangé.
@@ -1760,20 +1776,34 @@ html:not(.dark) body {
   background-attachment: fixed;
 }
 
-/* 🔥 v0.6.14 : FORCE TRANSPARENCE sur les conteneurs principaux
-   pour que le fond ciel soit visible entre les blocs */
+/* 🔥 v0.6.15 : FORCE TRANSPARENCE ULTRA-AGRESSIVE sur tous les conteneurs
+   potentiels qui pourraient porter un fond blanc (Tailwind utilities,
+   #app, main, sections). Seuls les éléments avec classe .card et les
+   blocs custom .vfr-block-* gardent leur fond opaque. */
 html:not(.dark) body > main,
 html:not(.dark) body main,
-html:not(.dark) main {
-  background: transparent !important;
-  background-color: transparent !important;
-}
-html:not(.dark) [id^="tab-"] {
+html:not(.dark) main,
+html:not(.dark) #app,
+html:not(.dark) #root,
+html:not(.dark) .container,
+html:not(.dark) [class*="max-w-"],
+html:not(.dark) [id^="tab-"],
+html:not(.dark) [id^="page-"],
+html:not(.dark) body > section,
+html:not(.dark) section.tab-content,
+html:not(.dark) .tab-content {
   background: transparent !important;
   background-color: transparent !important;
 }
 
-/* 🔥 v0.6.14 : Gap visible entre les blocs (ciel visible entre)
+/* 🔥 v0.6.15 : Si un wrapper invisible enveloppe le contenu et a un fond
+   blanc, on le rend transparent. Mais on garde les .card visibles. */
+html:not(.dark) body > div:not(.card):not([id]):not(.v0610-footer-pill) {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* 🔥 v0.6.15 : Gap visible entre les blocs (ciel visible entre)
    On force du margin-bottom sur les enfants directs de #tab-plan
    au cas où le gap flex ne s'applique pas */
 html:not(.dark) #tab-plan > * {
@@ -1789,7 +1819,7 @@ html:not(.dark) .card {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* 🔥 v0.6.14 : Header pilule SANS flou, MAIS sans rectangle blanc moche.
+/* 🔥 v0.6.15 : Header pilule SANS flou, MAIS sans rectangle blanc moche.
    On retire juste le backdrop-filter. Le natif gère sa pilule centrée
    avec son propre fond. PAS de fond blanc forcé sur tous les enfants
    (ce qui créait la "feuille blanche" pleine largeur en v0.6.10). */
@@ -1811,7 +1841,7 @@ html:not(.dark) #aerodromes-merged-wrapper {
   background-color: #ffffff !important;
 }
 
-/* 🔥 v0.6.14 : footer (Sources / Données indicatives) dans une pilule blanche */
+/* 🔥 v0.6.15 : footer (Sources / Données indicatives) dans une pilule blanche */
 html:not(.dark) .v0610-footer-pill {
   background-color: #ffffff !important;
   border-radius: 14px;
@@ -1824,7 +1854,7 @@ html:not(.dark) .v0610-footer-pill {
   document.head.appendChild(skyBgCss);
 
   // ============================================================
-  // 🔥 v0.6.14 — FIX #1 : Légende météo France décalée à droite
+  // 🔥 v0.6.15 — FIX #1 : Légende météo France décalée à droite
   // des contrôles Leaflet (+/- et plein écran)
   // ============================================================
   const fixLegendCss = document.createElement('style');
@@ -1847,7 +1877,7 @@ body[data-fullscreen-active] .wf-mode-line {
   document.head.appendChild(fixLegendCss);
 
   // ============================================================
-  // 🔥 v0.6.14 — FIX #2 : RECONSTRUCTION RADICALE des sections
+  // 🔥 v0.6.15 — FIX #2 : RECONSTRUCTION RADICALE des sections
   // #airspaces-section et #trip-summary pour éliminer DÉFINITIVEMENT
   // les doublons de titre. On wipe la card et on reconstruit avec :
   //   - UN seul header custom (titre + badge + chevron unifié à droite)
@@ -1933,7 +1963,7 @@ body[data-fullscreen-active] .wf-mode-line {
       apply();
     });
 
-    console.log('[v0.6.14] airspaces-section rebuild ✓');
+    console.log('[v0.6.15] airspaces-section rebuild ✓');
   }
 
   function rebuildTripSummaryV0610() {
@@ -1997,10 +2027,10 @@ body[data-fullscreen-active] .wf-mode-line {
       apply();
     });
 
-    console.log('[v0.6.14] trip-summary rebuild ✓');
+    console.log('[v0.6.15] trip-summary rebuild ✓');
   }
 
-  // 🔥 v0.6.14 : APPROCHE NUCLÉAIRE pour le doublon de titre.
+  // 🔥 v0.6.15 : APPROCHE NUCLÉAIRE pour le doublon de titre.
   // On cherche le h2 natif PAR ICÔNE (shield-alert pour airspaces),
   // on trouve sa card englobante, on APLATIT toute card imbriquée AU-DESSUS,
   // on supprime les h2 dupliqués sans icon, et on pose un chevron inline.
@@ -2008,7 +2038,7 @@ body[data-fullscreen-active] .wf-mode-line {
   function v0613FlattenAndChevron(section, key, iconLucide, titleRegex) {
     if (!section) return;
 
-    // 🔥 v0.6.14 : TRANSMUTATION RADICALE.
+    // 🔥 v0.6.15 : TRANSMUTATION RADICALE.
     // Le DOM observé montre que la .card est devenue un <details> avec un
     // <summary> qui CONTIENT le titre dupliqué + le marker ▾. C'est l'origine
     // du doublon. Solution : convertir le <details> en <div> et supprimer
@@ -2021,7 +2051,7 @@ body[data-fullscreen-active] .wf-mode-line {
       // Supprimer le summary (doublon de titre)
       const sum = det.querySelector(':scope > summary');
       if (sum) {
-        console.log(`[v0.6.14] Removed <summary> doublon dans #${section.id}`);
+        console.log(`[v0.6.15] Removed <summary> doublon dans #${section.id}`);
         sum.remove();
       }
       // Transmuter le <details> en <div> : créer un nouveau <div>,
@@ -2036,7 +2066,7 @@ body[data-fullscreen-active] .wf-mode-line {
       while (det.firstChild) newDiv.appendChild(det.firstChild);
       // Remplacer dans le parent
       det.parentNode.replaceChild(newDiv, det);
-      console.log(`[v0.6.14] Transmuté <details> en <div> dans #${section.id} ✓`);
+      console.log(`[v0.6.15] Transmuté <details> en <div> dans #${section.id} ✓`);
     });
 
     // 1. Trouver le h2 natif (priorité : celui avec l'icône)
@@ -2076,7 +2106,7 @@ body[data-fullscreen-active] .wf-mode-line {
         }
         if (toRemove.parentElement && toRemove !== nativeCard) {
           toRemove.remove();
-          console.log(`[v0.6.14] Suppression doublon titre sans icon dans #${section.id}`);
+          console.log(`[v0.6.15] Suppression doublon titre sans icon dans #${section.id}`);
         }
       }
     });
@@ -2108,7 +2138,17 @@ body[data-fullscreen-active] .wf-mode-line {
       }
     });
 
-    if (nativeCard.dataset.v0614Done === '1') return;
+    if (nativeCard.dataset.v0614Done === '1') {
+      // 🔥 v0.6.15 : déjà traitée, mais on RE-VÉRIFIE que le chevron est bien
+      // toujours présent (sinon on le ré-ajoute). Évite le bug où le chevron
+      // disparaît après un re-render natif.
+      if (!nativeCard.querySelector('.unified-chevron')) {
+        delete nativeCard.dataset.v0614Done;
+        // continue execution to re-add chevron
+      } else {
+        return;
+      }
+    }
     nativeCard.dataset.v0614Done = '1';
 
     // 7. Identifier ou créer le header flex contenant nativeH2
@@ -2164,7 +2204,7 @@ body[data-fullscreen-active] .wf-mode-line {
       saveCollapsePref(key, collapsed);
       apply();
     });
-    console.log(`[v0.6.14] Chevron inline ajouté à #${section.id} ✓`);
+    console.log(`[v0.6.15] Chevron inline ajouté à #${section.id} ✓`);
   }
 
   function v0613NuclearFixAll() {
@@ -2184,7 +2224,7 @@ body[data-fullscreen-active] .wf-mode-line {
   function applyChevronsV0611() { v0613NuclearFixAll(); }
 
   // ============================================================
-  // 🔥 v0.6.14 — FIX #3 : PRÉSERVATION DU SCROLL dans #airspaces-list
+  // 🔥 v0.6.15 — FIX #3 : PRÉSERVATION DU SCROLL dans #airspaces-list
   // Quand le code natif rebuild la liste (updateAirspacesOnRoute),
   // le scrollTop revient à 0. On capture la position de scroll en live
   // et on la restaure quand un mutation se produit.
@@ -2208,13 +2248,13 @@ body[data-fullscreen-active] .wf-mode-line {
       }
     });
     obs.observe(list, { childList: true, subtree: false });
-    console.log('[v0.6.14] airspaces-list scroll preservation ✓');
+    console.log('[v0.6.15] airspaces-list scroll preservation ✓');
   }
   setTimeout(setupAirspacesScrollPreservation, 800);
   setTimeout(setupAirspacesScrollPreservation, 2500);
 
   // ============================================================
-  // 🔥 v0.6.14 — FIX #7 : Wrap les textes du footer (Sources /
+  // 🔥 v0.6.15 — FIX #7 : Wrap les textes du footer (Sources /
   // Données indicatives) dans une pilule blanche pour lisibilité
   // sur le fond nuages.
   // ============================================================
@@ -2249,22 +2289,22 @@ body[data-fullscreen-active] .wf-mode-line {
   setTimeout(wrapFooterTextsInPill, 2500);
 
   // ============================================================
-  // 🔥 v0.6.14 — FIX #8 : ANIMATIONS AU CHANGEMENT DE TAB
+  // 🔥 v0.6.15 — FIX #8 : ANIMATIONS AU CHANGEMENT DE TAB
   // Mini overlay avion qui glisse de bas-gauche en diagonale + 
   // fade-slide-in du contenu du tab. Style "Apple smooth".
   // ============================================================
   // ============================================================
-  // 🔥 v0.6.14 — ANIMATIONS DÉSACTIVÉES
+  // 🔥 v0.6.15 — ANIMATIONS DÉSACTIVÉES
   // Killian a demandé le retrait pour l'instant. CSS + JS neutralisés.
   // ============================================================
   // Pas d'injection de keyframes ni de classes v0610-*.
   // showPlaneOverlay et setupTabAnimationsV0611 sont définis vides
   // au cas où du code restant les appellerait.
-  function showPlaneOverlay() { /* no-op v0.6.14 */ }
-  function setupTabAnimationsV0611() { /* no-op v0.6.14 */ return true; }
+  function showPlaneOverlay() { /* no-op v0.6.15 */ }
+  function setupTabAnimationsV0611() { /* no-op v0.6.15 */ return true; }
 
   // ============================================================
-  // 🔥 v0.6.14 — FIX #9 : Étendre le filtre harmonizeDetailsChevrons
+  // 🔥 v0.6.15 — FIX #9 : Étendre le filtre harmonizeDetailsChevrons
   // pour ignorer les <details> dans les fiches AD (DÉPART/ARRIVÉE/ÉTAPE)
   // qui ne devraient pas recevoir mon chevron unifié.
   // On override la fonction existante pour ajouter ces exclusions.
@@ -2344,7 +2384,7 @@ body[data-fullscreen-active] .wf-mode-line {
   // BOOT
   // ============================================================
   if (typeof showToast === 'function') {
-    showToast('✓ v0.6.14 chargé', 'ok', 3000);
+    showToast('✓ v0.6.15 chargé', 'ok', 3000);
   }
-  console.log('[Extensions v0.6.14] Intégration terminée');
+  console.log('[Extensions v0.6.15] Intégration terminée');
 })();
