@@ -1,7 +1,7 @@
 /* ============================================================
-   AutogyroDash — extensions v0.6.24
+   AutogyroDash — extensions v0.6.25
    ------------------------------------------------------------
-   Nouveau dans v0.6.24 (hotfix v0.6.5 — 4 correctifs ciblés) :
+   Nouveau dans v0.6.25 (hotfix v0.6.5 — 4 correctifs ciblés) :
      A. Fusion overlays-carte + map en un seul bloc
         "Carte des aérodromes" avec un header + un chevron unique
      B. Chevrons toggle UNIFORMES : tous au même style et même
@@ -51,7 +51,7 @@
   }
   await waitForAppReady();
 
-  console.log('[Extensions v0.6.24] Boot...');
+  console.log('[Extensions v0.6.25] Boot...');
 
   function escapeHtml(s) {
     if (s === null || s === undefined) return '';
@@ -77,9 +77,9 @@
   }
 
   try {
-    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.24');
+    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.25');
     document.querySelectorAll('span.text-xs.pre-mono').forEach(s => {
-      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.24';
+      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.25';
     });
   } catch (e) {}
 
@@ -268,7 +268,7 @@
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🌤️ Météo aviation</h3><p class="text-xs">METAR/TAF : <strong>aviationweather.gov</strong>. Visuel : <strong>Windy.com</strong>.</p></div>
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🛡️ Espaces aériens</h3><p class="text-xs">Source : <strong>OpenAIP</strong>.</p></div>
       </div>
-      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.24</div>
+      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.25</div>
     `;
   }
   function setupResourcesNav() {
@@ -495,10 +495,10 @@
       }
       if (!inserted) return;
 
-      console.log('[Satellite v0.6.24] Toggle inséré en première position ✓');
+      console.log('[Satellite v0.6.25] Toggle inséré en première position ✓');
 
       let satOn = false;
-      // 🔥 v0.6.24 : tracker explicitement l'état du satellite natif
+      // 🔥 v0.6.25 : tracker explicitement l'état du satellite natif
       // pour pouvoir le synchroniser dans les 2 sens (activation + désactivation).
       // Bug v0.6.7 : on cliquait sur satelliteBtn pour activer mais JAMAIS
       // pour désactiver → l'iframe Windy restait collée à l'écran.
@@ -540,7 +540,7 @@
           modeBtns.forEach(b => { b.style.display = b.dataset.origDisplay || ''; });
           if (affichageLabel) affichageLabel.style.display = affichageLabel.dataset.origDisplay || '';
 
-          // 🔥 v0.6.24 : DÉSACTIVER explicitement le satellite natif
+          // 🔥 v0.6.25 : DÉSACTIVER explicitement le satellite natif
           if (nativeSatActive) clickSatelliteNative();
 
           // Reset mode au "temp" par défaut
@@ -936,7 +936,7 @@
       wfRowZonesNotes.appendChild(notesBlock);
     }
 
-    // Ordre final souhaité (v0.6.24 — AZBA/NOTAM passe après zones aériennes)
+    // Ordre final souhaité (v0.6.25 — AZBA/NOTAM passe après zones aériennes)
     //   1. Trajet
     //   2. wfRowWeather (Météo générale | Windy)
     //   3. mapControls + mapContainer (fusionnés via mergeMapBlocksIntoOneCard)
@@ -960,7 +960,7 @@
       planTab.appendChild(node);
     });
 
-    // 🔥 v0.6.24 : masquer wf-row-azba-notam tant que pas de trajet validé
+    // 🔥 v0.6.25 : masquer wf-row-azba-notam tant que pas de trajet validé
     // (similaire au comportement natif de #airspaces-section et #trip-summary)
     if (wfRowAzbaNotam) {
       const trip = (typeof computeTrip === 'function') ? computeTrip() : null;
@@ -972,7 +972,7 @@
       }
     }
 
-    // 🔥 v0.6.24 : DÉSACTIVÉ — makeNativeBlockCollapsible cassait l'affichage
+    // 🔥 v0.6.25 : DÉSACTIVÉ — makeNativeBlockCollapsible cassait l'affichage
     // de #airspaces-section et #trip-summary (wrap natif + content invisible).
     // Remplacé par addAbsoluteChevronToCard() qui pose juste un chevron en
     // position absolute sans toucher au DOM natif.
@@ -980,10 +980,10 @@
     // makeNativeBlockCollapsible(tripSummary, 'resume-trajet', 'résumé du trajet');
     // Note : on NE plie PAS #map-container (Leaflet casserait)
 
-    // 🔥 FIX #A v0.6.24 : Fusion overlays-carte + map-container en "Carte des aérodromes"
+    // 🔥 FIX #A v0.6.25 : Fusion overlays-carte + map-container en "Carte des aérodromes"
     mergeMapBlocksIntoOneCard();
 
-    // 🔥 FIX #B v0.6.24 : Harmoniser les chevrons des <details> natifs
+    // 🔥 FIX #B v0.6.25 : Harmoniser les chevrons des <details> natifs
     harmonizeDetailsChevrons();
 
     // Réinvalider les cartes Leaflet après reorganisation (display:flex peut perturber)
@@ -994,7 +994,7 @@
   }
 
   // ============================================================
-  // 🔥 FIX #A v0.6.24 — FUSION overlays-carte + map-container
+  // 🔥 FIX #A v0.6.25 — FUSION overlays-carte + map-container
   // En un seul bloc "Carte des aérodromes" avec UN header + UN chevron
   // ============================================================
   function mergeMapBlocksIntoOneCard() {
@@ -1078,11 +1078,11 @@
       apply();
     });
 
-    console.log('[v0.6.24] Carte aérodromes fusionnée ✓');
+    console.log('[v0.6.25] Carte aérodromes fusionnée ✓');
   }
 
   // ============================================================
-  // 🔥 FIX #B v0.6.24 — HARMONISATION DES CHEVRONS NATIFS
+  // 🔥 FIX #B v0.6.25 — HARMONISATION DES CHEVRONS NATIFS
   // Remplace les <i lucide chevron-down> et .accordion-icon
   // par un chevron uniforme au même style que les autres
   // ============================================================
@@ -1091,7 +1091,7 @@
       const summary = det.querySelector('summary');
       if (!summary) return;
 
-      // 🔥 FIX v0.6.24 : skip les sous-<details> imbriqués pour ne pas
+      // 🔥 FIX v0.6.25 : skip les sous-<details> imbriqués pour ne pas
       // doubler avec leurs chevrons natifs (légende BASULM, logistique fiches AD)
       if (det.parentElement?.closest('details')) return;
       if (det.closest('#map-controls, #map-container, #ad-cards, #aerodromes-merged-wrapper #map-controls')) return;
@@ -1139,14 +1139,14 @@
   function makeNativeBlockCollapsible(el, key, _label) {
     if (!el) return;
 
-    // 🔥 v0.6.24 : si `el` contient une seule .card enfant direct,
+    // 🔥 v0.6.25 : si `el` contient une seule .card enfant direct,
     // opérer sur cette .card au lieu de `el` (cas #trip-summary et #airspaces-section)
     let target = el;
     if (el.children.length === 1 && el.firstElementChild?.classList?.contains('card')) {
       target = el.firstElementChild;
     }
 
-    // 🔥 NETTOYAGE IDEMPOTENT v0.6.24 :
+    // 🔥 NETTOYAGE IDEMPOTENT v0.6.25 :
     // Avant toute redécoration, on vire toute trace de décoration précédente
     // pour garantir l'absence de doublons même si la fonction est appelée
     // plusieurs fois sur le même bloc.
@@ -1240,7 +1240,7 @@
     if (!document.getElementById('vfr-checks-wrapper-v065')) {
       injectBriefBlocksV065();
     } else {
-      // 🔥 v0.6.24 : appels makeNativeBlockCollapsible désactivés (cassaient l'affichage)
+      // 🔥 v0.6.25 : appels makeNativeBlockCollapsible désactivés (cassaient l'affichage)
       // Remplacés par addAbsoluteChevronToCard via applyChevronsV0611 (non-destructif)
       if (typeof applyChevronsV0611 === 'function') {
         try { applyChevronsV0611(); } catch (e) {}
@@ -1285,7 +1285,7 @@
     }
   }
 
-  // 🔥 v0.6.24 : VISIBILITÉ DÉFENSIVE des blocs zones aériennes + AZBA/NOTAM
+  // 🔥 v0.6.25 : VISIBILITÉ DÉFENSIVE des blocs zones aériennes + AZBA/NOTAM
   // ----------------------------------------------------------------------
   // v0.6.17 ne masquait pas réellement les blocs. Triple protection ici :
   // 1. style.display = 'none' (inline, max priorité)
@@ -1408,7 +1408,7 @@
     });
   }, 1500);
 
-  // 🔥 v0.6.24 — DIAGNOSTIC console (à invoquer manuellement)
+  // 🔥 v0.6.25 — DIAGNOSTIC console (à invoquer manuellement)
   // Tape dans la console : window.__diagBriefing()
   window.__diagBriefing = function() {
     const { count, total } = v0618CountFilledTripInputs();
@@ -1416,7 +1416,7 @@
     const sec = document.getElementById('airspaces-section');
     const wfRow = document.getElementById('wf-row-azba-notam');
     const report = {
-      version: 'v0.6.24',
+      version: 'v0.6.25',
       inputs: {
         detected: total,
         filled: count,
@@ -1433,11 +1433,11 @@
         computedDisplay: getComputedStyle(wfRow).display
       } : 'NOT_FOUND'
     };
-    console.log('=== DIAG v0.6.24 ===', report);
+    console.log('=== DIAG v0.6.25 ===', report);
     return report;
   };
 
-  // 🔥 v0.6.24 — DIAGNOSTIC SPACING (mesure les vrais gaps visuels)
+  // 🔥 v0.6.25 — DIAGNOSTIC SPACING (mesure les vrais gaps visuels)
   // Tape dans la console : window.__diagSpacing()
   window.__diagSpacing = function() {
     const tabPlan = document.getElementById('tab-plan');
@@ -1477,7 +1477,7 @@
     });
   };
 
-  // 🔥 v0.6.24 — HIDE EMPTY FLEX CHILDREN
+  // 🔥 v0.6.25 — HIDE EMPTY FLEX CHILDREN
   // ----------------------------------------------------------------
   // DIAG révélé : #tab-plan a des enfants avec offsetHeight 0 mais
   // sans display:none. En flex layout, ils prennent un gap (22px) chacun
@@ -1518,7 +1518,7 @@
       if (isReallyEmpty) {
         c.dataset.v0622AutoHide = '1';
         c.style.setProperty('display', 'none', 'important');
-        console.log(`[v0.6.24] Wrapper vide caché (gap fantôme évité) : ${c.id || c.tagName.toLowerCase() + '.' + c.className.slice(0, 30)}`);
+        console.log(`[v0.6.25] Wrapper vide caché (gap fantôme évité) : ${c.id || c.tagName.toLowerCase() + '.' + c.className.slice(0, 30)}`);
       }
     });
   }
@@ -1575,7 +1575,7 @@
   setTimeout(updateAirspacesVisibility, 3000);
 
   // ============================================================
-  // 🔥 v0.6.24 — FOOTER TEXTE BASCULÉ SOUS BLOC HISTORIQUE
+  // 🔥 v0.6.25 — FOOTER TEXTE BASCULÉ SOUS BLOC HISTORIQUE
   // ----------------------------------------------------------
   // Le natif a un texte "Aérodromes : DGAC..." + "Données indicatives..."
   // positionné hors des tabs (dans <main> ou <footer> selon scénario).
@@ -1589,42 +1589,37 @@
   // 3. Injecter ma propre version du texte INSIDE #tab-history (à la fin)
   // ============================================================
   function v0618HandleHistoriqueFooter() {
+    // 🔥 v0.6.25 — APPROCHE SIMPLE : cacher TOUJOURS et PARTOUT le texte
+    // natif "Aérodromes : DGAC / Données indicatives" (hors tabs et hors mon
+    // footer custom). Plus de toggle, plus de flash.
+    // Et injecte mon footer custom dans #tab-history.
+
     const tabHistory = document.getElementById('tab-history');
-    if (!tabHistory) return;
 
-    // 1. Détecter si l'onglet historique est actuellement visible
-    const isHistoryVisible = !tabHistory.classList.contains('hidden') &&
-                             getComputedStyle(tabHistory).display !== 'none';
+    // 1. Cacher PARTOUT et TOUJOURS le texte natif
+    const toHide = new Set();
 
-    // 2. Construire la liste des éléments natifs "Aérodromes/Données indicatives" à cacher
-    // 🔥 v0.6.24 : approche élargie — on couvre <p>, <div>, <span>, <small>, ET le
-    // <footer> parent (si le natif les a regroupés dans un <footer>).
-    const toToggle = new Set();
-
-    // Paragraphes/divs/spans/small qui matchent directement le texte
     document.querySelectorAll('p, div, span, small').forEach(el => {
       if (el.classList.contains('v0618-hist-footer-text')) return;
       if (el.closest('.v0618-hist-footer-text')) return;
-      if (el.closest('[id^="tab-"]')) return; // dans une tab → laisser
+      if (el.closest('[id^="tab-"]')) return;
       const txt = (el.textContent || '').trim();
       const isFooter = (txt.startsWith('Aérodromes :') && txt.includes('DGAC')) ||
                        (txt.startsWith('Données indicatives') && txt.includes('pilote'));
       if (isFooter && txt.length < 600) {
-        toToggle.add(el);
+        toHide.add(el);
       }
     });
 
-    // <footer> qui contient ces textes (même indirect)
     document.querySelectorAll('footer').forEach(footer => {
       if (footer.closest('[id^="tab-"]')) return;
       const txt = (footer.textContent || '').trim();
       if (txt.includes('Aérodromes :') && txt.includes('DGAC') &&
           txt.includes('Données indicatives') && txt.length < 1000) {
-        toToggle.add(footer);
+        toHide.add(footer);
       }
     });
 
-    // <main> ou autre conteneur direct ayant CES DEUX phrases et peu d'enfants
     document.querySelectorAll('main > div, body > div, main > section, body > section, main > aside').forEach(el => {
       if (el.id && el.id.startsWith('tab-')) return;
       if (el.classList.contains('v0618-hist-footer-text')) return;
@@ -1632,38 +1627,26 @@
       const txt = (el.textContent || '').trim();
       if (txt.includes('Aérodromes :') && txt.includes('DGAC') &&
           txt.includes('Données indicatives') && txt.length < 600) {
-        toToggle.add(el);
+        toHide.add(el);
       }
     });
 
-    // 3. Apply hide/show
-    toToggle.forEach(el => {
-      if (isHistoryVisible) {
-        if (el.dataset.v0618FooterHidden !== '1') {
-          el.dataset.v0618FooterOrigDisplay = el.style.display || '__empty__';
-          el.style.setProperty('display', 'none', 'important');
-          el.dataset.v0618FooterHidden = '1';
-        }
-      } else {
-        if (el.dataset.v0618FooterHidden === '1') {
-          const orig = el.dataset.v0618FooterOrigDisplay;
-          if (orig === '__empty__') el.style.removeProperty('display');
-          else el.style.display = orig;
-          delete el.dataset.v0618FooterHidden;
-          delete el.dataset.v0618FooterOrigDisplay;
-        }
+    // Apply hide (jamais restaure)
+    toHide.forEach(el => {
+      if (el.dataset.v0625HiddenAlways !== '1') {
+        el.dataset.v0625HiddenAlways = '1';
+        el.style.setProperty('display', 'none', 'important');
       }
     });
 
-    // 4. Garantir la présence de mon footer inside #tab-history
-    if (!tabHistory.querySelector('.v0618-hist-footer-text')) {
+    // 2. Garantir la présence de mon footer inside #tab-history
+    if (tabHistory && !tabHistory.querySelector('.v0618-hist-footer-text')) {
       const footerEl = document.createElement('div');
       footerEl.className = 'v0618-hist-footer-text';
       footerEl.style.cssText = 'padding: 24px 16px 16px; color: #4b5563; font-size: 0.78rem; line-height: 1.6; text-align: center;';
       footerEl.innerHTML = '<p>Aérodromes : <strong>DGAC</strong>. Plateformes ULM : <strong>BASULM / FFPLUM</strong>. Météo : aviationweather.gov, open-meteo.com. Espaces aériens : OpenAIP. Voir l\'onglet <a href="javascript:void(0)" class="v0618-link-sources" style="color: #2563eb; text-decoration: underline;">sources</a> pour le détail.</p><p style="margin-top: 6px;">Données indicatives — le pilote reste seul responsable de la vérification SIA / METAR / TAF / NOTAM / AZBA avant chaque vol.</p>';
       tabHistory.appendChild(footerEl);
 
-      // Wire le lien "sources" → switch sur l'onglet ressources
       const link = footerEl.querySelector('.v0618-link-sources');
       if (link) {
         link.addEventListener('click', e => {
@@ -1674,10 +1657,21 @@
       }
     }
   }
-  setTimeout(v0618HandleHistoriqueFooter, 300);
-  setTimeout(v0618HandleHistoriqueFooter, 1500);
-  setTimeout(v0618HandleHistoriqueFooter, 3000);
-  setInterval(v0618HandleHistoriqueFooter, 1500);
+  // Boot: lancer ASAP pour éviter le flash, puis périodique
+  setTimeout(v0618HandleHistoriqueFooter, 50);
+  setTimeout(v0618HandleHistoriqueFooter, 200);
+  setTimeout(v0618HandleHistoriqueFooter, 800);
+  setTimeout(v0618HandleHistoriqueFooter, 2000);
+  setInterval(v0618HandleHistoriqueFooter, 1000);
+
+  // 🔥 v0.6.25 — MutationObserver pour cacher INSTANTANÉMENT le texte natif
+  // (évite le flash quand on change d'onglet ou que le natif re-render)
+  setTimeout(() => {
+    const obs = new MutationObserver(() => {
+      v0618HandleHistoriqueFooter();
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+  }, 100);
 
   // ============================================================
   // RENAME OPENAIP OVERLAY (inchangé v0.6.4)
@@ -1774,9 +1768,9 @@ body > header, body header { max-width: 100% !important; }
   gap: 14px;
   align-items: stretch;
 }
-/* 🔥 FIX #C v0.6.24 : sur la row Zones aériennes | Notes Pilote,
+/* 🔥 FIX #C v0.6.25 : sur la row Zones aériennes | Notes Pilote,
    ne pas étirer les blocs à la même hauteur — la liste a son propre scroll */
-/* 🔥 v0.6.24 : Sur la row Zones aériennes | Notes Pilote,
+/* 🔥 v0.6.25 : Sur la row Zones aériennes | Notes Pilote,
    on remet stretch pour que les 2 blocs aient des proportions harmonisées.
    Le scroll interne de la liste reste actif. */
 #wf-row-zones-notes {
@@ -1796,7 +1790,7 @@ body > header, body header { max-width: 100% !important; }
   flex-direction: column !important;
   gap: 22px !important;
 }
-/* 🔥 v0.6.24 : wrapper interne vfr-checks-wrapper-v065 doit avoir le MÊME gap
+/* 🔥 v0.6.25 : wrapper interne vfr-checks-wrapper-v065 doit avoir le MÊME gap
    que #tab-plan, sinon les gaps internes (14px inline) diffèrent des externes (22px) */
 #vfr-checks-wrapper-v065 {
   gap: 22px !important;
@@ -1827,7 +1821,7 @@ html.dark .vfr-block-temsi {
 }
 .vfr-block-azba, .vfr-block-notam, .vfr-block-temsi { background: var(--card); }
 
-/* === 🔥 v0.6.24 — RETIRE TOUS LES TOGGLES DES BLOCS DYNAMIQUES === */
+/* === 🔥 v0.6.25 — RETIRE TOUS LES TOGGLES DES BLOCS DYNAMIQUES === */
 /* Killian : plus de soucis avec les toggles, ces blocs sont
    dépliés en permanence. */
 #airspaces-section .unified-chevron,
@@ -1879,21 +1873,33 @@ html.dark .vfr-block-temsi {
   height: auto !important;
   overflow: visible !important;
 }
-/* Et neutraliser les <details> natifs résiduels */
+/* Et neutraliser les <details> natifs résiduels (déplier toujours) */
 #airspaces-section details,
 #trip-summary details,
 .vfr-block-azba details,
 .vfr-block-notam details,
 .ad-card details:not(#map-container details):not(#map-controls details),
 [data-ad-card] details {
-  /* details devient un simple block toujours ouvert */
+  /* details devient un simple block toujours ouvert (forcé via JS aussi) */
 }
+/* v0.6.25 : NE PAS cacher les <summary> car ils peuvent contenir le titre
+   du bloc (ex: "notes pilote"). On les laisse visibles mais sans toggle
+   (le JS de v0624 transmute en div.v0625-ex-summary). */
 #airspaces-section details > summary,
 #trip-summary details > summary,
 .vfr-block-azba details > summary,
 .vfr-block-notam details > summary,
 .ad-card details > summary,
 [data-ad-card] details > summary {
+  list-style: none !important;
+  cursor: default !important;
+}
+#airspaces-section details > summary::-webkit-details-marker,
+#trip-summary details > summary::-webkit-details-marker,
+.vfr-block-azba details > summary::-webkit-details-marker,
+.vfr-block-notam details > summary::-webkit-details-marker,
+.ad-card details > summary::-webkit-details-marker,
+[data-ad-card] details > summary::-webkit-details-marker {
   display: none !important;
 }
 
@@ -1928,7 +1934,7 @@ html.dark body[data-fullscreen-active] .wf-mode-line {
   color: var(--foreground) !important;
 }
 
-/* === 🔥 CHEVRON UNIFIÉ v0.6.24 ===
+/* === 🔥 CHEVRON UNIFIÉ v0.6.25 ===
    Tous les chevrons (blocs custom + blocs natifs + <details>)
    utilisent la même classe .unified-chevron pour un rendu identique */
 .unified-chevron {
@@ -1949,7 +1955,7 @@ html.dark body[data-fullscreen-active] .wf-mode-line {
   flex-shrink: 0;
   user-select: none;
   padding: 0;
-  /* 🔥 v0.6.24 : visibilité renforcée */
+  /* 🔥 v0.6.25 : visibilité renforcée */
   opacity: 1 !important;
   visibility: visible !important;
   z-index: 2;
@@ -1974,7 +1980,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   display: none !important;
 }
 
-/* === 🔥 FIX #C v0.6.24 — Zones aériennes scroll interne ===
+/* === 🔥 FIX #C v0.6.25 — Zones aériennes scroll interne ===
    On NE met PAS max-height sur la .card complète (ça forçait le <p>
    d'avertissement final à déborder visuellement).
    Le scroll interne se fait uniquement sur la liste #airspaces-list. */
@@ -2007,7 +2013,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
 /* === Container map-container pleine largeur === */
 #map-container { width: 100% !important; }
 
-/* === Carte aérodromes fusionnée (v0.6.24) ===
+/* === Carte aérodromes fusionnée (v0.6.25) ===
    On supprime le .card sur les enfants pour éviter double encadrement */
 #aerodromes-merged-wrapper #map-controls,
 #aerodromes-merged-wrapper #map-container {
@@ -2029,7 +2035,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   document.head.appendChild(v065Css);
 
   // ============================================================
-  // 🔥 v0.6.24 — FIX METAR : cleanup cache pollué + timeout wrapper
+  // 🔥 v0.6.25 — FIX METAR : cleanup cache pollué + timeout wrapper
   // L'override v0.6.8 stockait au format {data, ts} alors que le natif
   // attend le METAR directement. On nettoie/répare au boot.
   // En plus, on wrap fetchMetar avec un timeout global de 12s pour
@@ -2057,7 +2063,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
         }
       });
       if (fixed > 0 || removed > 0) {
-        console.log(`[v0.6.24] METAR cache cleanup : ${fixed} repaired, ${removed} removed ✓`);
+        console.log(`[v0.6.25] METAR cache cleanup : ${fixed} repaired, ${removed} removed ✓`);
       }
     } catch (e) {}
   })();
@@ -2082,7 +2088,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
           return null;
         }
       };
-      console.log('[METAR v0.6.24] timeout-wrapped (12s max) ✓');
+      console.log('[METAR v0.6.25] timeout-wrapped (12s max) ✓');
     }
     _tryPatch();
   })();
@@ -2185,7 +2191,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
         }
       };
 
-      console.log('[METAR v0.6.24] fetchMetar patché : Promise.any + 5s + stale-while-revalidate ✓');
+      console.log('[METAR v0.6.25] fetchMetar patché : Promise.any + 5s + stale-while-revalidate ✓');
     }
     _tryPatch();
   })();
@@ -2193,7 +2199,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   // Fin de l'ancien patch METAR désactivé.
 
   // ============================================================
-  // 🌤️ FOND CIEL + NUAGES v0.6.24 (mode jour uniquement)
+  // 🌤️ FOND CIEL + NUAGES v0.6.25 (mode jour uniquement)
   // SVG inline en data URL = 0 fichier à héberger, vectoriel, ~1 KB.
   // Les .card restent opaques pour passer par-dessus avec un léger
   // box-shadow pour les faire "flotter". Mode nuit inchangé.
@@ -2209,7 +2215,7 @@ html:not(.dark) body {
   background-attachment: fixed;
 }
 
-/* 🔥 v0.6.24 : FORCE TRANSPARENCE ULTRA-AGRESSIVE sur tous les conteneurs
+/* 🔥 v0.6.25 : FORCE TRANSPARENCE ULTRA-AGRESSIVE sur tous les conteneurs
    potentiels qui pourraient porter un fond blanc (Tailwind utilities,
    #app, main, sections). Seuls les éléments avec classe .card et les
    blocs custom .vfr-block-* gardent leur fond opaque. */
@@ -2229,14 +2235,14 @@ html:not(.dark) .tab-content {
   background-color: transparent !important;
 }
 
-/* 🔥 v0.6.24 : Si un wrapper invisible enveloppe le contenu et a un fond
+/* 🔥 v0.6.25 : Si un wrapper invisible enveloppe le contenu et a un fond
    blanc, on le rend transparent. Mais on garde les .card visibles. */
 html:not(.dark) body > div:not(.card):not([id]):not(.v0610-footer-pill) {
   background: transparent !important;
   background-color: transparent !important;
 }
 
-/* 🔥 v0.6.24 : Le gap entre blocs est géré UNIQUEMENT par le gap flex
+/* 🔥 v0.6.25 : Le gap entre blocs est géré UNIQUEMENT par le gap flex
    de #tab-plan (14px, défini ligne 1495). On ne rajoute PAS de margin-bottom
    ici, sinon ça s'additionne (28px effectif → gap TRAJET trop grand). */
 html:not(.dark) #tab-plan > * {
@@ -2252,7 +2258,7 @@ html:not(.dark) .card {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-/* 🔥 v0.6.24 : Header pilule SANS flou, MAIS sans rectangle blanc moche.
+/* 🔥 v0.6.25 : Header pilule SANS flou, MAIS sans rectangle blanc moche.
    On retire juste le backdrop-filter. Le natif gère sa pilule centrée
    avec son propre fond. PAS de fond blanc forcé sur tous les enfants
    (ce qui créait la "feuille blanche" pleine largeur en v0.6.10). */
@@ -2274,7 +2280,7 @@ html:not(.dark) #aerodromes-merged-wrapper {
   background-color: #ffffff !important;
 }
 
-/* 🔥 v0.6.24 : footer (Sources / Données indicatives) - style ciblé
+/* 🔥 v0.6.25 : footer (Sources / Données indicatives) - style ciblé
    sur le footer natif <footer> directement, sans wrapper pilule
    (qui causait le bug du fond blanc sur toute la page).
    Le footer natif est <footer class="fixed bottom-0 left-0 right-0 ...">. */
@@ -2295,7 +2301,7 @@ html:not(.dark) .v0610-footer-pill {
   document.head.appendChild(skyBgCss);
 
   // ============================================================
-  // 🔥 v0.6.24 — FIX #1 : Légende météo France décalée à droite
+  // 🔥 v0.6.25 — FIX #1 : Légende météo France décalée à droite
   // des contrôles Leaflet (+/- et plein écran)
   // ============================================================
   const fixLegendCss = document.createElement('style');
@@ -2318,7 +2324,7 @@ body[data-fullscreen-active] .wf-mode-line {
   document.head.appendChild(fixLegendCss);
 
   // ============================================================
-  // 🔥 v0.6.24 — FIX #2 : RECONSTRUCTION RADICALE des sections
+  // 🔥 v0.6.25 — FIX #2 : RECONSTRUCTION RADICALE des sections
   // #airspaces-section et #trip-summary pour éliminer DÉFINITIVEMENT
   // les doublons de titre. On wipe la card et on reconstruit avec :
   //   - UN seul header custom (titre + badge + chevron unifié à droite)
@@ -2404,7 +2410,7 @@ body[data-fullscreen-active] .wf-mode-line {
       apply();
     });
 
-    console.log('[v0.6.24] airspaces-section rebuild ✓');
+    console.log('[v0.6.25] airspaces-section rebuild ✓');
   }
 
   function rebuildTripSummaryV0610() {
@@ -2468,10 +2474,10 @@ body[data-fullscreen-active] .wf-mode-line {
       apply();
     });
 
-    console.log('[v0.6.24] trip-summary rebuild ✓');
+    console.log('[v0.6.25] trip-summary rebuild ✓');
   }
 
-  // 🔥 v0.6.24 : APPROCHE NUCLÉAIRE pour le doublon de titre.
+  // 🔥 v0.6.25 : APPROCHE NUCLÉAIRE pour le doublon de titre.
   // On cherche le h2 natif PAR ICÔNE (shield-alert pour airspaces),
   // on trouve sa card englobante, on APLATIT toute card imbriquée AU-DESSUS,
   // on supprime les h2 dupliqués sans icon, et on pose un chevron inline.
@@ -2479,7 +2485,7 @@ body[data-fullscreen-active] .wf-mode-line {
   function v0613FlattenAndChevron(section, key, iconLucide, titleRegex) {
     if (!section) return;
 
-    // 🔥 v0.6.24 : TRANSMUTATION RADICALE.
+    // 🔥 v0.6.25 : TRANSMUTATION RADICALE.
     // Le DOM observé montre que la .card est devenue un <details> avec un
     // <summary> qui CONTIENT le titre dupliqué + le marker ▾. C'est l'origine
     // du doublon. Solution : convertir le <details> en <div> et supprimer
@@ -2492,7 +2498,7 @@ body[data-fullscreen-active] .wf-mode-line {
       // Supprimer le summary (doublon de titre)
       const sum = det.querySelector(':scope > summary');
       if (sum) {
-        console.log(`[v0.6.24] Removed <summary> doublon dans #${section.id}`);
+        console.log(`[v0.6.25] Removed <summary> doublon dans #${section.id}`);
         sum.remove();
       }
       // Transmuter le <details> en <div> : créer un nouveau <div>,
@@ -2507,7 +2513,7 @@ body[data-fullscreen-active] .wf-mode-line {
       while (det.firstChild) newDiv.appendChild(det.firstChild);
       // Remplacer dans le parent
       det.parentNode.replaceChild(newDiv, det);
-      console.log(`[v0.6.24] Transmuté <details> en <div> dans #${section.id} ✓`);
+      console.log(`[v0.6.25] Transmuté <details> en <div> dans #${section.id} ✓`);
     });
 
     // 1. Trouver le h2 natif (priorité : celui avec l'icône)
@@ -2547,7 +2553,7 @@ body[data-fullscreen-active] .wf-mode-line {
         }
         if (toRemove.parentElement && toRemove !== nativeCard) {
           toRemove.remove();
-          console.log(`[v0.6.24] Suppression doublon titre sans icon dans #${section.id}`);
+          console.log(`[v0.6.25] Suppression doublon titre sans icon dans #${section.id}`);
         }
       }
     });
@@ -2564,7 +2570,7 @@ body[data-fullscreen-active] .wf-mode-line {
       }
     });
 
-    // 🔥 v0.6.24 — CLEANUP IDEMPOTENT (toujours, AVANT le check v0614Done)
+    // 🔥 v0.6.25 — CLEANUP IDEMPOTENT (toujours, AVANT le check v0614Done)
     // ----------------------------------------------------------------
     // V0.6.19 bug : on retirait TOUS les chevrons (step 6) AVANT le check
     // v0614Done. Le check trouvait donc TOUJOURS null → boucle infinie
@@ -2609,7 +2615,7 @@ body[data-fullscreen-active] .wf-mode-line {
     });
 
     if (nativeCard.dataset.v0614Done === '1') {
-      // 🔥 v0.6.24 : Check basé sur le chev absolute (v0623-abs)
+      // 🔥 v0.6.25 : Check basé sur le chev absolute (v0623-abs)
       // Si présent dans nativeCard → tout est bon, on sort proprement.
       const absChev = nativeCard.querySelector(':scope > .v0623-abs');
       if (absChev) {
@@ -2639,11 +2645,11 @@ body[data-fullscreen-active] .wf-mode-line {
     }
     if (!header) return;
 
-    // 🔥 v0.6.24 BUG FIX CRITIQUE : TOUJOURS ajouter la classe .v0614-header
+    // 🔥 v0.6.25 BUG FIX CRITIQUE : TOUJOURS ajouter la classe .v0614-header
     // au header CHOISI (même si on a réutilisé une flex row du natif).
     header.classList.add('v0614-header');
 
-    // 🔥 v0.6.24 — CHEV EN ABSOLUTE POSITIONING (garanti top-right)
+    // 🔥 v0.6.25 — CHEV EN ABSOLUTE POSITIONING (garanti top-right)
     // ----------------------------------------------------------------
     // L'approche inline (header.appendChild) ne donnait pas un résultat
     // visible chez Killian (peut-être un wrap dû à un badge "10 / 54 zones"
@@ -2668,13 +2674,13 @@ body[data-fullscreen-active] .wf-mode-line {
     chev.style.cssText = 'position: absolute !important; top: 12px !important; right: 14px !important; z-index: 10 !important;';
     nativeCard.appendChild(chev); // appendé à nativeCard, PAS au header
 
-    // 🔥 v0.6.24 : Cleanup ciblé UNIQUEMENT sur triangles chevron
+    // 🔥 v0.6.25 : Cleanup ciblé UNIQUEMENT sur triangles chevron
     // (PAS de "+", "-", "−", "–", "—", "─", "━" qui matchaient des badges
     //  natifs légitimes — causaient les zones non chargées en v0.6.21)
     nativeCard.querySelectorAll('.unified-chevron, .block-chev').forEach(c => {
       if (c !== chev) {
         c.remove();
-        console.log(`[v0.6.24] Chevron .unified-chevron/.block-chev parasite retiré dans #${section.id}`);
+        console.log(`[v0.6.25] Chevron .unified-chevron/.block-chev parasite retiré dans #${section.id}`);
       }
     });
     // Tout élément feuille avec UN seul caractère triangulaire chevron, sauf le mien
@@ -2687,7 +2693,7 @@ body[data-fullscreen-active] .wf-mode-line {
       if (txt.length === 0 || txt.length > 2) return;
       // SEULS triangles chevron (sans "+" ni tirets pour éviter de casser zones)
       if (/^[▼▾▽▿⌃⌄⏷⏶▲▴△▵⏵⏴▶◀▸◂➤➡˅˄﹀⮟⮝]$/.test(txt)) {
-        console.log(`[v0.6.24] Élément <${el.tagName.toLowerCase()}> "${txt}" retiré dans #${section.id}`);
+        console.log(`[v0.6.25] Élément <${el.tagName.toLowerCase()}> "${txt}" retiré dans #${section.id}`);
         el.remove();
       }
     });
@@ -2720,11 +2726,11 @@ body[data-fullscreen-active] .wf-mode-line {
       saveCollapsePref(key, collapsed);
       apply();
     });
-    console.log(`[v0.6.24] Chevron absolute ajouté à #${section.id} ✓`);
+    console.log(`[v0.6.25] Chevron absolute ajouté à #${section.id} ✓`);
   }
 
   function v0613NuclearFixAll() {
-    // 🔥 v0.6.24 — DÉSACTIVÉ : Killian veut plus AUCUN toggle sur les blocs
+    // 🔥 v0.6.25 — DÉSACTIVÉ : Killian veut plus AUCUN toggle sur les blocs
     // apparaissant après remplissage du trajet (airspaces, trip-summary, etc.)
     // La fonction v0624RemoveAllDynamicToggles ci-dessous gère le cleanup.
     return;
@@ -2734,11 +2740,11 @@ body[data-fullscreen-active] .wf-mode-line {
   setTimeout(v0613NuclearFixAll, 2500);
   setTimeout(v0613NuclearFixAll, 4500);
   setTimeout(v0613NuclearFixAll, 7000);
-  // 🔥 v0.6.24 : Le setInterval reste mais la fonction est no-op
+  // 🔥 v0.6.25 : Le setInterval reste mais la fonction est no-op
   setInterval(v0613NuclearFixAll, 3000);
 
   // ============================================================
-  // 🔥 v0.6.24 — RETIRE TOUS LES TOGGLES DES BLOCS DYNAMIQUES
+  // 🔥 v0.6.25 — RETIRE TOUS LES TOGGLES DES BLOCS DYNAMIQUES
   // ----------------------------------------------------------------
   // Killian : "retire les toggles pour les éléments apparaissant
   //  seulement après avoir populé le trajet. Au moins plus de soucis"
@@ -2784,7 +2790,8 @@ body[data-fullscreen-active] .wf-mode-line {
         }
       });
 
-      // 3. Transmuter <details> → <div> et virer les <summary>
+      // 3. Transmuter <details> → <div> en PRÉSERVANT le contenu du <summary>
+      //    (sinon le titre "notes pilote" disparait !)
       Array.from(block.querySelectorAll('details')).forEach(det => {
         // Ne PAS toucher #map-container ou ad-cards complexe
         if (det.closest('#map-controls, #map-container')) return;
@@ -2794,7 +2801,29 @@ body[data-fullscreen-active] .wf-mode-line {
         });
         while (det.firstChild) {
           if (det.firstChild.tagName === 'SUMMARY') {
-            det.firstChild.remove();
+            // 🔥 v0.6.25 : EXTRAIRE le contenu du summary (le titre)
+            // pour le préserver comme titre du nouveau div.
+            const summary = det.firstChild;
+            // Retirer chevrons internes du summary
+            summary.querySelectorAll('.unified-chevron, .collapse-chevron, .v0623-abs, .v0614-chev, .block-chev').forEach(c => c.remove());
+            // Retirer caractères chevron orphelins du summary
+            summary.querySelectorAll('*').forEach(el => {
+              if (el.children.length > 0) return;
+              const txt = (el.textContent || '').trim();
+              if (txt.length === 0 || txt.length > 2) return;
+              if (/^[▼▾▽▿⌃⌄⏷⏶▲▴△▵⏵⏴▶◀▸◂➤➡˅˄﹀⮟⮝]$/.test(txt)) {
+                el.remove();
+              }
+            });
+            // Wrapper le contenu du summary dans un <div> qui devient le "titre"
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'v0625-ex-summary';
+            titleDiv.style.cssText = 'display:block;cursor:default;user-select:text;';
+            while (summary.firstChild) {
+              titleDiv.appendChild(summary.firstChild);
+            }
+            summary.remove();
+            div.appendChild(titleDiv);
           } else {
             div.appendChild(det.firstChild);
           }
@@ -2831,7 +2860,7 @@ body[data-fullscreen-active] .wf-mode-line {
   function applyChevronsV0611() { v0613NuclearFixAll(); }
 
   // ============================================================
-  // 🔥 v0.6.24 — FIX #3 : PRÉSERVATION DU SCROLL dans #airspaces-list
+  // 🔥 v0.6.25 — FIX #3 : PRÉSERVATION DU SCROLL dans #airspaces-list
   // Quand le code natif rebuild la liste (updateAirspacesOnRoute),
   // le scrollTop revient à 0. On capture la position de scroll en live
   // et on la restaure quand un mutation se produit.
@@ -2855,13 +2884,13 @@ body[data-fullscreen-active] .wf-mode-line {
       }
     });
     obs.observe(list, { childList: true, subtree: false });
-    console.log('[v0.6.24] airspaces-list scroll preservation ✓');
+    console.log('[v0.6.25] airspaces-list scroll preservation ✓');
   }
   setTimeout(setupAirspacesScrollPreservation, 800);
   setTimeout(setupAirspacesScrollPreservation, 2500);
 
   // ============================================================
-  // 🔥 v0.6.24 — FIX BLOC BLANC : déballer le wrapper .v0610-footer-pill
+  // 🔥 v0.6.25 — FIX BLOC BLANC : déballer le wrapper .v0610-footer-pill
   // ----------------------------------------------------------------
   // Bug v0.6.10 : ma fonction wrapFooterTextsInPill avait wrappé le
   // <main> entier dans une pilule blanche (parent commun des 2 textes
@@ -2881,7 +2910,7 @@ body[data-fullscreen-active] .wf-mode-line {
         parent.insertBefore(pill.firstChild, pill);
       }
       pill.remove();
-      console.log('[v0.6.24] Déballé .v0610-footer-pill erroné ✓');
+      console.log('[v0.6.25] Déballé .v0610-footer-pill erroné ✓');
     });
   }
   setTimeout(v0616UnwrapBrokenFooterPill, 100);
@@ -2890,25 +2919,25 @@ body[data-fullscreen-active] .wf-mode-line {
 
   // wrapFooterTextsInPill : NO-OP désormais (fonction conservée pour
   // compat avec les anciens setTimeout, mais ne wrap plus rien)
-  function wrapFooterTextsInPill() { /* no-op v0.6.24 */ }
+  function wrapFooterTextsInPill() { /* no-op v0.6.25 */ }
 
   // ============================================================
-  // 🔥 v0.6.24 — FIX #8 : ANIMATIONS AU CHANGEMENT DE TAB
+  // 🔥 v0.6.25 — FIX #8 : ANIMATIONS AU CHANGEMENT DE TAB
   // Mini overlay avion qui glisse de bas-gauche en diagonale + 
   // fade-slide-in du contenu du tab. Style "Apple smooth".
   // ============================================================
   // ============================================================
-  // 🔥 v0.6.24 — ANIMATIONS DÉSACTIVÉES
+  // 🔥 v0.6.25 — ANIMATIONS DÉSACTIVÉES
   // Killian a demandé le retrait pour l'instant. CSS + JS neutralisés.
   // ============================================================
   // Pas d'injection de keyframes ni de classes v0610-*.
   // showPlaneOverlay et setupTabAnimationsV0611 sont définis vides
   // au cas où du code restant les appellerait.
-  function showPlaneOverlay() { /* no-op v0.6.24 */ }
-  function setupTabAnimationsV0611() { /* no-op v0.6.24 */ return true; }
+  function showPlaneOverlay() { /* no-op v0.6.25 */ }
+  function setupTabAnimationsV0611() { /* no-op v0.6.25 */ return true; }
 
   // ============================================================
-  // 🔥 v0.6.24 — FIX #9 : Étendre le filtre harmonizeDetailsChevrons
+  // 🔥 v0.6.25 — FIX #9 : Étendre le filtre harmonizeDetailsChevrons
   // pour ignorer les <details> dans les fiches AD (DÉPART/ARRIVÉE/ÉTAPE)
   // qui ne devraient pas recevoir mon chevron unifié.
   // On override la fonction existante pour ajouter ces exclusions.
@@ -2988,7 +3017,7 @@ body[data-fullscreen-active] .wf-mode-line {
   // BOOT
   // ============================================================
   if (typeof showToast === 'function') {
-    showToast('✓ v0.6.24 chargé', 'ok', 3000);
+    showToast('✓ v0.6.25 chargé', 'ok', 3000);
   }
-  console.log('[Extensions v0.6.24] Intégration terminée');
+  console.log('[Extensions v0.6.25] Intégration terminée');
 })();
