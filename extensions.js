@@ -1,7 +1,7 @@
 /* ============================================================
-   AutogyroDash — extensions v0.6.6
+   AutogyroDash — extensions v0.6.7
    ------------------------------------------------------------
-   Nouveau dans v0.6.6 (hotfix v0.6.5 — 4 correctifs ciblés) :
+   Nouveau dans v0.6.7 (hotfix v0.6.5 — 4 correctifs ciblés) :
      A. Fusion overlays-carte + map en un seul bloc
         "Carte des aérodromes" avec un header + un chevron unique
      B. Chevrons toggle UNIFORMES : tous au même style et même
@@ -51,7 +51,7 @@
   }
   await waitForAppReady();
 
-  console.log('[Extensions v0.6.6] Boot...');
+  console.log('[Extensions v0.6.7] Boot...');
 
   function escapeHtml(s) {
     if (s === null || s === undefined) return '';
@@ -77,9 +77,9 @@
   }
 
   try {
-    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.6');
+    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.7');
     document.querySelectorAll('span.text-xs.pre-mono').forEach(s => {
-      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.6';
+      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.7';
     });
   } catch (e) {}
 
@@ -268,7 +268,7 @@
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🌤️ Météo aviation</h3><p class="text-xs">METAR/TAF : <strong>aviationweather.gov</strong>. Visuel : <strong>Windy.com</strong>.</p></div>
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🛡️ Espaces aériens</h3><p class="text-xs">Source : <strong>OpenAIP</strong>.</p></div>
       </div>
-      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.6</div>
+      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.7</div>
     `;
   }
   function setupResourcesNav() {
@@ -943,10 +943,10 @@
     makeNativeBlockCollapsible(tripSummary, 'resume-trajet', 'résumé du trajet');
     // Note : on NE plie PAS #map-container (Leaflet casserait)
 
-    // 🔥 FIX #A v0.6.6 : Fusion overlays-carte + map-container en "Carte des aérodromes"
+    // 🔥 FIX #A v0.6.7 : Fusion overlays-carte + map-container en "Carte des aérodromes"
     mergeMapBlocksIntoOneCard();
 
-    // 🔥 FIX #B v0.6.6 : Harmoniser les chevrons des <details> natifs
+    // 🔥 FIX #B v0.6.7 : Harmoniser les chevrons des <details> natifs
     harmonizeDetailsChevrons();
 
     // Réinvalider les cartes Leaflet après reorganisation (display:flex peut perturber)
@@ -957,7 +957,7 @@
   }
 
   // ============================================================
-  // 🔥 FIX #A v0.6.6 — FUSION overlays-carte + map-container
+  // 🔥 FIX #A v0.6.7 — FUSION overlays-carte + map-container
   // En un seul bloc "Carte des aérodromes" avec UN header + UN chevron
   // ============================================================
   function mergeMapBlocksIntoOneCard() {
@@ -1041,11 +1041,11 @@
       apply();
     });
 
-    console.log('[v0.6.6] Carte aérodromes fusionnée ✓');
+    console.log('[v0.6.7] Carte aérodromes fusionnée ✓');
   }
 
   // ============================================================
-  // 🔥 FIX #B v0.6.6 — HARMONISATION DES CHEVRONS NATIFS
+  // 🔥 FIX #B v0.6.7 — HARMONISATION DES CHEVRONS NATIFS
   // Remplace les <i lucide chevron-down> et .accordion-icon
   // par un chevron uniforme au même style que les autres
   // ============================================================
@@ -1053,6 +1053,14 @@
     document.querySelectorAll('details:not([data-chevron-harmonized])').forEach(det => {
       const summary = det.querySelector('summary');
       if (!summary) return;
+
+      // 🔥 FIX v0.6.7 : skip les sous-<details> imbriqués pour ne pas
+      // doubler avec leurs chevrons natifs (légende BASULM, logistique fiches AD)
+      if (det.parentElement?.closest('details')) return;
+      if (det.closest('#map-controls, #map-container, #ad-cards, #aerodromes-merged-wrapper #map-controls')) return;
+      // Skip si le summary contient déjà un caractère chevron visible (légendes BASULM)
+      const summaryText = (summary.textContent || '').trim();
+      if (/^[▶▼►◀]/.test(summaryText)) return;
 
       det.dataset.chevronHarmonized = '1';
 
@@ -1088,33 +1096,36 @@
         if (det.open) ch.classList.remove('collapsed');
         else ch.classList.add('collapsed');
       });
-
-      // Empêcher le clic sur le chevron de propager au summary (qui le fermerait deux fois)
-      ch.addEventListener('click', (e) => {
-        // Laisser le summary gérer le toggle natif, juste ne pas double-toggle
-        // En fait, le summary va recevoir le clic via bubble. On laisse propager.
-      });
     });
   }
 
   function makeNativeBlockCollapsible(el, key, _label) {
     if (!el) return;
     if (el.dataset.nativeCollapse === '1') return;
-    el.dataset.nativeCollapse = '1';
 
-    // 🔥 FIX v0.6.6 : si `el` contient une seule .card enfant direct,
+    // 🔥 FIX v0.6.7 : si `el` contient une seule .card enfant direct,
     // opérer sur cette .card au lieu de `el` (cas #trip-summary et #airspaces-section)
     let target = el;
     if (el.children.length === 1 && el.firstElementChild?.classList?.contains('card')) {
       target = el.firstElementChild;
     }
 
+    // 🔥 GARDE v0.6.7 : si la cible a déjà été décorée (chevron unifié
+    // présent ou content wrapper créé), on marque comme fait et on sort
+    if (target.querySelector(':scope > .native-collapsible-content')) {
+      el.dataset.nativeCollapse = '1';
+      return;
+    }
+    if (target.querySelector('.unified-chevron')) {
+      el.dataset.nativeCollapse = '1';
+      return;
+    }
+
+    el.dataset.nativeCollapse = '1';
+
     // Trouver l'en-tête : premier h2 / h3 / .text-sm.font-medium
     const header = target.querySelector('h2, h3, .text-sm.font-medium, .section-title');
     if (!header) return;
-
-    // Ne pas re-injecter si chevron déjà présent
-    if (target.querySelector('.collapse-chevron-native')) return;
 
     // Le headerWrapper est l'élément enfant direct de `target` qui contient le header
     let headerWrapper = header;
@@ -1127,10 +1138,11 @@
     const contentWrapper = document.createElement('div');
     contentWrapper.className = 'native-collapsible-content';
     const others = Array.from(target.children).filter(c => c !== headerWrapper);
+    if (others.length === 0) return; // rien à wrapper, anomalie
     others.forEach(c => contentWrapper.appendChild(c));
     target.appendChild(contentWrapper);
 
-    // Créer chevron unifié v0.6.6
+    // Créer chevron unifié
     const chevron = document.createElement('button');
     chevron.className = 'collapse-chevron-native unified-chevron';
     chevron.type = 'button';
@@ -1331,7 +1343,7 @@ body > header, body header { max-width: 100% !important; }
   gap: 14px;
   align-items: stretch;
 }
-/* 🔥 FIX #C v0.6.6 : sur la row Zones aériennes | Notes Pilote,
+/* 🔥 FIX #C v0.6.7 : sur la row Zones aériennes | Notes Pilote,
    ne pas étirer les blocs à la même hauteur — la liste a son propre scroll */
 #wf-row-zones-notes {
   align-items: start !important;
@@ -1403,7 +1415,7 @@ html.dark body[data-fullscreen-active] .wf-mode-line {
   color: var(--foreground) !important;
 }
 
-/* === 🔥 CHEVRON UNIFIÉ v0.6.6 ===
+/* === 🔥 CHEVRON UNIFIÉ v0.6.7 ===
    Tous les chevrons (blocs custom + blocs natifs + <details>)
    utilisent la même classe .unified-chevron pour un rendu identique */
 .unified-chevron {
@@ -1441,10 +1453,12 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   display: none !important;
 }
 
-/* === 🔥 FIX #C v0.6.6 — Zones aériennes scroll interne === */
+/* === 🔥 FIX #C v0.6.7 — Zones aériennes scroll interne ===
+   On NE met PAS max-height sur la .card complète (ça forçait le <p>
+   d'avertissement final à déborder visuellement).
+   Le scroll interne se fait uniquement sur la liste #airspaces-list. */
 #airspaces-section .card,
 #airspaces-section > div.card {
-  max-height: 480px;
   display: flex !important;
   flex-direction: column;
 }
@@ -1472,7 +1486,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
 /* === Container map-container pleine largeur === */
 #map-container { width: 100% !important; }
 
-/* === Carte aérodromes fusionnée (v0.6.6) ===
+/* === Carte aérodromes fusionnée (v0.6.7) ===
    On supprime le .card sur les enfants pour éviter double encadrement */
 #aerodromes-merged-wrapper #map-controls,
 #aerodromes-merged-wrapper #map-container {
@@ -1497,7 +1511,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   // BOOT
   // ============================================================
   if (typeof showToast === 'function') {
-    showToast('✓ v0.6.6 chargé', 'ok', 3000);
+    showToast('✓ v0.6.7 chargé', 'ok', 3000);
   }
-  console.log('[Extensions v0.6.6] Intégration terminée');
+  console.log('[Extensions v0.6.7] Intégration terminée');
 })();
