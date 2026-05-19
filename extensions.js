@@ -1,12 +1,26 @@
 /* ============================================================
-   AutogyroDash — extensions v0.6.4
+   AutogyroDash — extensions v0.6.5
    ------------------------------------------------------------
-   Nouveau dans v0.6.4 (hotfix v0.6.3) :
-     - FIX CRITIQUE : navigation tabs cassée (tab-plan
-       display:block !important empêchait .hidden)
-     - FIX CRITIQUE : blocs AZBA/NOTAM/météo collés à gauche
-       (tab-plan natif en grid 2 cols → forcé en flex column)
-     - Hard override des classes .hidden sur tous les tabs
+   Nouveau dans v0.6.5 (correctifs UI desktop demandés par K.) :
+     1. Fiche ACFT : grille équilibrée (1 ligne pleine + 5×2 cols)
+        - Transpondeur retire son col-span-2
+        - Indicatif radio à côté du transpondeur (plus à côté immat)
+     2. Brief : TOUS les blocs pliables avec chevron ▼/▲ explicite
+        (sauf carte interactive Leaflet — invalidation casserait map)
+     3. Brief : réorganisation selon croquis
+        - Trajet pleine largeur EN HAUT
+        - Météo générale | Météo Visuelle
+        - AZBA/RTBA | NOTAM
+        - Carte aérodromes pleine largeur
+        - Zones aériennes traversées | Notes Pilote
+     4. Satellite : toggle on/off à GAUCHE de [temp][vent][nuages]
+        + visible aussi en mode plein écran météo France
+        + cache automatiquement temp/vent/nuages quand ON
+     5. Météo France : zoom auto sur l'itinéraire quand ≥2 AD remplis
+        (sinon vue France entière par défaut)
+
+   Garde tous les fixes v0.6.4 (navigation tabs, ACFT slots,
+   webcams fiches AD, lexique SOFIA, AZBA/NOTAM popup, etc.)
    ============================================================ */
 
 (async function() {
@@ -26,7 +40,7 @@
   }
   await waitForAppReady();
 
-  console.log('[Extensions v0.6.3] Boot...');
+  console.log('[Extensions v0.6.5] Boot...');
 
   function escapeHtml(s) {
     if (s === null || s === undefined) return '';
@@ -52,9 +66,9 @@
   }
 
   try {
-    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.4');
+    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.5');
     document.querySelectorAll('span.text-xs.pre-mono').forEach(s => {
-      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.4';
+      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.5';
     });
   } catch (e) {}
 
@@ -84,7 +98,7 @@
   console.log(`[Sigles] ${SIGLES.length} sigles chargés`);
 
   // ============================================================
-  // PAGE RESSOURCES
+  // PAGE RESSOURCES (inchangée v0.6.4)
   // ============================================================
   function replaceSourcesWithResources() {
     let resourcesTab = document.querySelector('.tab-btn[data-tab="resources"]');
@@ -243,7 +257,7 @@
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🌤️ Météo aviation</h3><p class="text-xs">METAR/TAF : <strong>aviationweather.gov</strong>. Visuel : <strong>Windy.com</strong>.</p></div>
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🛡️ Espaces aériens</h3><p class="text-xs">Source : <strong>OpenAIP</strong>.</p></div>
       </div>
-      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.4</div>
+      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.5</div>
     `;
   }
   function setupResourcesNav() {
@@ -265,7 +279,7 @@
   replaceSourcesWithResources();
 
   // ============================================================
-  // HOOK CLICK TABS
+  // HOOK CLICK TABS (inchangé v0.6.4)
   // ============================================================
   document.querySelectorAll('.tab-btn').forEach(b => {
     b.addEventListener('click', function() {
@@ -291,7 +305,7 @@
   tabObserver.observe(document.body, { childList: true, subtree: true });
 
   // ============================================================
-  // HISTORIQUE VOLS
+  // HISTORIQUE VOLS (inchangé v0.6.4)
   // ============================================================
   const HISTORY_KEY = 'autogyrodash_history_v1';
   function loadHistory() { try { const raw = localStorage.getItem(HISTORY_KEY); if (!raw) return []; const arr = JSON.parse(raw); return Array.isArray(arr) ? arr : []; } catch(e) { return []; } }
@@ -367,7 +381,7 @@
   addHistoryTab();
 
   // ============================================================
-  // BOUTON ÉPINGLER
+  // BOUTON ÉPINGLER (inchangé v0.6.4)
   // ============================================================
   function addPinButton() {
     const pdfBtn = document.getElementById('pdf-btn');
@@ -389,20 +403,24 @@
   addPinButton();
 
   // ============================================================
-  // 🔥 FIX #1 — SATELLITE TOGGLE DANS PILULE AFFICHAGE
+  // 🔥 FIX #4 v0.6.5 — SATELLITE TOGGLE À GAUCHE (renforcé)
   // ============================================================
-  function setupSatelliteToggleV063() {
+  function setupSatelliteToggleV065() {
     let attempts = 0;
     function tryInit() {
       attempts++;
-      if (attempts > 40) { console.warn('[Satellite v0.6.3] Boutons introuvables'); return; }
+      if (attempts > 60) { console.warn('[Satellite v0.6.5] Boutons introuvables après 60 tentatives'); return; }
 
       const allBtns = Array.from(document.querySelectorAll('button, .tab-btn, [role="tab"], .mode-btn'));
+      // Mode buttons : ceux qui sont temp/vent/nuages (mais PAS satellite)
       const modeBtns = allBtns.filter(b => {
         const txt = (b.textContent || '').trim().toLowerCase();
-        return /\b(température|temperature|temp\b|nuages?|cloud|vent|wind)\b/i.test(txt) && txt.length < 30;
+        return /\b(température|temperature|temp\b|nuages?|cloud|vent|wind)\b/i.test(txt)
+            && !/satellite/i.test(txt)
+            && txt.length < 30;
       });
-      const satelliteBtn = allBtns.find(b => /satellite/i.test((b.textContent || '').trim()) && (b.textContent || '').length < 25);
+      const satelliteBtn = document.getElementById('wf-satellite-toggle')
+        || allBtns.find(b => /satellite/i.test((b.textContent || '').trim()) && (b.textContent || '').length < 25);
 
       if (!satelliteBtn || modeBtns.length < 2) {
         setTimeout(tryInit, 200);
@@ -411,17 +429,26 @@
       if (satelliteBtn.dataset.satToggled === '1') return;
       satelliteBtn.dataset.satToggled = '1';
 
-      // Recherche label "affichage"
-      const allTextNodes = Array.from(document.querySelectorAll('span, label, div'));
-      const affichageLabel = allTextNodes.find(el => {
-        const txt = (el.textContent || '').trim().toLowerCase();
-        return (txt === 'affichage' || txt === 'affichage :' || txt === 'mode' || txt === 'mode :') && el.childElementCount === 0;
-      });
+      // Trouver la ligne d'affichage (parent commun des mode-btns)
+      let affichageLine = modeBtns[0].parentNode;
+      if (affichageLine) affichageLine.classList.add('wf-mode-line');
 
-      // Cache satellite natif
+      // Chercher le label "affichage"
+      const affichageLabel = affichageLine
+        ? Array.from(affichageLine.children).find(el => {
+            const txt = (el.textContent || '').trim().toLowerCase();
+            return txt === 'affichage :' || txt === 'affichage' || txt === 'mode :' || txt === 'mode';
+          })
+        : null;
+
+      // Cacher le bouton satellite natif (on le pilote programmatiquement)
       satelliteBtn.style.display = 'none';
 
-      // Crée toggle
+      // Supprimer un éventuel ancien toggle pour idempotence
+      const oldToggle = document.getElementById('sat-toggle-pill');
+      if (oldToggle) oldToggle.remove();
+
+      // Créer le nouveau toggle pill
       const toggle = document.createElement('button');
       toggle.id = 'sat-toggle-pill';
       toggle.type = 'button';
@@ -443,9 +470,12 @@
       `;
       toggle.innerHTML = `<span style="font-size:13px;">🛰️</span><span>satellite</span><span id="sat-state-badge" style="margin-left:4px;padding:1px 6px;border-radius:9999px;background:#374151;color:#9CA3AF;font-size:9px;font-weight:700;letter-spacing:0.05em;">OFF</span>`;
 
-      // Insert AVANT le label "affichage"
+      // INSÉRER EN TÊTE de la ligne d'affichage (avant le label "affichage")
       let inserted = false;
-      if (affichageLabel && affichageLabel.parentNode) {
+      if (affichageLine && affichageLine.firstChild) {
+        affichageLine.insertBefore(toggle, affichageLine.firstChild);
+        inserted = true;
+      } else if (affichageLabel && affichageLabel.parentNode) {
         affichageLabel.parentNode.insertBefore(toggle, affichageLabel);
         inserted = true;
       } else if (modeBtns[0] && modeBtns[0].parentNode) {
@@ -454,16 +484,23 @@
       }
       if (!inserted) return;
 
-      console.log('[Satellite v0.6.3] Toggle inséré');
+      console.log('[Satellite v0.6.5] Toggle inséré en première position ✓');
 
       let satOn = false;
       function applyState() {
         const badge = document.getElementById('sat-state-badge');
         if (satOn) {
+          // Cacher mode buttons + label "affichage"
           modeBtns.forEach(b => {
             if (!b.dataset.origDisplay) b.dataset.origDisplay = b.style.display || '';
             b.style.display = 'none';
           });
+          if (affichageLabel && !affichageLabel.dataset.origDisplay) {
+            affichageLabel.dataset.origDisplay = affichageLabel.style.display || '';
+          }
+          if (affichageLabel) affichageLabel.style.display = 'none';
+
+          // Déclencher l'activation satellite natif
           if (!satelliteBtn._programmatic) {
             satelliteBtn._programmatic = true;
             satelliteBtn.style.display = '';
@@ -476,7 +513,10 @@
           toggle.style.color = 'white';
           if (badge) { badge.textContent = 'ON'; badge.style.background = 'white'; badge.style.color = '#15803D'; }
         } else {
+          // Réafficher mode buttons + label
           modeBtns.forEach(b => { b.style.display = b.dataset.origDisplay || ''; });
+          if (affichageLabel) affichageLabel.style.display = affichageLabel.dataset.origDisplay || '';
+
           if (modeBtns[0] && !modeBtns[0]._programmatic) {
             modeBtns[0]._programmatic = true;
             modeBtns[0].click();
@@ -503,10 +543,12 @@
     }
     setTimeout(tryInit, 500);
   }
-  setupSatelliteToggleV063();
+  setupSatelliteToggleV065();
 
   // ============================================================
-  // FICHE ACFT — Indicatif radio compact (FIX #5)
+  // 🔥 FIX #1 v0.6.5 — FICHE ACFT en grille équilibrée
+  //   - retire sm:col-span-2 du transpondeur
+  //   - ajoute "indicatif radio" à côté du transpondeur
   // ============================================================
   const ACFT_EXTRA_KEY = 'autogyrodash_acft_extras_v1';
   function loadAcftExtras() { try { return JSON.parse(localStorage.getItem(ACFT_EXTRA_KEY) || '{}'); } catch(e) { return {}; } }
@@ -515,77 +557,67 @@
     try {
       if (STATE.acft && STATE.acft.id !== undefined) return String(STATE.acft.id);
       if (STATE.currentAcftSlot !== undefined) return String(STATE.currentAcftSlot);
+      if (typeof getActiveAcftIndex === 'function') return String(getActiveAcftIndex());
     } catch(e) {}
     return 'default';
   }
 
-  function injectAcftFields() {
+  function setupAcftLayoutV065() {
     const acftTab = document.getElementById('tab-acft');
     if (!acftTab) return;
-    let immatField = acftTab.querySelector('input[id*="immat" i], input[id*="registr" i], input[placeholder*="JUBA" i]');
-    if (!immatField) {
-      const labels = Array.from(acftTab.querySelectorAll('label, .text-xs, span, div'));
-      const immatLabel = labels.find(el => /^immatriculation/i.test((el.textContent || '').trim()) && (el.textContent || '').length < 30);
-      if (immatLabel) {
-        const next = immatLabel.parentNode?.querySelector('input');
-        if (next) immatField = next;
-      }
-    }
-    if (!immatField) return;
 
-    const immatWrapper = immatField.closest('div');
-    if (!immatWrapper) return;
-    const parentRow = immatWrapper.parentNode;
-    if (!parentRow) return;
+    // 1. Nettoyer un ancien bloc v0.6.x (callsign à côté de l'immat)
+    const oldCompact = acftTab.querySelector('.acft-callsign-compact');
+    if (oldCompact) oldCompact.remove();
 
-    // Supprimer ancien bloc radio v0.6.2 s'il existe
-    const oldBlock = acftTab.querySelector('.acft-radio-id-block, .acft-extras-block');
-    if (oldBlock) oldBlock.remove();
+    // 2. Trouver le transpondeur
+    const transpInput = acftTab.querySelector('#acft-transpondeur');
+    if (!transpInput) return;
+    const transpDiv = transpInput.closest('div.sm\\:col-span-2, div');
+    if (!transpDiv) return;
 
-    if (acftTab.querySelector('.acft-callsign-compact')) return;
+    // 3. Retirer le col-span-2 (pour que la grille 2-cols s'applique)
+    transpDiv.classList.remove('sm:col-span-2');
 
-    const callsignBlock = document.createElement('div');
-    callsignBlock.className = 'acft-callsign-compact';
-    callsignBlock.style.cssText = `display:flex;flex-direction:column;gap:4px;`;
-    callsignBlock.innerHTML = `
-      <label class="text-xs text-muted" style="display:block;">Indicatif radio (call sign à l'antenne)</label>
-      <input type="text" id="acft-callsign" class="ad-input" placeholder="Ex: Foxtrot-Juliet-Alpha-Bravo-Charlie" maxlength="60" style="width:100%;" />
-      <div class="text-xs text-muted" style="font-size:10px;">Prononcé en arrivant sur fréquence. Sauvegardé pour la fiche active.</div>
+    // 4. Si l'indicatif radio existe déjà, ne pas re-créer
+    if (acftTab.querySelector('#acft-callsign')) return;
+
+    // 5. Créer le bloc indicatif radio à côté du transpondeur
+    const callsignDiv = document.createElement('div');
+    callsignDiv.innerHTML = `
+      <label class="text-xs text-muted">indicatif radio (call sign à l'antenne)</label>
+      <input type="text" id="acft-callsign" class="ad-input mt-1" placeholder="Ex: Foxtrot-Juliet-Alpha-Bravo-Charlie" maxlength="60" />
+      <p class="text-xs text-muted mt-1" style="font-size:10px;">Prononcé en arrivant sur fréquence. Sauvegardé pour la fiche active.</p>
     `;
+    // Insérer juste après le transpondeur dans la grille
+    transpDiv.parentNode.insertBefore(callsignDiv, transpDiv.nextSibling);
 
-    const parentStyle = window.getComputedStyle(parentRow);
-    const isGrid = parentStyle.display === 'grid' || parentStyle.display === 'flex';
-    if (isGrid) {
-      parentRow.appendChild(callsignBlock);
-    } else {
-      const grid = document.createElement('div');
-      grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:8px;';
-      parentRow.insertBefore(grid, immatWrapper);
-      grid.appendChild(immatWrapper);
-      grid.appendChild(callsignBlock);
-    }
-
+    // 6. Charger l'éventuelle valeur sauvegardée
     const slotId = getCurrentAcftSlotId();
     const extras = loadAcftExtras();
     const slotData = extras[slotId] || {};
     const callInput = document.getElementById('acft-callsign');
     if (callInput && slotData.callsign) callInput.value = slotData.callsign;
 
+    // 7. Persistance auto
     let debounce;
-    function persistBoth() {
+    function persist() {
       const cur = loadAcftExtras();
       const sid = getCurrentAcftSlotId();
-      const immat = (immatField.value || '').toUpperCase().trim();
+      const immatField = acftTab.querySelector('#acft-immat');
+      const immat = (immatField?.value || '').toUpperCase().trim();
       const callsign = (callInput?.value || '').trim();
       cur[sid] = { immat, callsign };
       saveAcftExtras(cur);
     }
-    callInput?.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(persistBoth, 400); });
-    immatField.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(persistBoth, 400); });
+    callInput?.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(persist, 400); });
+    const immatField = acftTab.querySelector('#acft-immat');
+    immatField?.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(persist, 400); });
   }
-  injectAcftFields();
-  setInterval(injectAcftFields, 2500);
+  setupAcftLayoutV065();
+  setInterval(setupAcftLayoutV065, 2500);
 
+  // Exposer pour le PDF (compat ancien hook)
   window.__getAcftExtras = function() {
     const slotId = getCurrentAcftSlotId();
     const all = loadAcftExtras();
@@ -593,92 +625,117 @@
   };
 
   // ============================================================
-  // BRIEF — Layout grille (FIX #3)
+  // 🔥 FIX #3 v0.6.5 — RÉORGANISATION DU BRIEF SELON CROQUIS
+  // Layout cible (de haut en bas) :
+  //   1. Trajet pleine largeur
+  //   2. [Météo générale | Météo Visuelle]
+  //   3. [AZBA/RTBA | NOTAM]
+  //   4. Carte aérodromes (overlays + carte) pleine largeur
+  //   5. [Zones aériennes traversées | Notes Pilote]
   // ============================================================
-  function injectBriefBlocks() {
+  function injectBriefBlocksV065() {
     const planTab = document.getElementById('tab-plan');
     if (!planTab) return;
-    if (document.getElementById('vfr-checks-wrapper')) return;
+    if (document.getElementById('vfr-checks-wrapper-v065')) return;
 
+    // Wrapper principal qui contiendra les rangées
     const wrapper = document.createElement('div');
-    wrapper.id = 'vfr-checks-wrapper';
-    wrapper.style.cssText = 'display:flex;flex-direction:column;gap:14px;margin-bottom:14px;';
+    wrapper.id = 'vfr-checks-wrapper-v065';
+    wrapper.style.cssText = 'display:flex;flex-direction:column;gap:14px;';
 
     wrapper.innerHTML = `
-      <div class="vfr-row-2cols">
-        <div class="card vfr-block-azba" style="padding:14px 16px;border-left:4px solid #DC2626;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-            <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0;display:flex;align-items:center;gap:6px;"><span style="color:#DC2626;">⚔️</span><span>AZBA / RTBA</span></h2>
-            <span style="font-size:10px;background:#DC2626;color:white;padding:2px 8px;border-radius:9999px;font-weight:600;">À VÉRIFIER</span>
+      <!-- Rangée Météo native | Windy -->
+      <div id="wf-row-weather" class="vfr-row-2cols">
+        <div id="weather-native-anchor" style="display:contents;"></div>
+        <div class="card vfr-block-temsi collapsible-block" data-collapse-key="windy" style="padding:14px 16px;border-left:4px solid #0891B2;">
+          <div class="collapsible-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0;display:flex;align-items:center;gap:6px;"><span style="color:#0891B2;">🌧</span><span>Météo visuelle (Windy)</span></h2>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button id="windy-layer-toggle" style="font-size:10px;background:#0891B2;color:white;border:none;padding:4px 10px;border-radius:9999px;cursor:pointer;font-weight:600;">CLOUDS</button>
+              <button class="collapse-chevron" type="button" title="plier / déplier" style="background:transparent;border:none;cursor:pointer;font-size:14px;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;color:var(--foreground);transition:transform 0.2s;">▼</button>
+            </div>
           </div>
-          <div style="background:var(--muted);border-radius:6px;padding:14px;text-align:center;margin-bottom:10px;border:1px dashed var(--border);">
-            <div style="font-size:34px;line-height:1;margin-bottom:6px;">🗺️</div>
-            <div style="font-size:12px;font-weight:600;margin-bottom:3px;">Carte AZBA temps réel</div>
-            <div style="font-size:11px;color:var(--muted-foreground);line-height:1.4;">Le SIA bloque l'iframe. Bouton ci-dessous = fenêtre dédiée.</div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr;gap:6px;">
-            <button class="open-azba-sia" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#DC2626;border:none;border-radius:6px;color:white;cursor:pointer;font-size:13px;font-weight:500;">
-              <span style="font-size:16px;">🇫🇷</span><span style="flex:1;text-align:left;"><strong>AZBA officielle SIA</strong></span><span>→</span>
-            </button>
-            <button class="open-supaip" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--foreground);cursor:pointer;font-size:13px;">
-              <span style="font-size:16px;">🗺️</span><span style="flex:1;text-align:left;"><strong>SUP AIP France</strong></span><span style="color:var(--muted-foreground);">→</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="card vfr-block-notam" style="padding:14px 16px;border-left:4px solid #2563EB;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-            <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0;display:flex;align-items:center;gap:6px;"><span style="color:#2563EB;">📋</span><span>NOTAM</span></h2>
-            <span style="font-size:10px;background:#2563EB;color:white;padding:2px 8px;border-radius:9999px;font-weight:600;">À VÉRIFIER</span>
-          </div>
-          <div style="background:var(--muted);border-radius:6px;padding:14px;text-align:center;margin-bottom:10px;border:1px dashed var(--border);">
-            <div style="font-size:34px;line-height:1;margin-bottom:6px;">📋</div>
-            <div style="font-size:12px;font-weight:600;margin-bottom:3px;">Visualisateur AIP / NOTAM</div>
-            <div style="font-size:11px;color:var(--muted-foreground);line-height:1.4;">Carte officielle SIA, fenêtre dédiée.</div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr;gap:6px;">
-            <button class="open-vaip" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#2563EB;border:none;border-radius:6px;color:white;cursor:pointer;font-size:13px;font-weight:500;">
-              <span style="font-size:16px;">🇫🇷</span><span style="flex:1;text-align:left;"><strong>Visualisateur AIP/NOTAM SIA</strong></span><span>→</span>
-            </button>
-            <button class="open-aeroweb" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--foreground);cursor:pointer;font-size:13px;">
-              <span style="font-size:16px;">📡</span><span style="flex:1;text-align:left;"><strong>Aeroweb — NOTAM + TEMSI</strong></span><span style="color:var(--muted-foreground);">→</span>
-            </button>
+          <div class="collapsible-content">
+            <div style="position:relative;overflow:hidden;border-radius:6px;border:1px solid var(--border);background:var(--muted);">
+              <iframe id="windy-iframe" src="https://embed.windy.com/embed2.html?lat=46.5&lon=2.5&detailLat=46.5&detailLon=2.5&width=650&height=380&zoom=5&level=surface&overlay=clouds&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=°C&radarRange=-1" frameborder="0" style="width:100%;height:380px;display:block;border:0;"></iframe>
+            </div>
+            <p class="text-xs text-muted mt-2 italic">Windy.com (gratuit). TEMSI officielle → Aeroweb.</p>
+            <a href="https://aviation.meteo.fr/login.php" target="_blank" rel="noreferrer" style="display:inline-block;margin-top:4px;font-size:11px;color:#0891B2;text-decoration:underline;">→ TEMSI officielle Aeroweb</a>
           </div>
         </div>
       </div>
 
-      <div id="weather-row" class="vfr-row-2cols">
-        <div id="weather-native-anchor" style="display:contents;"></div>
-        <div class="card vfr-block-temsi" style="padding:14px 16px;border-left:4px solid #0891B2;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-            <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0;display:flex;align-items:center;gap:6px;"><span style="color:#0891B2;">🌧</span><span>Météo visuelle (Windy)</span></h2>
-            <button id="windy-layer-toggle" style="font-size:10px;background:#0891B2;color:white;border:none;padding:4px 10px;border-radius:9999px;cursor:pointer;font-weight:600;">CLOUDS</button>
+      <!-- Rangée AZBA | NOTAM -->
+      <div id="wf-row-azba-notam" class="vfr-row-2cols">
+        <div class="card vfr-block-azba collapsible-block" data-collapse-key="azba" style="padding:14px 16px;border-left:4px solid #DC2626;">
+          <div class="collapsible-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0;display:flex;align-items:center;gap:6px;"><span style="color:#DC2626;">⚔️</span><span>AZBA / RTBA</span></h2>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:10px;background:#DC2626;color:white;padding:2px 8px;border-radius:9999px;font-weight:600;">À VÉRIFIER</span>
+              <button class="collapse-chevron" type="button" title="plier / déplier" style="background:transparent;border:none;cursor:pointer;font-size:14px;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;color:var(--foreground);transition:transform 0.2s;">▼</button>
+            </div>
           </div>
-          <div style="position:relative;overflow:hidden;border-radius:6px;border:1px solid var(--border);background:var(--muted);">
-            <iframe id="windy-iframe" src="https://embed.windy.com/embed2.html?lat=46.5&lon=2.5&detailLat=46.5&detailLon=2.5&width=650&height=380&zoom=5&level=surface&overlay=clouds&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=°C&radarRange=-1" frameborder="0" style="width:100%;height:380px;display:block;border:0;"></iframe>
+          <div class="collapsible-content">
+            <div style="background:var(--muted);border-radius:6px;padding:14px;text-align:center;margin-bottom:10px;border:1px dashed var(--border);">
+              <div style="font-size:34px;line-height:1;margin-bottom:6px;">🗺️</div>
+              <div style="font-size:12px;font-weight:600;margin-bottom:3px;">Carte AZBA temps réel</div>
+              <div style="font-size:11px;color:var(--muted-foreground);line-height:1.4;">Le SIA bloque l'iframe. Bouton ci-dessous = fenêtre dédiée.</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr;gap:6px;">
+              <button class="open-azba-sia" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#DC2626;border:none;border-radius:6px;color:white;cursor:pointer;font-size:13px;font-weight:500;">
+                <span style="font-size:16px;">🇫🇷</span><span style="flex:1;text-align:left;"><strong>AZBA officielle SIA</strong></span><span>→</span>
+              </button>
+              <button class="open-supaip" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--foreground);cursor:pointer;font-size:13px;">
+                <span style="font-size:16px;">🗺️</span><span style="flex:1;text-align:left;"><strong>SUP AIP France</strong></span><span style="color:var(--muted-foreground);">→</span>
+              </button>
+            </div>
           </div>
-          <p class="text-xs text-muted mt-2 italic">Windy.com (gratuit). TEMSI officielle → Aeroweb.</p>
-          <a href="https://aviation.meteo.fr/login.php" target="_blank" rel="noreferrer" style="display:inline-block;margin-top:4px;font-size:11px;color:#0891B2;text-decoration:underline;">→ TEMSI officielle Aeroweb</a>
+        </div>
+
+        <div class="card vfr-block-notam collapsible-block" data-collapse-key="notam" style="padding:14px 16px;border-left:4px solid #2563EB;">
+          <div class="collapsible-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0;display:flex;align-items:center;gap:6px;"><span style="color:#2563EB;">📋</span><span>NOTAM</span></h2>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:10px;background:#2563EB;color:white;padding:2px 8px;border-radius:9999px;font-weight:600;">À VÉRIFIER</span>
+              <button class="collapse-chevron" type="button" title="plier / déplier" style="background:transparent;border:none;cursor:pointer;font-size:14px;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;color:var(--foreground);transition:transform 0.2s;">▼</button>
+            </div>
+          </div>
+          <div class="collapsible-content">
+            <div style="background:var(--muted);border-radius:6px;padding:14px;text-align:center;margin-bottom:10px;border:1px dashed var(--border);">
+              <div style="font-size:34px;line-height:1;margin-bottom:6px;">📋</div>
+              <div style="font-size:12px;font-weight:600;margin-bottom:3px;">Visualisateur AIP / NOTAM</div>
+              <div style="font-size:11px;color:var(--muted-foreground);line-height:1.4;">Carte officielle SIA, fenêtre dédiée.</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr;gap:6px;">
+              <button class="open-vaip" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#2563EB;border:none;border-radius:6px;color:white;cursor:pointer;font-size:13px;font-weight:500;">
+                <span style="font-size:16px;">🇫🇷</span><span style="flex:1;text-align:left;"><strong>Visualisateur AIP/NOTAM SIA</strong></span><span>→</span>
+              </button>
+              <button class="open-aeroweb" style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--foreground);cursor:pointer;font-size:13px;">
+                <span style="font-size:16px;">📡</span><span style="flex:1;text-align:left;"><strong>Aeroweb — NOTAM + TEMSI</strong></span><span style="color:var(--muted-foreground);">→</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     `;
 
-    const cards = planTab.querySelectorAll('.card');
-    const firstCard = cards[0];
-    if (firstCard && firstCard.parentNode) {
-      firstCard.parentNode.insertBefore(wrapper, firstCard);
+    // Stratégie d'insertion : on insère le wrapper APRÈS le bloc trajet
+    // Le bloc trajet est le premier <details> ou .card avec input ad-input-0
+    const tripBlock = planTab.querySelector('details') || planTab.querySelector('.card');
+    if (tripBlock && tripBlock.parentNode) {
+      tripBlock.parentNode.insertBefore(wrapper, tripBlock.nextSibling);
     } else {
       planTab.insertBefore(wrapper, planTab.firstChild);
     }
 
+    // Relocaliser la météo native dans le slot dédié
     function relocateNativeWeather() {
-      const allCards = planTab.querySelectorAll('.card');
+      const allDetails = planTab.querySelectorAll('details, .card');
       let nativeWeather = null;
-      allCards.forEach(c => {
+      allDetails.forEach(c => {
         if (c === wrapper) return;
         if (c.contains(wrapper)) return;
-        const txt = (c.textContent || '').toLowerCase();
-        if (/m[ée]t[ée]o g[ée]n[ée]rale/i.test(txt) && c.querySelector('iframe, .leaflet-container, [class*="leaflet"]') !== null) {
+        if (c.querySelector('#weather-france-map') !== null) {
           nativeWeather = c;
         }
       });
@@ -693,6 +750,7 @@
     relocateNativeWeather();
     setInterval(relocateNativeWeather, 2000);
 
+    // Bindings boutons popup
     function openCenteredPopup(url, title) {
       const w = Math.min(1280, Math.floor(window.screen.width * 0.95));
       const h = Math.min(900, Math.floor(window.screen.height * 0.9));
@@ -706,11 +764,13 @@
     wrapper.querySelector('.open-vaip')?.addEventListener('click', () => openCenteredPopup('https://www.sia.aviation-civile.gouv.fr/vaip', 'Visualisateur AIP SIA'));
     wrapper.querySelector('.open-aeroweb')?.addEventListener('click', () => openCenteredPopup('https://aviation.meteo.fr/login.php', 'Aeroweb'));
 
+    // Toggle Windy layer
     const layerToggle = document.getElementById('windy-layer-toggle');
     const iframe = document.getElementById('windy-iframe');
     const layers = ['clouds', 'satellite', 'thunder', 'rain', 'wind'];
     let layerIdx = 0;
-    layerToggle?.addEventListener('click', () => {
+    layerToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
       layerIdx = (layerIdx + 1) % layers.length;
       const layer = layers[layerIdx];
       layerToggle.textContent = layer.toUpperCase();
@@ -718,12 +778,310 @@
         iframe.src = `https://embed.windy.com/embed2.html?lat=46.5&lon=2.5&detailLat=46.5&detailLon=2.5&width=650&height=380&zoom=5&level=surface&overlay=${layer}&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=°C&radarRange=-1`;
       }
     });
+
+    // Binding collapsibles
+    wireCollapsibles();
+
+    // FIX #3 suite : réorganiser l'ordre DOM
+    reorderBriefDOM();
   }
-  injectBriefBlocks();
-  setInterval(() => { if (!document.getElementById('vfr-checks-wrapper')) injectBriefBlocks(); }, 3000);
 
   // ============================================================
-  // RENAME OPENAIP OVERLAY
+  // FIX #2 v0.6.5 — COLLAPSIBLE GÉNÉRIQUE
+  // ============================================================
+  const COLLAPSE_PREF_KEY = 'autogyrodash_collapse_v1';
+  function loadCollapsePrefs() {
+    try { return JSON.parse(localStorage.getItem(COLLAPSE_PREF_KEY) || '{}'); }
+    catch(e) { return {}; }
+  }
+  function saveCollapsePref(key, collapsed) {
+    const cur = loadCollapsePrefs();
+    cur[key] = collapsed;
+    try { localStorage.setItem(COLLAPSE_PREF_KEY, JSON.stringify(cur)); } catch(e) {}
+  }
+
+  function wireCollapsibles() {
+    const blocks = document.querySelectorAll('.collapsible-block:not([data-collapse-wired])');
+    blocks.forEach(block => {
+      block.dataset.collapseWired = '1';
+      const chevron = block.querySelector('.collapse-chevron');
+      const content = block.querySelector('.collapsible-content');
+      if (!chevron || !content) return;
+
+      const key = block.dataset.collapseKey || 'default';
+      const prefs = loadCollapsePrefs();
+      // État initial : déplié par défaut (sauf si l'utilisateur a explicitement plié avant)
+      let collapsed = prefs[key] === true;
+
+      function apply() {
+        if (collapsed) {
+          content.style.display = 'none';
+          chevron.style.transform = 'rotate(-90deg)';
+        } else {
+          content.style.display = '';
+          chevron.style.transform = 'rotate(0deg)';
+        }
+      }
+      apply();
+
+      chevron.addEventListener('click', (e) => {
+        e.stopPropagation();
+        collapsed = !collapsed;
+        saveCollapsePref(key, collapsed);
+        apply();
+      });
+      // Rendre le titre cliquable aussi (sauf sur boutons internes)
+      const header = block.querySelector('.collapsible-header h2, .collapsible-header h3');
+      if (header) {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', (e) => {
+          if (e.target.closest('button')) return; // ne pas intercepter les autres boutons
+          collapsed = !collapsed;
+          saveCollapsePref(key, collapsed);
+          apply();
+        });
+      }
+    });
+  }
+
+  // ============================================================
+  // FIX #3 suite — REORDER DOM tab-plan selon croquis
+  //   Ordre attendu :
+  //     1. Trajet (premier <details>)
+  //     2. wf-row-weather (Météo native | Windy)
+  //     3. wf-row-azba-notam (AZBA | NOTAM)
+  //     4. #map-controls (overlays carte)
+  //     5. #map-container (carte interactive — NON pliable)
+  //     6. #airspaces-section + Notes Pilote en row 2 cols
+  //     7. #trip-summary (pleine largeur après)
+  //     8. #ad-cards (pleine largeur)
+  // ============================================================
+  function reorderBriefDOM() {
+    const planTab = document.getElementById('tab-plan');
+    if (!planTab) return;
+
+    const wfRowWeather = document.getElementById('wf-row-weather');
+    const wfRowAzbaNotam = document.getElementById('wf-row-azba-notam');
+    if (!wfRowWeather || !wfRowAzbaNotam) return;
+
+    // Localiser les blocs
+    const allChildren = Array.from(planTab.children);
+    let trajetBlock = null;
+    let mapControls = document.getElementById('map-controls');
+    let mapContainer = document.getElementById('map-container');
+    let airspacesSection = document.getElementById('airspaces-section');
+    let tripSummary = document.getElementById('trip-summary');
+    let adCards = document.getElementById('ad-cards');
+    let notesBlock = null;
+
+    // Identifier Trajet : details contenant ad-input-0
+    allChildren.forEach(el => {
+      if (!trajetBlock && el.querySelector?.('#ad-input-0')) trajetBlock = el;
+      // Identifier Notes Pilote : details contenant notes-textarea
+      if (!notesBlock && el.querySelector?.('#notes-textarea')) notesBlock = el;
+      // Wrapper natif <div class="grid grid-cols-1 lg:grid-cols-2 gap-4"> qui contient les 2 <details>
+      // Si oui, on le démantèle pour séparer Trajet et Météo France
+      if (el.classList?.contains('grid') && el.querySelectorAll('details').length >= 2) {
+        // Ce wrapper contient Trajet + Météo native, on déplace ses enfants au niveau planTab
+        Array.from(el.children).forEach(child => {
+          planTab.insertBefore(child, el);
+        });
+        el.remove();
+      }
+    });
+
+    // Re-localiser après déballage
+    if (!trajetBlock) {
+      trajetBlock = Array.from(planTab.children).find(el => el.querySelector?.('#ad-input-0'));
+    }
+    if (!notesBlock) {
+      notesBlock = Array.from(planTab.children).find(el => el.querySelector?.('#notes-textarea'));
+    }
+
+    // Créer un wrapper pour Zones aériennes | Notes Pilote
+    let wfRowZonesNotes = document.getElementById('wf-row-zones-notes');
+    if (!wfRowZonesNotes && airspacesSection && notesBlock) {
+      wfRowZonesNotes = document.createElement('div');
+      wfRowZonesNotes.id = 'wf-row-zones-notes';
+      wfRowZonesNotes.className = 'vfr-row-2cols';
+      planTab.appendChild(wfRowZonesNotes);
+      wfRowZonesNotes.appendChild(airspacesSection);
+      wfRowZonesNotes.appendChild(notesBlock);
+    }
+
+    // Ordre final souhaité
+    const orderedNodes = [
+      trajetBlock,
+      wfRowWeather,
+      wfRowAzbaNotam,
+      mapControls,
+      mapContainer,
+      wfRowZonesNotes,
+      tripSummary,
+      adCards
+    ].filter(Boolean);
+
+    // Appliquer l'ordre en réinsérant à la suite
+    orderedNodes.forEach(node => {
+      planTab.appendChild(node);
+    });
+
+    // Marquer les blocs natifs comme pliables (Trajet et Météo France sont déjà <details>)
+    // Pour map-controls, airspaces-section, trip-summary : ajouter chevron custom
+    makeNativeBlockCollapsible(mapControls, 'overlays-carte', 'overlays carte');
+    makeNativeBlockCollapsible(airspacesSection, 'zones-aer', 'zones aériennes traversées');
+    makeNativeBlockCollapsible(tripSummary, 'resume-trajet', 'résumé du trajet');
+    // Note : on NE plie PAS #map-container (Leaflet casserait)
+
+    // Réinvalider les cartes Leaflet après reorganisation (display:flex peut perturber)
+    setTimeout(() => {
+      try { if (typeof map !== 'undefined' && map?.invalidateSize) map.invalidateSize(); } catch(e) {}
+      try { if (typeof weatherFranceMap !== 'undefined' && weatherFranceMap?.invalidateSize) weatherFranceMap.invalidateSize(); } catch(e) {}
+    }, 200);
+  }
+
+  function makeNativeBlockCollapsible(el, key, _label) {
+    if (!el) return;
+    if (el.dataset.nativeCollapse === '1') return;
+    el.dataset.nativeCollapse = '1';
+
+    // Trouver l'en-tête : premier h2 / h3 / .text-sm.font-medium
+    const header = el.querySelector('h2, h3, .text-sm.font-medium, .section-title');
+    if (!header) return;
+
+    // Ne pas re-injecter si chevron déjà présent
+    if (el.querySelector('.collapse-chevron-native')) return;
+
+    // Créer wrapper de contenu (tous les enfants directs sauf le parent du header)
+    // Stratégie : on wrap tout sauf le premier "rang" qui contient le header
+    const allChildren = Array.from(el.children);
+    if (allChildren.length === 0) return;
+
+    // Le header peut être inline ou dans un wrapper d'en-tête. On détecte :
+    // si header.parentNode === el → header est enfant direct → on prend ses voisins comme contenu
+    // sinon le wrapper du header est enfant direct → on prend ses voisins comme contenu
+    let headerWrapper = header;
+    while (headerWrapper.parentNode !== el && headerWrapper.parentNode) {
+      headerWrapper = headerWrapper.parentNode;
+    }
+
+    // Créer le contenu wrapper
+    const contentWrapper = document.createElement('div');
+    contentWrapper.className = 'native-collapsible-content';
+    // Déplacer tous les enfants AUTRES que headerWrapper dans contentWrapper
+    Array.from(el.children).forEach(child => {
+      if (child !== headerWrapper) contentWrapper.appendChild(child);
+    });
+    el.appendChild(contentWrapper);
+
+    // Créer chevron et l'ajouter à l'en-tête
+    const chevron = document.createElement('button');
+    chevron.className = 'collapse-chevron-native';
+    chevron.type = 'button';
+    chevron.title = 'plier / déplier';
+    chevron.innerHTML = '▼';
+    chevron.style.cssText = 'background:transparent;border:none;cursor:pointer;font-size:14px;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;color:var(--foreground);transition:transform 0.2s;margin-left:auto;flex-shrink:0;';
+
+    // S'assurer que headerWrapper est un flex container, sinon le wrapper
+    const cs = window.getComputedStyle(headerWrapper);
+    if (cs.display !== 'flex') {
+      // Wrap header + ses voisins direct (badge etc.) dans un flex
+      // Cas simple : on append le chevron à headerWrapper
+      headerWrapper.style.display = 'flex';
+      headerWrapper.style.alignItems = 'center';
+      headerWrapper.style.justifyContent = 'space-between';
+      headerWrapper.style.flexWrap = 'wrap';
+      headerWrapper.style.gap = '6px';
+    }
+    headerWrapper.appendChild(chevron);
+
+    // État initial
+    const prefs = loadCollapsePrefs();
+    let collapsed = prefs[key] === true;
+
+    function apply() {
+      if (collapsed) {
+        contentWrapper.style.display = 'none';
+        chevron.style.transform = 'rotate(-90deg)';
+      } else {
+        contentWrapper.style.display = '';
+        chevron.style.transform = 'rotate(0deg)';
+      }
+    }
+    apply();
+
+    chevron.addEventListener('click', (e) => {
+      e.stopPropagation();
+      collapsed = !collapsed;
+      saveCollapsePref(key, collapsed);
+      apply();
+    });
+  }
+
+  injectBriefBlocksV065();
+  setInterval(() => {
+    if (!document.getElementById('vfr-checks-wrapper-v065')) {
+      injectBriefBlocksV065();
+    } else {
+      // Re-tenter de plier les blocs natifs au cas où ils auraient été regen
+      const mc = document.getElementById('map-controls');
+      const as = document.getElementById('airspaces-section');
+      const ts = document.getElementById('trip-summary');
+      makeNativeBlockCollapsible(mc, 'overlays-carte', 'overlays carte');
+      makeNativeBlockCollapsible(as, 'zones-aer', 'zones aériennes traversées');
+      makeNativeBlockCollapsible(ts, 'resume-trajet', 'résumé du trajet');
+      wireCollapsibles();
+    }
+  }, 3000);
+
+  // ============================================================
+  // 🔥 FIX #5 v0.6.5 — MÉTÉO FRANCE : zoom auto sur trajet
+  // ============================================================
+  // FRANCE entière par défaut, fitBounds quand ≥2 AD valides
+  function updateWeatherFranceZoom() {
+    if (typeof weatherFranceMap === 'undefined' || !weatherFranceMap) return;
+    const validPoints = (STATE.trip || []).filter(p => p && p.lat && p.lon);
+    if (validPoints.length < 2) {
+      // Pas de trajet → vue France entière
+      // Ne pas re-setter à chaque fois pour éviter spam, vérifier si déjà
+      try {
+        const c = weatherFranceMap.getCenter();
+        const z = weatherFranceMap.getZoom();
+        if (!(Math.abs(c.lat - 46.3) < 0.5 && Math.abs(c.lng - 2.5) < 0.5 && z <= 6)) {
+          weatherFranceMap.setView([46.3, 2.5], 6, { animate: false });
+        }
+      } catch(e) {
+        try { weatherFranceMap.setView([46.3, 2.5], 6, { animate: false }); } catch(e2) {}
+      }
+      return;
+    }
+    // Zoom sur trajet
+    try {
+      const latlngs = validPoints.map(p => [p.lat, p.lon]);
+      const bounds = L.latLngBounds(latlngs);
+      weatherFranceMap.fitBounds(bounds, { padding: [50, 50], animate: true, maxZoom: 9 });
+    } catch(e) {
+      console.warn('[Météo France zoom] fitBounds échec:', e);
+    }
+  }
+
+  // Hook dans onTripChange : on chaîne sans casser les hooks existants
+  if (typeof window.__originalOnTripChange === 'undefined') {
+    window.__originalOnTripChange = window.onTripChange;
+  }
+  const _prevOnTripChange = window.onTripChange;
+  window.onTripChange = function() {
+    if (typeof _prevOnTripChange === 'function') {
+      _prevOnTripChange.apply(this, arguments);
+    }
+    // Petit délai pour laisser Leaflet s'initialiser au premier appel
+    setTimeout(updateWeatherFranceZoom, 100);
+  };
+  // Appel initial différé pour s'assurer que weatherFranceMap est prête
+  setTimeout(updateWeatherFranceZoom, 1500);
+
+  // ============================================================
+  // RENAME OPENAIP OVERLAY (inchangé v0.6.4)
   // ============================================================
   function renameOpenaipOverlay() {
     const all = Array.from(document.querySelectorAll('span, label, div, button, h3, h4'));
@@ -742,7 +1100,7 @@
   setInterval(renameOpenaipOverlay, 2000);
 
   // ============================================================
-  // NOTAM/WEBCAMS FICHES AD
+  // NOTAM/WEBCAMS FICHES AD (inchangé v0.6.4)
   // ============================================================
   const WEBCAMS = {
     'LFLB': { url: 'https://www.aeroport-chambery.com/webcam/', label: 'Webcam Chambéry-Aix', source: 'Aéroport Chambéry' },
@@ -795,11 +1153,11 @@
   setTimeout(addNotamAndWebcamToCards, 300);
 
   // ============================================================
-  // 🔥 CSS GLOBAL v0.6.3
+  // 🔥 CSS GLOBAL v0.6.5
   // ============================================================
-  const v063Css = document.createElement('style');
-  v063Css.id = 'extensions-v0_6_3-css';
-  v063Css.textContent = `
+  const v065Css = document.createElement('style');
+  v065Css.id = 'extensions-v0_6_5-css';
+  v065Css.textContent = `
 /* === Dashboard 90vw === */
 body > main,
 body main {
@@ -821,8 +1179,7 @@ body > header, body header { max-width: 100% !important; }
   .vfr-row-2cols { grid-template-columns: 1fr; }
 }
 
-/* === FIX v0.6.4 : tab-plan en flex column UNIQUEMENT quand visible === */
-/* :not(.hidden) garantit que la classe hidden cache toujours le tab */
+/* === tab-plan en flex column UNIQUEMENT quand visible === */
 #tab-plan:not(.hidden) {
   display: flex !important;
   flex-direction: column !important;
@@ -838,7 +1195,7 @@ body > header, body header { max-width: 100% !important; }
 #tab-plan .card:has(#loop-checkbox) {
   width: 100% !important;
 }
-/* Sécurité : on s'assure que les autres tabs gardent leur display original quand cachés */
+/* Sécurité : les autres tabs gardent leur display original quand cachés */
 #tab-acft.hidden, #tab-history.hidden, #tab-resources.hidden, #tab-params.hidden, #tab-sources.hidden {
   display: none !important;
 }
@@ -854,36 +1211,61 @@ html.dark .vfr-block-temsi {
 }
 .vfr-block-azba, .vfr-block-notam, .vfr-block-temsi { background: var(--card); }
 
-/* === ACFT callsign compact === */
+/* === ACFT callsign === */
 .acft-callsign-compact label { font-weight: 500; }
 
-/* === Plein écran météo : satellite toggle flotte === */
-body[data-fullscreen-active] #sat-toggle-pill,
-.weather-fullscreen #sat-toggle-pill,
-.map-fullscreen-wf #sat-toggle-pill {
+/* === Satellite toggle === */
+#sat-toggle-pill:hover { filter: brightness(1.05); }
+
+/* === Plein écran météo France : ligne d'affichage flotte top-left === */
+.map-fullscreen-wf .wf-mode-line,
+body[data-fullscreen-active] .wf-mode-line {
   position: fixed !important;
   top: 70px !important;
   left: 12px !important;
+  right: auto !important;
   z-index: 100000 !important;
-  background: rgba(255,255,255,0.95) !important;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  padding: 10px 14px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  border: 1.5px solid var(--border) !important;
+  flex-wrap: wrap !important;
+  max-width: calc(100vw - 24px) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
 }
-html.dark body[data-fullscreen-active] #sat-toggle-pill,
-html.dark .weather-fullscreen #sat-toggle-pill,
-html.dark .map-fullscreen-wf #sat-toggle-pill {
-  background: rgba(0,0,0,0.85) !important;
-  color: white !important;
+html.dark .map-fullscreen-wf .wf-mode-line,
+html.dark body[data-fullscreen-active] .wf-mode-line {
+  background: rgba(20, 20, 22, 0.95) !important;
+  color: var(--foreground) !important;
 }
 
-#sat-toggle-pill:hover { filter: brightness(1.05); }
+/* === Chevrons de pliage === */
+.collapse-chevron, .collapse-chevron-native {
+  user-select: none;
+}
+.collapse-chevron:hover, .collapse-chevron-native:hover {
+  background: var(--hover-bg, rgba(0,0,0,0.04)) !important;
+  border-radius: 50%;
+}
+
+/* === Container map-container pleine largeur === */
+#map-container { width: 100% !important; }
+
+/* === native-collapsible-content : prefs persistées === */
+.native-collapsible-content {
+  transition: opacity 0.15s;
+}
   `;
-  document.head.appendChild(v063Css);
+  document.head.appendChild(v065Css);
 
   // ============================================================
   // BOOT
   // ============================================================
   if (typeof showToast === 'function') {
-    showToast('✓ v0.6.4 chargé', 'ok', 3000);
+    showToast('✓ v0.6.5 chargé', 'ok', 3000);
   }
-  console.log('[Extensions v0.6.4] Intégration terminée');
+  console.log('[Extensions v0.6.5] Intégration terminée');
 })();
