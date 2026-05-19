@@ -1,7 +1,7 @@
 /* ============================================================
-   AutogyroDash — extensions v0.6.7
+   AutogyroDash — extensions v0.6.9
    ------------------------------------------------------------
-   Nouveau dans v0.6.7 (hotfix v0.6.5 — 4 correctifs ciblés) :
+   Nouveau dans v0.6.9 (hotfix v0.6.5 — 4 correctifs ciblés) :
      A. Fusion overlays-carte + map en un seul bloc
         "Carte des aérodromes" avec un header + un chevron unique
      B. Chevrons toggle UNIFORMES : tous au même style et même
@@ -51,7 +51,7 @@
   }
   await waitForAppReady();
 
-  console.log('[Extensions v0.6.7] Boot...');
+  console.log('[Extensions v0.6.9] Boot...');
 
   function escapeHtml(s) {
     if (s === null || s === undefined) return '';
@@ -77,9 +77,9 @@
   }
 
   try {
-    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.7');
+    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.6.9');
     document.querySelectorAll('span.text-xs.pre-mono').forEach(s => {
-      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.7';
+      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.6.9';
     });
   } catch (e) {}
 
@@ -268,7 +268,7 @@
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🌤️ Météo aviation</h3><p class="text-xs">METAR/TAF : <strong>aviationweather.gov</strong>. Visuel : <strong>Windy.com</strong>.</p></div>
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🛡️ Espaces aériens</h3><p class="text-xs">Source : <strong>OpenAIP</strong>.</p></div>
       </div>
-      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.7</div>
+      <div class="text-xs text-muted text-center pt-2">AutogyroDash v0.6.9</div>
     `;
   }
   function setupResourcesNav() {
@@ -495,9 +495,26 @@
       }
       if (!inserted) return;
 
-      console.log('[Satellite v0.6.5] Toggle inséré en première position ✓');
+      console.log('[Satellite v0.6.9] Toggle inséré en première position ✓');
 
       let satOn = false;
+      // 🔥 v0.6.9 : tracker explicitement l'état du satellite natif
+      // pour pouvoir le synchroniser dans les 2 sens (activation + désactivation).
+      // Bug v0.6.7 : on cliquait sur satelliteBtn pour activer mais JAMAIS
+      // pour désactiver → l'iframe Windy restait collée à l'écran.
+      let nativeSatActive = false;
+
+      function clickSatelliteNative() {
+        if (satelliteBtn._programmatic) return;
+        satelliteBtn._programmatic = true;
+        const origDisplay = satelliteBtn.style.display;
+        satelliteBtn.style.display = '';
+        satelliteBtn.click();
+        satelliteBtn.style.display = origDisplay || 'none';
+        setTimeout(() => { satelliteBtn._programmatic = false; }, 60);
+        nativeSatActive = !nativeSatActive;
+      }
+
       function applyState() {
         const badge = document.getElementById('sat-state-badge');
         if (satOn) {
@@ -511,14 +528,9 @@
           }
           if (affichageLabel) affichageLabel.style.display = 'none';
 
-          // Déclencher l'activation satellite natif
-          if (!satelliteBtn._programmatic) {
-            satelliteBtn._programmatic = true;
-            satelliteBtn.style.display = '';
-            satelliteBtn.click();
-            satelliteBtn.style.display = 'none';
-            setTimeout(() => { satelliteBtn._programmatic = false; }, 50);
-          }
+          // Synchroniser le satellite natif : activer s'il ne l'est pas déjà
+          if (!nativeSatActive) clickSatelliteNative();
+
           toggle.style.background = '#15803D';
           toggle.style.borderColor = '#15803D';
           toggle.style.color = 'white';
@@ -528,10 +540,14 @@
           modeBtns.forEach(b => { b.style.display = b.dataset.origDisplay || ''; });
           if (affichageLabel) affichageLabel.style.display = affichageLabel.dataset.origDisplay || '';
 
+          // 🔥 v0.6.9 : DÉSACTIVER explicitement le satellite natif
+          if (nativeSatActive) clickSatelliteNative();
+
+          // Reset mode au "temp" par défaut
           if (modeBtns[0] && !modeBtns[0]._programmatic) {
             modeBtns[0]._programmatic = true;
             modeBtns[0].click();
-            setTimeout(() => { modeBtns[0]._programmatic = false; }, 50);
+            setTimeout(() => { modeBtns[0]._programmatic = false; }, 60);
           }
           toggle.style.background = 'var(--card)';
           toggle.style.borderColor = 'var(--border)';
@@ -920,14 +936,21 @@
       wfRowZonesNotes.appendChild(notesBlock);
     }
 
-    // Ordre final souhaité
+    // Ordre final souhaité (v0.6.9 — AZBA/NOTAM passe après zones aériennes)
+    //   1. Trajet
+    //   2. wfRowWeather (Météo générale | Windy)
+    //   3. mapControls + mapContainer (fusionnés via mergeMapBlocksIntoOneCard)
+    //   4. wfRowZonesNotes (Zones aériennes traversées | Notes pilote)
+    //   5. wfRowAzbaNotam (AZBA | NOTAM) — masqué tant que pas de trajet validé
+    //   6. tripSummary
+    //   7. adCards
     const orderedNodes = [
       trajetBlock,
       wfRowWeather,
-      wfRowAzbaNotam,
       mapControls,
       mapContainer,
       wfRowZonesNotes,
+      wfRowAzbaNotam,
       tripSummary,
       adCards
     ].filter(Boolean);
@@ -937,16 +960,28 @@
       planTab.appendChild(node);
     });
 
+    // 🔥 v0.6.9 : masquer wf-row-azba-notam tant que pas de trajet validé
+    // (similaire au comportement natif de #airspaces-section et #trip-summary)
+    if (wfRowAzbaNotam) {
+      const trip = (typeof computeTrip === 'function') ? computeTrip() : null;
+      const hasValidTrip = trip && trip.points && trip.points.length >= 2;
+      if (!hasValidTrip) {
+        wfRowAzbaNotam.classList.add('hidden');
+      } else {
+        wfRowAzbaNotam.classList.remove('hidden');
+      }
+    }
+
     // Marquer les blocs natifs comme pliables (Trajet et Météo France sont déjà <details>)
     // Pour map-controls, airspaces-section, trip-summary : ajouter chevron custom
     makeNativeBlockCollapsible(airspacesSection, 'zones-aer', 'zones aériennes traversées');
     makeNativeBlockCollapsible(tripSummary, 'resume-trajet', 'résumé du trajet');
     // Note : on NE plie PAS #map-container (Leaflet casserait)
 
-    // 🔥 FIX #A v0.6.7 : Fusion overlays-carte + map-container en "Carte des aérodromes"
+    // 🔥 FIX #A v0.6.9 : Fusion overlays-carte + map-container en "Carte des aérodromes"
     mergeMapBlocksIntoOneCard();
 
-    // 🔥 FIX #B v0.6.7 : Harmoniser les chevrons des <details> natifs
+    // 🔥 FIX #B v0.6.9 : Harmoniser les chevrons des <details> natifs
     harmonizeDetailsChevrons();
 
     // Réinvalider les cartes Leaflet après reorganisation (display:flex peut perturber)
@@ -957,7 +992,7 @@
   }
 
   // ============================================================
-  // 🔥 FIX #A v0.6.7 — FUSION overlays-carte + map-container
+  // 🔥 FIX #A v0.6.9 — FUSION overlays-carte + map-container
   // En un seul bloc "Carte des aérodromes" avec UN header + UN chevron
   // ============================================================
   function mergeMapBlocksIntoOneCard() {
@@ -1041,11 +1076,11 @@
       apply();
     });
 
-    console.log('[v0.6.7] Carte aérodromes fusionnée ✓');
+    console.log('[v0.6.9] Carte aérodromes fusionnée ✓');
   }
 
   // ============================================================
-  // 🔥 FIX #B v0.6.7 — HARMONISATION DES CHEVRONS NATIFS
+  // 🔥 FIX #B v0.6.9 — HARMONISATION DES CHEVRONS NATIFS
   // Remplace les <i lucide chevron-down> et .accordion-icon
   // par un chevron uniforme au même style que les autres
   // ============================================================
@@ -1054,7 +1089,7 @@
       const summary = det.querySelector('summary');
       if (!summary) return;
 
-      // 🔥 FIX v0.6.7 : skip les sous-<details> imbriqués pour ne pas
+      // 🔥 FIX v0.6.9 : skip les sous-<details> imbriqués pour ne pas
       // doubler avec leurs chevrons natifs (légende BASULM, logistique fiches AD)
       if (det.parentElement?.closest('details')) return;
       if (det.closest('#map-controls, #map-container, #ad-cards, #aerodromes-merged-wrapper #map-controls')) return;
@@ -1101,27 +1136,39 @@
 
   function makeNativeBlockCollapsible(el, key, _label) {
     if (!el) return;
-    if (el.dataset.nativeCollapse === '1') return;
 
-    // 🔥 FIX v0.6.7 : si `el` contient une seule .card enfant direct,
+    // 🔥 v0.6.9 : si `el` contient une seule .card enfant direct,
     // opérer sur cette .card au lieu de `el` (cas #trip-summary et #airspaces-section)
     let target = el;
     if (el.children.length === 1 && el.firstElementChild?.classList?.contains('card')) {
       target = el.firstElementChild;
     }
 
-    // 🔥 GARDE v0.6.7 : si la cible a déjà été décorée (chevron unifié
-    // présent ou content wrapper créé), on marque comme fait et on sort
-    if (target.querySelector(':scope > .native-collapsible-content')) {
-      el.dataset.nativeCollapse = '1';
-      return;
-    }
-    if (target.querySelector('.unified-chevron')) {
-      el.dataset.nativeCollapse = '1';
-      return;
+    // 🔥 NETTOYAGE IDEMPOTENT v0.6.9 :
+    // Avant toute redécoration, on vire toute trace de décoration précédente
+    // pour garantir l'absence de doublons même si la fonction est appelée
+    // plusieurs fois sur le même bloc.
+
+    // 1. Retirer tous les .unified-chevron déjà présents dans la card
+    target.querySelectorAll('.unified-chevron').forEach(c => c.remove());
+
+    // 2. Si un .native-collapsible-content existe, le déballer
+    //    (remettre ses enfants au niveau de target avant de re-wrapper)
+    const existingContent = target.querySelector(':scope > .native-collapsible-content');
+    if (existingContent) {
+      while (existingContent.firstChild) target.appendChild(existingContent.firstChild);
+      existingContent.remove();
     }
 
-    el.dataset.nativeCollapse = '1';
+    // 3. Retirer aussi le styling flex inline qu'on a peut-être posé sur un h2
+    //    (cas trip-summary où headerWrapper = h2 lui-même)
+    target.querySelectorAll('h2[data-v068-flexified], h3[data-v068-flexified]').forEach(h => {
+      // Conserver leur display original
+      h.style.display = '';
+      h.removeAttribute('data-v068-flexified');
+    });
+
+    // Maintenant on (re)décore proprement
 
     // Trouver l'en-tête : premier h2 / h3 / .text-sm.font-medium
     const header = target.querySelector('h2, h3, .text-sm.font-medium, .section-title');
@@ -1157,8 +1204,11 @@
       headerWrapper.style.justifyContent = 'space-between';
       headerWrapper.style.flexWrap = 'wrap';
       headerWrapper.style.gap = '6px';
+      headerWrapper.setAttribute('data-v068-flexified', '1');
     }
     headerWrapper.appendChild(chevron);
+
+    el.dataset.nativeCollapse = '1';
 
     // État initial (persisté)
     const prefs = loadCollapsePrefs();
@@ -1233,6 +1283,16 @@
     }
   }
 
+  // 🔥 v0.6.9 : toggle visibilité de wf-row-azba-notam selon trajet validé
+  function updateAzbaNotamVisibility() {
+    const wfRowAzbaNotam = document.getElementById('wf-row-azba-notam');
+    if (!wfRowAzbaNotam) return;
+    const trip = (typeof computeTrip === 'function') ? computeTrip() : null;
+    const hasValidTrip = trip && trip.points && trip.points.length >= 2;
+    if (hasValidTrip) wfRowAzbaNotam.classList.remove('hidden');
+    else wfRowAzbaNotam.classList.add('hidden');
+  }
+
   // Hook dans onTripChange : on chaîne sans casser les hooks existants
   if (typeof window.__originalOnTripChange === 'undefined') {
     window.__originalOnTripChange = window.onTripChange;
@@ -1244,9 +1304,12 @@
     }
     // Petit délai pour laisser Leaflet s'initialiser au premier appel
     setTimeout(updateWeatherFranceZoom, 100);
+    // Masquer/afficher AZBA/NOTAM selon le trajet
+    setTimeout(updateAzbaNotamVisibility, 50);
   };
   // Appel initial différé pour s'assurer que weatherFranceMap est prête
   setTimeout(updateWeatherFranceZoom, 1500);
+  setTimeout(updateAzbaNotamVisibility, 1500);
 
   // ============================================================
   // RENAME OPENAIP OVERLAY (inchangé v0.6.4)
@@ -1343,7 +1406,7 @@ body > header, body header { max-width: 100% !important; }
   gap: 14px;
   align-items: stretch;
 }
-/* 🔥 FIX #C v0.6.7 : sur la row Zones aériennes | Notes Pilote,
+/* 🔥 FIX #C v0.6.9 : sur la row Zones aériennes | Notes Pilote,
    ne pas étirer les blocs à la même hauteur — la liste a son propre scroll */
 #wf-row-zones-notes {
   align-items: start !important;
@@ -1415,7 +1478,7 @@ html.dark body[data-fullscreen-active] .wf-mode-line {
   color: var(--foreground) !important;
 }
 
-/* === 🔥 CHEVRON UNIFIÉ v0.6.7 ===
+/* === 🔥 CHEVRON UNIFIÉ v0.6.9 ===
    Tous les chevrons (blocs custom + blocs natifs + <details>)
    utilisent la même classe .unified-chevron pour un rendu identique */
 .unified-chevron {
@@ -1453,7 +1516,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   display: none !important;
 }
 
-/* === 🔥 FIX #C v0.6.7 — Zones aériennes scroll interne ===
+/* === 🔥 FIX #C v0.6.9 — Zones aériennes scroll interne ===
    On NE met PAS max-height sur la .card complète (ça forçait le <p>
    d'avertissement final à déborder visuellement).
    Le scroll interne se fait uniquement sur la liste #airspaces-list. */
@@ -1486,7 +1549,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
 /* === Container map-container pleine largeur === */
 #map-container { width: 100% !important; }
 
-/* === Carte aérodromes fusionnée (v0.6.7) ===
+/* === Carte aérodromes fusionnée (v0.6.9) ===
    On supprime le .card sur les enfants pour éviter double encadrement */
 #aerodromes-merged-wrapper #map-controls,
 #aerodromes-merged-wrapper #map-container {
@@ -1508,10 +1571,167 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
   document.head.appendChild(v065Css);
 
   // ============================================================
+  // 🔥 FIX #4 v0.6.9 — METAR RAPIDE
+  // Override de window.fetchMetar pour :
+  //   - Race parallèle entre les 3 proxies (Promise.any au lieu de séquentiel)
+  //   - Timeout réduit à 5s par proxy (au lieu de 8s)
+  //   - Cache stale-while-revalidate : si le cache est expiré mais existe,
+  //     on l'affiche tout de suite et on tente un refresh en background
+  // Gain attendu : 5s max au lieu de 24s en pire cas par AD.
+  // ============================================================
+  (function patchFetchMetar() {
+    function _tryPatch() {
+      if (typeof window.fetchMetar !== 'function') {
+        // Le code natif n'est pas encore défini, on retente
+        setTimeout(_tryPatch, 300);
+        return;
+      }
+      if (window.__fetchMetarPatchedV068) return;
+      window.__fetchMetarPatchedV068 = true;
+
+      const METAR_PROXIES_V068 = (apiUrl) => [
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(apiUrl)}`,
+        `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`,
+      ];
+
+      // fetchWithTimeout est fourni par le code natif ; sinon fallback
+      const _ftw = (typeof fetchWithTimeout === 'function')
+        ? fetchWithTimeout
+        : async (url, opts, ms) => {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), ms);
+            try { return await fetch(url, { ...opts, signal: ctrl.signal }); }
+            finally { clearTimeout(t); }
+          };
+
+      async function tryProxyOnce(proxyUrl) {
+        const r = await _ftw(proxyUrl, {}, 5000); // 5s timeout
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const text = await r.text();
+        if (!text || text.trim().startsWith('<')) throw new Error('non-JSON');
+        let json;
+        try { json = JSON.parse(text); } catch (e) { throw new Error('parse: ' + e.message); }
+        if (!Array.isArray(json) || json.length === 0) throw new Error('vide');
+        return json[0];
+      }
+
+      async function refreshInBackground(station, apiUrl, cacheKey, expiryKey) {
+        try {
+          const proxies = METAR_PROXIES_V068(apiUrl);
+          const data = await Promise.any(proxies.map(tryProxyOnce));
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ data, ts: Date.now() }));
+            localStorage.setItem(expiryKey, String(Date.now() + 60 * 60 * 1000));
+          } catch (e) {}
+        } catch (e) {
+          // silencieux : on a déjà retourné le cache stale à l'utilisateur
+        }
+      }
+
+      window.fetchMetar = async function fetchMetarFast(station) {
+        const cacheKey = `autogyrodash_metar_${station}`;
+        const expiryKey = `${cacheKey}__exp`;
+        const now = Date.now();
+        const apiUrl = `https://aviationweather.gov/api/data/metar?ids=${encodeURIComponent(station)}&format=json&taf=true&hours=2`;
+
+        // Lire cache (peut être stale)
+        let cached = null;
+        try {
+          const raw = localStorage.getItem(cacheKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            cached = parsed?.data || parsed; // compat ancien format
+          }
+        } catch (e) {}
+
+        const expiry = parseInt(localStorage.getItem(expiryKey) || '0', 10);
+        const isFresh = cached && expiry > now;
+
+        // Cas 1 : cache frais → retourner direct, pas de fetch
+        if (isFresh) {
+          return cached;
+        }
+
+        // Cas 2 : cache stale → retourner stale immédiatement + refresh en background
+        if (cached) {
+          refreshInBackground(station, apiUrl, cacheKey, expiryKey);
+          return cached;
+        }
+
+        // Cas 3 : pas de cache → race entre les 3 proxies (Promise.any)
+        try {
+          const proxies = METAR_PROXIES_V068(apiUrl);
+          const data = await Promise.any(proxies.map(tryProxyOnce));
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ data, ts: now }));
+            localStorage.setItem(expiryKey, String(now + 60 * 60 * 1000));
+          } catch (e) {}
+          return data;
+        } catch (e) {
+          // Tous les proxies ont échoué et pas de cache
+          if (typeof showToast === 'function') {
+            showToast(`METAR ${station} indisponible`, 'err', 3000);
+          }
+          return null;
+        }
+      };
+
+      console.log('[METAR v0.6.9] fetchMetar patché : Promise.any + 5s + stale-while-revalidate ✓');
+    }
+    _tryPatch();
+  })();
+
+  // ============================================================
+  // 🌤️ FOND CIEL + NUAGES v0.6.9 (mode jour uniquement)
+  // SVG inline en data URL = 0 fichier à héberger, vectoriel, ~1 KB.
+  // Les .card restent opaques pour passer par-dessus avec un léger
+  // box-shadow pour les faire "flotter". Mode nuit inchangé.
+  // ============================================================
+  const skyBgCss = document.createElement('style');
+  skyBgCss.id = 'extensions-v0_6_9-sky-bg';
+  skyBgCss.textContent = `
+html:not(.dark) body {
+  background-color: #4DC2F1;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 120' width='200' height='120'><g fill='white'><ellipse cx='40' cy='38' rx='22' ry='7'/><circle cx='30' cy='34' r='8'/><circle cx='42' cy='30' r='10'/><circle cx='54' cy='34' r='8'/><ellipse cx='140' cy='38' rx='22' ry='7'/><circle cx='130' cy='34' r='8'/><circle cx='142' cy='30' r='10'/><circle cx='154' cy='34' r='8'/><ellipse cx='90' cy='92' rx='22' ry='7'/><circle cx='80' cy='88' r='8'/><circle cx='92' cy='84' r='10'/><circle cx='104' cy='88' r='8'/><ellipse cx='190' cy='92' rx='22' ry='7'/><circle cx='180' cy='88' r='8'/><circle cx='192' cy='84' r='10'/><circle cx='204' cy='88' r='8'/><ellipse cx='-10' cy='92' rx='22' ry='7'/><circle cx='-20' cy='88' r='8'/><circle cx='-8' cy='84' r='10'/><circle cx='4' cy='88' r='8'/></g></svg>");
+  background-size: 200px 120px;
+  background-repeat: repeat;
+  background-attachment: fixed;
+}
+
+/* Les cards passent au-dessus du ciel : opaques + ombrage doux */
+html:not(.dark) .card {
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Le header pilule (top nav) : effet "verre dépoli" pour la lisibilité */
+html:not(.dark) body > header {
+  background: transparent !important;
+}
+html:not(.dark) body > header > * {
+  /* Les enfants gardent leur fond ; le wrapper devient transparent */
+}
+
+/* Sécurité : les éléments .vfr-block-* (AZBA/NOTAM/TEMSI) restent lisibles */
+html:not(.dark) .vfr-block-azba,
+html:not(.dark) .vfr-block-notam,
+html:not(.dark) .vfr-block-temsi {
+  background-color: #ffffff !important;
+}
+
+/* Le wrapper de carte fusionnée reste opaque */
+html:not(.dark) #aerodromes-merged-wrapper {
+  background-color: #ffffff !important;
+}
+  `;
+  document.head.appendChild(skyBgCss);
+
+  // ============================================================
   // BOOT
   // ============================================================
   if (typeof showToast === 'function') {
-    showToast('✓ v0.6.7 chargé', 'ok', 3000);
+    showToast('✓ v0.6.9 chargé', 'ok', 3000);
   }
-  console.log('[Extensions v0.6.7] Intégration terminée');
+  console.log('[Extensions v0.6.9] Intégration terminée');
 })();
