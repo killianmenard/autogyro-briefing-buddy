@@ -1,0 +1,174 @@
+/* ============================================================================
+   AERO GLASS — Design tokens VERROUILLÉS (AutogyroDash)
+   Version 1.0 · 08/06/2026 · intégré en Lot A (v0.7.0)
+   ----------------------------------------------------------------------------
+   Source de vérité unique du nouveau thème. Tailwind reste utilisable pour le
+   LAYOUT ; ces variables/classes pilotent COULEURS + EFFET VERRE.
+
+   RÈGLE INVIOLABLE RESPECTÉE : entre jour et nuit, SEULES les variables de
+   COULEUR changent (bloc html[data-theme]). La structure (flou, arrondis,
+   espacements, tailles) est commune → aucun déplacement d'élément.
+
+   Bascule thème : document.documentElement.setAttribute('data-theme','light'|'dark')
+   (posée en parallèle de la classe .dark existante — voir applyTheme dans index.html).
+
+   ⚠️ DÉ-CONFLITS LOT A (valeurs inchangées) :
+   L'app utilisait déjà `.card` (cartes blanches opaques, 31 usages) et la variable
+   `--card`. Pour ne pas écraser l'existant tant que la migration verre n'est pas
+   faite (Lot B/C), la recette verre de carte est renommée `.ag-card` / `--ag-card`.
+   Toutes les autres primitives (.glass, .inlay, .ag-*) sont sans collision.
+   La règle base `body{}` est gérée dans index.html (fond atmosphérique via pseudo-
+   élément, placement éprouvé anti sticky/fixed).
+   ============================================================================ */
+
+:root{
+  /* --- STRUCTURE (NE CHANGE PAS entre thèmes) --- */
+  --blur-p: 28px;          /* panneaux (desktop) */
+  --blur-c: 24px;          /* cartes internes (desktop) */
+  --r-xl: 24px;            /* panneaux principaux */
+  --r-lg: 16px;            /* cartes / boutons larges */
+  --r-md: 12px;            /* champs, petits blocs */
+  --r-pill: 999px;         /* chips, pilules */
+  --col-gap: 22px;
+  --pad: 20px;
+  --maxw: 1320px;          /* largeur max dashboard desktop */
+  --ease: cubic-bezier(.4,0,.2,1);
+  --t-theme: .5s;          /* durée transition de thème */
+
+  /* polices */
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;  /* titres */
+  --font-body: 'Hanken Grotesk', system-ui, sans-serif;        /* corps */
+  --font-mono: 'Geist', ui-monospace, monospace;               /* data / labels */
+}
+
+/* ===================== NUIT — « AeroPlan » (marine + cyan/violet) ===================== */
+html[data-theme="dark"]{
+  --bg-0:#0b1326; --bg-1:#131b2e;
+  --glow-a: rgba(0,219,231,.14);  --glow-a-xy:78% 6%;   /* cyan haut-droite */
+  --glow-b: rgba(112,0,255,.13);  --glow-b-xy:8% 94%;   /* violet bas-gauche */
+  --panel: rgba(255,255,255,.07); --panel-bd: rgba(255,255,255,.11);
+  --ag-card:  rgba(255,255,255,.12); --card-bd:  rgba(255,255,255,.16);
+  --inlay: rgba(255,255,255,.04); --inlay-bd: rgba(255,255,255,.07);
+  --text:#dae2fd; --text-2:#b9cacb; --text-3:#849495;
+  --accent:#00dbe7; --accent-2:#74f5ff; --accent-ink:#002022;
+  --accent-soft: rgba(0,219,231,.15); --accent-bd: rgba(0,219,231,.34);
+  --violet:#d1bcff; --violet-soft: rgba(170,120,255,.18);
+  --amber:#ffce6b;  --amber-soft: rgba(255,206,107,.16);
+  --good:#3fe0c0;  --danger:#ffb4ab;
+  --shadow: rgba(0,0,0,.5); --hi: rgba(255,255,255,.15);
+  --map-0:#0e1830; --map-1:#15233f;
+}
+
+/* ===================== JOUR — « AeroFlight » (verre chaud iridescent) ===================== */
+html[data-theme="light"]{
+  --bg-0:#eef1f9; --bg-1:#e6ebf4;
+  --glow-a: rgba(255,168,120,.34); --glow-a-xy:82% 88%;  /* peach sunset bas-droite */
+  --glow-b: rgba(120,150,255,.24); --glow-b-xy:6% 6%;    /* periwinkle haut-gauche */
+  --panel: rgba(255,255,255,.55); --panel-bd: rgba(255,255,255,.85);
+  --ag-card:  rgba(255,255,255,.38); --card-bd:  rgba(20,32,60,.11);
+  --inlay: rgba(255,255,255,.5);  --inlay-bd: rgba(20,32,60,.06);
+  --text:#16203a; --text-2:#44546d; --text-3:#6c7c8e;
+  --accent:#0792a6; --accent-2:#0aa6bd; --accent-ink:#ffffff;   /* cyan assombri pour contraste sur clair */
+  --accent-soft: rgba(7,146,166,.12); --accent-bd: rgba(7,146,166,.3);
+  --violet:#6d3df0; --violet-soft: rgba(109,61,240,.12);
+  --amber:#a9741a;  --amber-soft: rgba(169,116,26,.14);
+  --good:#0a9a82;  --danger:#c0413a;
+  --shadow: rgba(40,55,95,.13); --hi: rgba(255,255,255,.9);
+  --map-0:#cfd9ec; --map-1:#dccabe;
+}
+
+/* ===================== SURFACES VERRE ===================== */
+.glass{
+  background:var(--panel);
+  -webkit-backdrop-filter:blur(var(--blur-p)) saturate(150%); backdrop-filter:blur(var(--blur-p)) saturate(150%);
+  border:1px solid var(--panel-bd); border-radius:var(--r-xl);
+  box-shadow: inset 0 1px 0 var(--hi), 0 14px 40px var(--shadow);
+  transition: background-color var(--t-theme) var(--ease), border-color var(--t-theme) var(--ease), box-shadow .3s var(--ease), transform .3s var(--ease);
+}
+.ag-card{
+  background:var(--ag-card);
+  -webkit-backdrop-filter:blur(var(--blur-c)) saturate(140%); backdrop-filter:blur(var(--blur-c)) saturate(140%);
+  border:1px solid var(--card-bd); border-radius:var(--r-lg);
+  transition: background-color var(--t-theme) var(--ease), border-color var(--t-theme) var(--ease), transform .3s var(--ease);
+}
+.inlay{ background:var(--inlay); border:1px solid var(--inlay-bd); border-radius:var(--r-md); }
+.glow:hover{ border-color:var(--accent-bd); box-shadow: inset 0 1px 0 var(--hi), 0 0 22px var(--accent-soft), 0 14px 40px var(--shadow); }
+
+/* fond atmosphérique (recette de référence — en Lot A le fond est posé via html::before dans index.html) */
+.ag-bg{
+  position:fixed; inset:0; z-index:-2;
+  background:
+    radial-gradient(900px 600px at var(--glow-a-xy), var(--glow-a), transparent 58%),
+    radial-gradient(820px 640px at var(--glow-b-xy), var(--glow-b), transparent 60%),
+    linear-gradient(158deg, var(--bg-0), var(--bg-1));
+  transition: background var(--t-theme) var(--ease);
+}
+
+/* ===================== TYPOGRAPHIE ===================== */
+.ag-display{ font-family:var(--font-display); font-weight:800; letter-spacing:-.02em; }
+.ag-title{   font-family:var(--font-display); font-weight:700; letter-spacing:-.01em; }
+.ag-caps{    font-family:var(--font-mono); font-weight:600; text-transform:uppercase; letter-spacing:.11em; font-size:10.5px; }
+.ag-mono{    font-family:var(--font-mono); font-weight:500; letter-spacing:-.01em; }
+.ag-muted{ color:var(--text-2); } .ag-dim{ color:var(--text-3); } .ag-acc{ color:var(--accent); }
+
+/* ===================== CHIPS / BADGES / PASTILLES ZONES ===================== */
+.ag-chip{ display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:var(--r-pill);
+  background:var(--accent-soft); border:1px solid var(--accent-bd); color:var(--accent);
+  font-family:var(--font-mono); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; }
+.ag-dot{ width:7px; height:7px; border-radius:50%; } .ag-pulse{ animation:ag-pulse 2s infinite; }
+.ag-vfr{ color:var(--good); } .ag-vfr .ag-dot{ background:var(--good); }
+.ag-old{ color:var(--amber); } .ag-old .ag-dot{ background:var(--amber); }
+/* pastilles classes d'espace (carré + lettre) — conserve ta sémantique OACI */
+.ag-pastille{ width:26px; height:26px; border-radius:7px; display:grid; place-items:center; flex-shrink:0;
+  font-family:var(--font-display); font-weight:800; font-size:13px; }
+.ag-p-d{ background:var(--accent); color:var(--accent-ink); }   /* classe D */
+.ag-p-e{ background:var(--violet); color:#fff; }                /* classe E */
+.ag-p-r{ background:var(--amber); color:#3a2a00; }              /* R / restreint */
+
+/* ===================== BOUTONS ===================== */
+.ag-btn{ padding:11px; border-radius:var(--r-md); cursor:pointer; border:1px solid var(--accent-bd);
+  background:var(--accent-soft); color:var(--accent); font-family:var(--font-mono); font-weight:600;
+  font-size:10.5px; text-transform:uppercase; letter-spacing:.09em; display:flex; align-items:center; justify-content:center; gap:7px; transition:.2s; }
+.ag-btn:hover{ box-shadow:0 0 16px var(--accent-soft); } .ag-btn:active{ transform:scale(.97); }
+/* bouton primaire (ex : Export PDF) — léger « breathing glow » */
+.ag-btn-primary{ border:none; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:var(--accent-ink);
+  box-shadow:0 8px 24px var(--accent-soft); animation:ag-breath 3.4s var(--ease) infinite; }
+.ag-btn-primary:hover{ transform:translateY(-1px); } .ag-btn-primary:active{ transform:scale(.98); }
+
+/* ===================== TIMELINE WAYPOINTS ===================== */
+.ag-timeline{ position:relative; padding-left:26px; display:flex; flex-direction:column; gap:11px; }
+.ag-timeline .ag-spine{ position:absolute; left:8px; top:8px; bottom:8px; width:2px; opacity:.55; border-radius:2px;
+  background:linear-gradient(var(--accent), var(--accent) 30%, var(--violet)); }
+.ag-wp{ position:relative; display:flex; align-items:center; justify-content:space-between; padding:11px 13px; }
+.ag-wp .ag-pin{ position:absolute; width:11px; height:11px; border-radius:50%; }
+.ag-wp .ag-pin.dep{ left:-22px; background:var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
+.ag-wp .ag-pin.arr{ left:-22px; background:var(--violet); box-shadow:0 0 0 4px var(--violet-soft); }
+.ag-wp .ag-pin.mid{ left:-20.5px; width:8px; height:8px; background:var(--text-3); }
+
+/* ===================== JAUGE (carburant / autonomie) ===================== */
+/* SVG : 2 cercles r=42, stroke-dasharray=264 ; dashoffset = 264*(1 - pct) */
+.ag-gauge{ position:relative; width:96px; height:96px; }
+.ag-gauge .track{ fill:none; stroke:var(--inlay-bd); stroke-width:6; }
+.ag-gauge .val{ fill:none; stroke:var(--accent); stroke-width:6; stroke-linecap:round; }
+
+/* ===================== ANIMATIONS ===================== */
+@keyframes ag-pulse{ 0%,100%{opacity:1} 50%{opacity:.35} }
+@keyframes ag-breath{ 0%,100%{box-shadow:0 8px 22px var(--accent-soft)} 50%{box-shadow:0 8px 30px var(--accent-soft),0 0 18px var(--accent-soft)} }
+@keyframes ag-fadeUp{ from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
+.ag-reveal{ opacity:0; animation:ag-fadeUp .6s var(--ease) forwards; animation-delay:var(--d,0ms); }
+
+/* ===================== RESPONSIVE — flou réduit sur mobile (perf GPU) ===================== */
+@media (max-width:640px){
+  :root{ --blur-p:16px; --blur-c:12px; --col-gap:14px; --pad:16px; }
+}
+@media (prefers-reduced-motion:reduce){
+  .ag-reveal,.ag-pulse,.ag-btn-primary{ animation:none; opacity:1; }
+}
+
+/* ============================================================================
+   ⚠️ NE PAS appliquer .glass / backdrop-filter au-dessus de la carte Leaflet
+   VIVANTE (recompositing = saccades). La carte garde son rendu ; seuls les
+   CONTRÔLES flottants (zoom/calques) et le cadre sont en verre.
+   ⚠️ Le PDF (html2canvas) NE rend PAS backdrop-filter → le PDF garde son
+   style « impression » découplé (withLightTheme), il n'utilise PAS ces classes.
+   ============================================================================ */
