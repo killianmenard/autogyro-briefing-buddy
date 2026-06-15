@@ -1,0 +1,1063 @@
+{
+ "type": "FUEL",
+ "version": "AIRAC 06/26",
+ "source": "SIA AIXM — Licence Ouverte Etalab v2.0",
+ "ad": {
+  "LFMU": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFPB": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFBR": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "FMEE": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "H24"
+  },
+  "LFES": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFQT": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFDJ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFLA": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFTZ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFLL": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFMD": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFSG": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFLD": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFKC": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFBL": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFDH": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFLW": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFMI": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HO"
+  },
+  "LFEV": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFML": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "H24"
+  },
+  "LFOZ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFPF": {
+   "grades": [
+    "UL91"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFLS": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFBU": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFLH": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFSM": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFLB": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFLG": {
+   "grades": [
+    "JET A1",
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFME": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFGJ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFOQ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFBF": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFHT": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "FMEP": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFBK": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "H24"
+  },
+  "LFCK": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "TFFG": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFSN": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFAT": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFNH": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFNC": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFCW": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFJY": {
+   "grades": [
+    "JET A1",
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFAI": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "HJ (jour)"
+  },
+  "LFDB": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFRH": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFQQ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFRV": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFMO": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFDS": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "H24"
+  },
+  "LFLC": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFAY": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "NTTB": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFKF": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "SOCA": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFHY": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFEI": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFGL": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFGM": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFJL": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFNB": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "NWWW": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "H24"
+  },
+  "NWWL": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFBX": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFBH": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFRI": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFSL": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFBA": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "TFFF": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFCC": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFBP": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFRU": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFQG": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFCI": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFHP": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFHV": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "H24"
+  },
+  "TFFR": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFCR": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFAV": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFVP": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFOT": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFQM": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFJR": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFMY": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFLU": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFLP": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFMH": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFMK": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFLV": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFOH": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFDN": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFRS": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "H24"
+  },
+  "LFOV": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFLO": {
+   "grades": [
+    "JET A1",
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFBS": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "H24"
+  },
+  "LFBN": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "H24"
+  },
+  "LFRD": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFQB": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFAQ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFMN": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "HO"
+  },
+  "LFBO": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "H24"
+  },
+  "LFQA": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFBI": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFLX": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFBZ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFST": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFLN": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFPO": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFMT": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFRO": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFRQ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HO"
+  },
+  "LFOU": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFKJ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HO"
+  },
+  "LFRZ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFCY": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "H24"
+  },
+  "LFBE": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFSB": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFMP": {
+   "grades": [
+    "JET A1",
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFPT": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFSA": {
+   "grades": [
+    "SP98"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFXU": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFFU": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFCE": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFGI": {
+   "grades": [
+    "JET A1",
+    "100LL",
+    "SP95"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFGK": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFGZ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "FMCZ": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "NWWM": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "NLWW": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFMA": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFGA": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFKB": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFMV": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFRC": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFOB": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFRG": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HO"
+  },
+  "LFRT": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFPM": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "H24"
+  },
+  "LFRM": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFOK": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFBT": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFRB": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFRN": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFBD": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HO"
+  },
+  "LFTW": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFMQ": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFLY": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFBY": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "NTAA": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFOP": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "NTTR": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "NTTG": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFAC": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFSD": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "Voir NOTAM/VAC"
+  },
+  "LFRK": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  },
+  "LFPN": {
+   "grades": [
+    "JET A1",
+    "100LL"
+   ],
+   "horaires": "HX — voir VAC"
+  }
+ }
+}
