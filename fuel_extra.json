@@ -1,0 +1,28 @@
+{
+  "type": "FUEL_EXTRA",
+  "version": "manuel",
+  "source": "Complément manuel (VAC AVT) — saisie pilote",
+  "note": "Complète fuel.json (AIXM SIA) pour les terrains où l'avitaillement aéroclub/informel n'est pas (ou mal) référencé dans l'AIXM. Édition manuelle sur GitHub. Schéma identique à l'app : ad:{ICAO:{fuel_100ll, fuel_ul91, fuel_sp98, fuel_jet_a1 (true/false/null), phone, hours, notes, last_update}}. En cas de doublon ICAO avec fuel.json, cette source est prioritaire (objet complet).",
+  "ad": {
+    "LFLQ": {
+      "fuel_100ll": false,
+      "fuel_ul91": true,
+      "fuel_sp98": false,
+      "fuel_jet_a1": false,
+      "phone": "06 95 46 87 14",
+      "hours": "09h00-17h00 sur RDV la veille",
+      "notes": "ULM Aéro Drôme : 06 31 53 43 08 · ACM Porte de Provence : 04 75 46 01 76",
+      "last_update": "2026-05-14"
+    },
+    "LFLU": {
+      "fuel_100ll": true,
+      "fuel_ul91": null,
+      "fuel_sp98": false,
+      "fuel_jet_a1": true,
+      "phone": "04 75 78 04 02 (AFIS)",
+      "hours": "LUN-VEN 07h00-18h00, hors AFIS PPR obligatoire",
+      "notes": "Aéro-ULM-Valence : 06 66 65 23 39 · b.roustan@valenceaeroport.fr · Pas de SP",
+      "last_update": "2026-05-14"
+    }
+  }
+}
