@@ -1,5 +1,5 @@
 /* ============================================================
-   AutogyroDash — extensions v0.8.71
+   AutogyroDash — extensions v0.8.72
    ------------------------------------------------------------
    Nouveau dans v0.6.34 (hotfix v0.6.5 — 4 correctifs ciblés) :
      A. Fusion overlays-carte + map en un seul bloc
@@ -77,9 +77,9 @@
   }
 
   try {
-    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.8.71');
+    document.title = document.title.replace(/v0\.\d+\.\d+/, 'v0.8.72');
     document.querySelectorAll('span.text-xs.pre-mono').forEach(s => {
-      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.8.71';
+      if (/^v0\.\d+\.\d+$/.test(s.textContent.trim())) s.textContent = 'v0.8.72';
     });
   } catch (e) {}
 
@@ -306,7 +306,7 @@
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">📖 Sigles aéronautiques (670)</h3><p class="text-xs">Source : <strong>SOFIA</strong> — DGAC.</p></div>
       </div>
 
-      <div class="text-xs text-muted text-center pt-4 mt-2 border-t border-thin">AutogyroDash v0.8.71</div>
+      <div class="text-xs text-muted text-center pt-4 mt-2 border-t border-thin">AutogyroDash v0.8.72</div>
     `;
   }
   function setupResourcesNav() {
@@ -1588,7 +1588,7 @@
     const sec = document.getElementById('airspaces-section');
     const wfRow = document.getElementById('wf-row-azba-notam');
     const report = {
-      version: 'v0.8.71',
+      version: 'v0.8.72',
       inputs: {
         detected: total,
         filled: count,
@@ -2607,7 +2607,7 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
 }
 
 /* ============================================================
-   L1+L2 (v0.8.71) — MOBILE « Apple Maps » : carte plein ecran +
+   L1+L2 (v0.8.72) — MOBILE « Apple Maps » : carte plein ecran +
    feuille OPAQUE (fond app --bg-0, cartes internes sans verre) ; 3 crans
    distincts : PILULE flottante en bas / feuille a mi-hauteur / pleine page
    sans carte. Bouton+panneau calques reconstruits. Recherche unie a la poignee.
@@ -2690,21 +2690,14 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
     backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
   }
 
-  /* ---- CRAN PLEIN : pleine page, carte cachee. La recherche disparait en fondu, la poignee reste (drag) ---- */
-  body.ag-sheet-full #ag-sheet-head {
-    background: transparent !important; border-color: transparent !important; box-shadow: none !important;
-    margin: 0 4px !important;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
-  }
-  body.ag-sheet-full #ag-sheet-head .map-search-ctrl {
-    opacity: 0 !important; max-height: 0 !important; margin: 0 !important;
-    pointer-events: none !important; overflow: hidden !important;
-  }
+  /* ---- CRAN PLEIN : la barre de drag passe SOUS le header de l'app (espace), la recherche flottante s'efface (cf. CSS pilule) ---- */
+  body.ag-sheet-full #tab-plan { padding-top: 78px !important; }
+  body.ag-sheet-full #ag-sheet-head { top: 78px !important; }
 
-  /* ---- CRAN BAS : seule la PILULE de recherche (le head) flotte en bas ; la feuille est transparente ---- */
+  /* ---- CRAN BAS : la feuille est reduite a sa BARRE de drag ; la pilule de recherche flotte juste au-dessus ---- */
   body.ag-sheet-peek:not(.ag-dragging) #tab-plan {
     top: auto !important; bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
-    height: auto !important; max-height: 92px !important;
+    height: auto !important; max-height: 46px !important;
     left: 0 !important; right: 0 !important;
     padding: 0 !important;
     background: transparent !important;
@@ -2717,26 +2710,38 @@ details[data-chevron-harmonized] summary > .flex > [data-lucide="chevron-down"] 
     margin: 0 12px !important;
   }
 
-  /* ---- EN-TETE = PILULE flottante (poignee + recherche) facon header ; sticky, se tire ---- */
+  /* ---- EN-TETE = BARRE de drag (poignee seule, pilule blanche) ; la recherche est une pilule flottante separee ---- */
   #ag-sheet-head {
-    position: sticky; top: 8px; z-index: 50;
-    margin: 0 4px 14px; padding: 7px 12px 10px;
+    position: sticky; top: 0; z-index: 40;
+    margin: 0 12px 10px; padding: 9px 12px;
     background: var(--header-pill-bg, #fff);
     border: 1.5px solid var(--header-pill-border, #e5e7eb);
-    border-radius: 26px;
-    box-shadow: 0 6px 20px rgba(31,42,68,.16);
+    border-radius: 999px;
+    box-shadow: 0 6px 20px rgba(31,42,68,.14);
     touch-action: none;
-    transition: opacity .26s ease, background-color .2s ease, box-shadow .2s ease, border-color .2s ease;
   }
   #ag-sheet-handle { height: 18px; display: flex; align-items: center; justify-content: center; }
   #ag-sheet-handle .ag-grip { width: 42px; height: 5px; border-radius: 999px; background: var(--text-3, #97a2b2); opacity: .55; }
-  #ag-sheet-head .map-search-ctrl { position: static !important; width: 100% !important; max-width: none !important; margin: 4px 0 0 !important; box-shadow: none !important; background: transparent !important; max-height: 240px; opacity: 1; transition: opacity .26s ease, max-height .26s ease, margin .26s ease; }
-  #ag-sheet-head .map-search-input {
-    width: 100%; font-size: 16px !important; padding: 11px 14px; border-radius: 12px;
-    border: 1px solid var(--card-bd, rgba(20,32,60,.12)); background: var(--bg-1, #fff); color: var(--text, #16203a);
+  /* ---- PILULE de recherche FLOTTANTE (au-dessus de la feuille, facon header). Position bottom recalculee en JS. ---- */
+  #ag-search-pill {
+    display: none;
+    position: fixed; left: 12px; right: 12px; z-index: 45; bottom: 120px;
+    background: var(--header-pill-bg, #fff);
+    border: 1.5px solid var(--header-pill-border, #e5e7eb);
+    border-radius: 26px;
+    box-shadow: 0 6px 20px rgba(31,42,68,.18);
+    padding: 5px 10px;
+    transition: opacity .26s ease;
+  }
+  body.ag-mobile-sheet #ag-search-pill { display: block; }
+  body.ag-sheet-full #ag-search-pill { opacity: 0; pointer-events: none; }
+  #ag-search-pill .map-search-ctrl { position: static !important; width: 100% !important; max-width: none !important; margin: 0 !important; box-shadow: none !important; background: transparent !important; }
+  #ag-search-pill .map-search-input {
+    width: 100%; font-size: 16px !important; padding: 9px 12px; border-radius: 18px;
+    border: none; background: transparent; color: var(--text, #16203a);
     touch-action: auto;
   }
-  #ag-sheet-head .map-search-results { position: static !important; margin-top: 6px; }
+  #ag-search-pill .map-search-results { position: static !important; margin-top: 4px; max-height: 40vh; overflow-y: auto; }
 
   body.ag-mobile-sheet #tab-plan .dash-section-title { color: var(--text, #16203a) !important; opacity: 1 !important; }
 
@@ -3921,13 +3926,13 @@ body[data-fullscreen-active] .wf-mode-line {
   // BOOT
   // ============================================================
   if (typeof showToast === 'function') {
-    showToast('✓ v0.8.71 chargé', 'ok', 3000);
+    showToast('✓ v0.8.72 chargé', 'ok', 3000);
   }
   console.log('[Extensions v0.6.34] Intégration terminée');
 })();
 
 /* ============================================================
-   L1+L2 (v0.8.71) — Feuille mobile « Apple Maps » : carte plein ecran +
+   L1+L2 (v0.8.72) — Feuille mobile « Apple Maps » : carte plein ecran +
    feuille opaque 3 crans (pilule bas / mi-hauteur / pleine page sans carte) +
    panneau calques reconstruit depuis layerControl._layers (vraies couches).
    Footer PDF NON deplace (pilule fixe en CSS). Desktop : rien ne s'execute.
@@ -3936,14 +3941,14 @@ body[data-fullscreen-active] .wf-mode-line {
   if (!window.matchMedia) return;
   var MQ = window.matchMedia('(max-width: 768px)');
   var current = 'mid';
-  var bg=null, mapHome=null, searchHome=null;
+  var bg=null, mapHome=null, searchHome=null, searchPill=null;
 
   function M(){ try { return (typeof map !== 'undefined' && map) ? map : null; } catch(e){ return null; } }
   function ih(){ return window.innerHeight || document.documentElement.clientHeight || 800; }
   function pxFor(name){
     var H = ih();
     if (name==='full') return 0;                       /* pleine page : carte cachee */
-    if (name==='peek') return Math.max(0, H - 90);     /* drag : ne laisse que ~90px (la pilule prend le relais) */
+    if (name==='peek') return Math.max(0, H - 58);     /* cran bas : ne montre que la barre de drag (~46px) ; la pilule de recherche flotte au-dessus */
     return Math.round(0.46*H);                          /* mi-hauteur : carte + feuille */
   }
   function invalidate(d){ var m=M(); if(m && m.invalidateSize){ setTimeout(function(){ try{ m.invalidateSize({animate:false}); }catch(e){} }, d||80); } }
@@ -3954,11 +3959,17 @@ body[data-fullscreen-active] .wf-mode-line {
     document.body.classList.add('ag-sheet-'+name);
     if (name!=='peek') closeLayers();
   }
+  function positionSearch(ty, animate){
+    var sp = searchPill || document.getElementById('ag-search-pill'); if(!sp) return;
+    sp.style.transition = animate ? 'bottom .28s cubic-bezier(.4,0,.2,1), opacity .26s ease' : 'opacity .26s ease';
+    sp.style.bottom = Math.round(ih() - ty + 10) + 'px';   /* bord bas de la pilule = 10px au-dessus du bord haut de la feuille */
+  }
   function setDetent(tp, name, animate){
     current = name;
     tp.style.transition = animate ? 'transform .28s cubic-bezier(.4,0,.2,1)' : 'none';
     tp.style.transform = 'translateY(' + pxFor(name) + 'px)';
     setBodyDetent(name);
+    positionSearch(pxFor(name), animate);
     invalidate(animate?320:90);
   }
   function attachDrag(tp, el){
@@ -3968,6 +3979,7 @@ body[data-fullscreen-active] .wf-mode-line {
       dragging=true; document.body.classList.add('ag-dragging');
       startY=e.touches[0].clientY; startTy=pxFor(current);
       tp.style.transition='none'; tp.style.transform='translateY('+startTy+'px)';
+      var sp0=document.getElementById('ag-search-pill'); if(sp0) sp0.style.transition='none';
     }, {passive:true});
     el.addEventListener('touchmove', function(e){
       if(!dragging) return;
@@ -3975,6 +3987,7 @@ body[data-fullscreen-active] .wf-mode-line {
       var ty = startTy + (e.touches[0].clientY - startY);
       ty = Math.max(pxFor('full'), Math.min(pxFor('peek'), ty));
       tp.style.transform = 'translateY(' + ty + 'px)';
+      positionSearch(ty, false);
     }, {passive:false});
     function end(){
       if(!dragging) return; dragging=false; document.body.classList.remove('ag-dragging');
@@ -3986,9 +3999,15 @@ body[data-fullscreen-active] .wf-mode-line {
     el.addEventListener('touchcancel', end);
   }
   function syncBg(tp){ if(bg){ var hid=tp.classList.contains('hidden'); bg.style.display = hid ? 'none' : ''; if(!hid) invalidate(140); } }
-  function moveSearch(head){
+  function makeSearchPill(){
+    var sp = document.getElementById('ag-search-pill');
+    if (!sp){ sp = document.createElement('div'); sp.id='ag-search-pill'; document.body.appendChild(sp); }
+    searchPill = sp;
+  }
+  function moveSearch(){
     var s = document.querySelector('.map-search-ctrl');
-    if (s && head && s.parentElement !== head){ if(!searchHome) searchHome = s.parentElement; head.appendChild(s); }
+    var sp = searchPill || document.getElementById('ag-search-pill');
+    if (s && sp && s.parentElement !== sp){ if(!searchHome) searchHome = s.parentElement; sp.appendChild(s); }
   }
   function buildLayersPanel(){
     var panel=document.getElementById('ag-layers-panel'); if(!panel) return;
@@ -4062,8 +4081,9 @@ body[data-fullscreen-active] .wf-mode-line {
         tp.insertBefore(head, tp.firstChild);
         attachDrag(tp, head);
       }
-      moveSearch(head);
-      setTimeout(function(){ moveSearch(document.getElementById('ag-sheet-head')); }, 600);
+      makeSearchPill();
+      moveSearch();
+      setTimeout(moveSearch, 600);
       makeLayers();
       var m = M(); if (m && !m.__agLayersClose){ m.__agLayersClose = true; m.on('click', closeLayers); }
       if (!tp.__agMo){ tp.__agMo = new MutationObserver(function(){ syncBg(tp); }); tp.__agMo.observe(tp, { attributes:true, attributeFilter:['class'] }); }
@@ -4080,6 +4100,7 @@ body[data-fullscreen-active] .wf-mode-line {
       if (mapHome && mc && mc.parentElement !== mapHome) mapHome.appendChild(mc);
       var s = document.querySelector('.map-search-ctrl');
       if (searchHome && s && s.parentElement !== searchHome) searchHome.appendChild(s);
+      var sp = document.getElementById('ag-search-pill'); if (sp){ sp.style.bottom=''; sp.remove(); searchPill=null; }
       var tp = document.getElementById('tab-plan');
       if (tp){ tp.style.transform=''; tp.style.transition=''; if(tp.__agMo){ tp.__agMo.disconnect(); tp.__agMo=null; } }
       var head = document.getElementById('ag-sheet-head'); if (head) head.remove();
