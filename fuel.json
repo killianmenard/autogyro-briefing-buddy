@@ -1,1063 +1,1994 @@
 {
  "type": "FUEL",
- "version": "AIRAC 06/26",
- "source": "SIA AIXM — Licence Ouverte Etalab v2.0",
+ "version": "AIRAC 06/26 (AD2)",
+ "source": "SIA eAIP AD-2, rubrique 10-AVT (Licence Ouverte / SIA)",
+ "generated": "2026-06-26",
+ "count": 306,
  "ad": {
-  "LFMU": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFPB": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFBR": {
-   "grades": [
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "FMEE": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "H24"
-  },
-  "LFES": {
-   "grades": [
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFQT": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFDJ": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFLA": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFTZ": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFLL": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFMD": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFSG": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFLD": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFKC": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFBL": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFDH": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFLW": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFMI": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HO"
-  },
-  "LFEV": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFML": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "H24"
-  },
-  "LFOZ": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFPF": {
-   "grades": [
-    "UL91"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFLS": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFBU": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFLH": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFSM": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFLB": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFLG": {
-   "grades": [
-    "JET A1",
-    "100LL",
-    "UL91"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFME": {
-   "grades": [
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFGJ": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFOQ": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFBF": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFHT": {
-   "grades": [
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "FMEP": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFBK": {
-   "grades": [
-    "100LL"
-   ],
-   "horaires": "H24"
-  },
-  "LFCK": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "TFFG": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFSN": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFAT": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFNH": {
+  "LFAB": {
    "grades": [
     "100LL",
-    "UL91"
+    "JET A1"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFNC": {
+  "LFAC": {
    "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFCW": {
-   "grades": [
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFJY": {
-   "grades": [
-    "JET A1",
     "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFAD": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFAE": {
+   "grades": [
     "UL91"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFAF": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFAI": {
    "grades": [
     "100LL"
    ],
-   "horaires": "HJ (jour)"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFDB": {
+  "LFAJ": {
    "grades": [
     "100LL"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFRH": {
+  "LFAK": {
    "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFAL": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFAM": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFAO": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFAQ": {
+   "grades": [
+    "100LL",
     "JET A1"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFQQ": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFRV": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFMO": {
+  "LFAS": {
    "grades": [
     "100LL"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFDS": {
+  "LFAT": {
    "grades": [
-    "100LL"
+    "100LL",
+    "JET A1"
    ],
-   "horaires": "H24"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFLC": {
+  "LFAV": {
    "grades": [
-    "JET A1",
-    "100LL"
+    "100LL",
+    "JET A1"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFAY": {
    "grades": [
     "100LL"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "NTTB": {
+  "LFBA": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBD": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBE": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBF": {
    "grades": [
     "JET A1"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFKF": {
+  "LFBG": {
    "grades": [
-    "JET A1",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBH": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBI": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBK": {
+   "grades": [
     "100LL"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "SOCA": {
+  "LFBL": {
    "grades": [
-    "JET A1",
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBN": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBO": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBP": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBR": {
+   "grades": [
     "100LL"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFHY": {
+  "LFBS": {
    "grades": [
-    "JET A1",
     "100LL"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBT": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBU": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBX": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBY": {
+   "grades": [
+    "100LL",
+    "UL91",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFBZ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCA": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCB": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCC": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCD": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCE": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCF": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCG": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCH": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCI": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCJ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCK": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCL": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCM": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCN": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCO": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCP": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCQ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCR": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCS": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCU": {
+   "grades": [
+    "100LL",
+    "SP98"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCV": {
+   "grades": [
+    "100LL",
+    "SP98"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCW": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCX": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCY": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFCZ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDA": {
+   "grades": [
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDB": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDC": {
+   "grades": [
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDE": {
+   "grades": [
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDF": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDH": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDI": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDJ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDK": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDL": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDM": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDN": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDP": {
+   "grades": [
+    "100LL",
+    "SP98"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDQ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDS": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDT": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDU": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDV": {
+   "grades": [
+    "100LL",
+    "SP98"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDW": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDX": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFDY": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFEA": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFEB": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFEF": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFEG": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFEH": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFEI": {
    "grades": [
     "100LL"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFEJ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFEM": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFEQ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFES": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFET": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFEV": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFEW": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFB": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFC": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFD": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFE": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFI": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFL": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFN": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFP": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFQ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFU": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFY": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFFZ": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGA": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGB": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGC": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGE": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGF": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGG": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGH": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGI": {
+   "grades": [
+    "100LL",
+    "SP98",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGJ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGK": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFGL": {
    "grades": [
     "100LL"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFGM": {
    "grades": [
     "100LL",
     "UL91"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGO": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGQ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGR": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGS": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGU": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGW": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGY": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFGZ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHA": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHC": {
+   "grades": [
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHD": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHE": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHG": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHH": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHI": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHJ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHM": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHN": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHO": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHP": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHQ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHS": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHT": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHU": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHV": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFHY": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFIF": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFIM": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFIR": {
+   "grades": [
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFIT": {
+   "grades": [
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFIX": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFJL": {
    "grades": [
     "JET A1"
    ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFNB": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "NWWW": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "H24"
-  },
-  "NWWL": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFBX": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFBH": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFRI": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFSL": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFBA": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "TFFF": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFCC": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFBP": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFRU": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFQG": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFCI": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFHP": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFHV": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "H24"
-  },
-  "TFFR": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFCR": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFAV": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFVP": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFOT": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFQM": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFJR": {
    "grades": [
-    "JET A1",
-    "100LL"
+    "100LL",
+    "JET A1"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFMY": {
+  "LFJS": {
    "grades": [
-    "JET A1",
     "100LL"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFLU": {
+  "LFJY": {
    "grades": [
-    "JET A1",
+    "100LL",
+    "UL91",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFKA": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFKB": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFKC": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFKF": {
+   "grades": [
     "100LL"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFKG": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFKJ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFKL": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFKO": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFKR": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFKY": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLA": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLB": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLC": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLD": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLE": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLG": {
+   "grades": [
+    "100LL",
+    "UL91",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLH": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLI": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLJ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLL": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLM": {
+   "grades": [
+    "100LL",
+    "SP98"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLN": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLO": {
+   "grades": [
+    "100LL",
+    "UL91",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFLP": {
    "grades": [
-    "JET A1",
-    "100LL"
+    "100LL",
+    "JET A1"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFMH": {
+  "LFLQ": {
    "grades": [
-    "JET A1",
-    "100LL"
+    "UL91"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFMK": {
+  "LFLR": {
    "grades": [
-    "JET A1",
     "100LL"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLS": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLU": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFLV": {
    "grades": [
     "100LL"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFOH": {
+  "LFLW": {
    "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFDN": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFRS": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "H24"
-  },
-  "LFOV": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFLO": {
-   "grades": [
-    "JET A1",
     "100LL",
-    "UL91"
+    "JET A1"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFBS": {
+  "LFLX": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFLY": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMA": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMC": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMD": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFME": {
    "grades": [
     "100LL"
    ],
-   "horaires": "H24"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFBN": {
+  "LFMH": {
    "grades": [
-    "JET A1",
-    "100LL"
+    "JET A1"
    ],
-   "horaires": "H24"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFRD": {
+  "LFMI": {
    "grades": [
-    "JET A1",
-    "100LL"
+    "100LL",
+    "JET A1"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFQB": {
+  "LFMK": {
    "grades": [
-    "JET A1",
-    "100LL"
+    "100LL",
+    "JET A1"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFAQ": {
+  "LFML": {
    "grades": [
-    "JET A1",
-    "100LL"
+    "100LL",
+    "JET A1"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFMN": {
    "grades": [
     "JET A1"
    ],
-   "horaires": "HO"
-  },
-  "LFBO": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "H24"
-  },
-  "LFQA": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFBI": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFLX": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFBZ": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFST": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFLN": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFPO": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFMT": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFRO": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFRQ": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HO"
-  },
-  "LFOU": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFKJ": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HO"
-  },
-  "LFRZ": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFCY": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "H24"
-  },
-  "LFBE": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFSB": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFMP": {
    "grades": [
-    "JET A1",
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMQ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMR": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMS": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMT": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMU": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMV": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMW": {
+   "grades": [
+    "UL91",
+    "SP98"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMX": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMY": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFMZ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFNA": {
+   "grades": [
+    "100LL",
+    "UL91",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFNB": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFNC": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFNE": {
+   "grades": [
+    "100LL",
+    "SP98"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFNF": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFNG": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFNH": {
+   "grades": [
     "100LL",
     "UL91"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFNJ": {
+   "grades": [
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFNQ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFNV": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOB": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOC": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOD": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOF": {
+   "grades": [
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOG": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOH": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOI": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOJ": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOK": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOM": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOO": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOP": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOQ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOR": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOS": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOU": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOV": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOW": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOX": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFOZ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPA": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPB": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPD": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPE": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPF": {
+   "grades": [
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPH": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPK": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPL": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPM": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPN": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPO": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPP": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPQ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFPT": {
    "grades": [
-    "JET A1",
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPX": {
+   "grades": [
     "100LL"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFPZ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQA": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQB": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQC": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQD": {
+   "grades": [
+    "100LL",
+    "SP98"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQE": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQF": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQG": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQH": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQJ": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQK": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQL": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQM": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQN": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQO": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQQ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQT": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQV": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFQW": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRB": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRC": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRD": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRE": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRF": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRG": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRH": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRI": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRK": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRM": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRN": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRO": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRQ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRS": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRT": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRV": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRW": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFRZ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFSA": {
    "grades": [
     "SP98"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFSB": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFSD": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFSG": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFSH": {
+   "grades": [
+    "100LL",
+    "UL91"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFSL": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFSM": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFSN": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFSP": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFST": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFSW": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFTF": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFTP": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFTW": {
+   "grades": [
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFTZ": {
+   "grades": [
+    "100LL",
+    "JET A1"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
+  },
+  "LFXB": {
+   "grades": [
+    "100LL"
+   ],
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
   "LFXU": {
    "grades": [
     "100LL",
     "UL91"
    ],
-   "horaires": "Voir NOTAM/VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFFU": {
+  "LFYG": {
    "grades": [
     "100LL"
    ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   },
-  "LFCE": {
+  "LFYR": {
    "grades": [
     "100LL"
    ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFGI": {
-   "grades": [
-    "JET A1",
-    "100LL",
-    "SP95"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFGK": {
-   "grades": [
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFGZ": {
-   "grades": [
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "FMCZ": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "NWWM": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "NLWW": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFMA": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFGA": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFKB": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFMV": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFRC": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFOB": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFRG": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HO"
-  },
-  "LFRT": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFPM": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "H24"
-  },
-  "LFRM": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFOK": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFBT": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFRB": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFRN": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFBD": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HO"
-  },
-  "LFTW": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFMQ": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFLY": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFBY": {
-   "grades": [
-    "100LL",
-    "UL91"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "NTAA": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFOP": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "NTTR": {
-   "grades": [
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "NTTG": {
-   "grades": [
-    "JET A1"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFAC": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFSD": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "Voir NOTAM/VAC"
-  },
-  "LFRK": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
-  },
-  "LFPN": {
-   "grades": [
-    "JET A1",
-    "100LL"
-   ],
-   "horaires": "HX — voir VAC"
+   "horaires": "Voir carte VAC (rubrique 10-AVT)"
   }
  }
 }
