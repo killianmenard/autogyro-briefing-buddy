@@ -1,5 +1,7 @@
 const functions = require('@google-cloud/functions-framework');
-const admin = require('firebase-admin');
+const { initializeApp, getApps } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
+const { getFirestore } = require('firebase-admin/firestore');
 const Stripe = require('stripe');
 
 // =====================================================================
@@ -8,8 +10,8 @@ const Stripe = require('stripe');
 
 // (1) Tes 2 price_id creees en Phase 1 Stripe. Remplace les placeholders.
 const ALLOWED_PRICES = [
-  'price_REMPLACE_MENSUEL',
-  'price_REMPLACE_ANNUEL',
+  'price_1Tste81rgPKfGt9UNTcQhOz6',
+  'price_1Tste81rgPKfGt9UnuFrOAhj',
 ];
 
 // (2) et (3) : STRIPE_SECRET_KEY et STRIPE_WEBHOOK_SECRET se mettent
@@ -30,12 +32,10 @@ const CANCEL_URL = 'https://app.monplandevol.fr/?checkout=cancel';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
-try {
-  admin.initializeApp();
-} catch (e) {
-  // Deja initialise dans cette instance de conteneur - sans danger
+if (getApps().length === 0) {
+  initializeApp();
 }
-const db = admin.firestore();
+const db = getFirestore();
 
 function applyCors(res) {
   res.set('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
@@ -49,7 +49,7 @@ async function verifyFirebaseUser(req) {
   const match = header.match(/^Bearer (.+)$/);
   if (!match) return null;
   try {
-    return await admin.auth().verifyIdToken(match[1]);
+    return await getAuth().verifyIdToken(match[1]);
   } catch (e) {
     return null;
   }
@@ -85,11 +85,11 @@ async function resolveUid(sub) {
 
 // Pose (ou retire) le statut Pro : custom claim signe serveur + miroir Firestore
 async function applyTier(uid, isPro) {
-  const user = await admin.auth().getUser(uid);
+  const user = await getAuth().getUser(uid);
   const claims = user.customClaims || {};
   if (isPro) claims.stripeRole = 'pro';
   else delete claims.stripeRole;
-  await admin.auth().setCustomUserClaims(uid, claims);
+  await getAuth().setCustomUserClaims(uid, claims);
 
   await db.collection('users').doc(uid).set(
     { subscriptionTier: isPro ? 'pro' : 'free' },
