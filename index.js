@@ -8,8 +8,8 @@ const Stripe = require('stripe');
 
 // (1) Tes 2 price_id creees en Phase 1 Stripe. Remplace les placeholders.
 const ALLOWED_PRICES = [
-  'price_1Tste81rgPKfGt9UNTcQhOz6',
-  'price_1Tste81rgPKfGt9UnuFrOAhj',
+  'price_REMPLACE_MENSUEL',
+  'price_REMPLACE_ANNUEL',
 ];
 
 // (2) et (3) : STRIPE_SECRET_KEY et STRIPE_WEBHOOK_SECRET se mettent
@@ -30,7 +30,11 @@ const CANCEL_URL = 'https://app.monplandevol.fr/?checkout=cancel';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
-if (admin.apps.length === 0) admin.initializeApp();
+try {
+  admin.initializeApp();
+} catch (e) {
+  // Deja initialise dans cette instance de conteneur - sans danger
+}
 const db = admin.firestore();
 
 function applyCors(res) {
