@@ -8,8 +8,8 @@ const Stripe = require('stripe');
 
 // (1) Tes 2 price_id creees en Phase 1 Stripe. Remplace les placeholders.
 const ALLOWED_PRICES = [
-  'price_REMPLACE_MENSUEL',
-  'price_REMPLACE_ANNUEL',
+  'price_1Tste81rgPKfGt9UNTcQhOz6',
+  'price_1Tste81rgPKfGt9UnuFrOAhj',
 ];
 
 // (2) et (3) : STRIPE_SECRET_KEY et STRIPE_WEBHOOK_SECRET se mettent
