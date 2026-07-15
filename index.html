@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="AutogyroDash" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>autogyrodash v1.0.82 — planification de vol VFR autogire</title>
+<title>autogyrodash v1.0.83 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -3045,6 +3045,7 @@ const METAR_PROXIES = (apiUrl) => [
   `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(apiUrl)}`,
   `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`,
   `https://api.cors.lol/?url=${encodeURIComponent(apiUrl)}`, // v1.0.46 — remplace corsproxy.io : celui-ci exige désormais une clé API payante pour tout domaine de production (confirmé sur corsproxy.io, changement de politique définitif, pas une panne)
+  `https://test.cors.workers.dev/?${apiUrl}`,   // ajouté après la panne du 15/07/2026 (seul survivant avec cors.lol au test console) ; worker Cloudflare de démo, non documenté : redondance, pas fondation
   `https://cors.x2u.in/${apiUrl}`,               // backup (raw, gratuit, utile quand les autres tombent)
   `https://thingproxy.freeboard.io/fetch/${apiUrl}`, // backup (raw, limite ~100k car., largement suffisant pour un METAR)
 ];
@@ -3251,7 +3252,8 @@ var SERVICES_DEFAULT_RADIUS_M = 1000;
 var SERVICES_CACHE_TTL_MS = 30 * 24 * 3600 * 1000;
 var SERVICES_OVERPASS_MIRRORS = [
   'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter'
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter'
 ];
 var SERVICES_META = {
   restaurant: { icon: '\uD83C\uDF7D\uFE0F', label: 'Restaurants' },
@@ -4258,7 +4260,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  autogyrodash v1.0.82`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  autogyrodash v1.0.83`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;
