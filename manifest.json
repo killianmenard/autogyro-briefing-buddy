@@ -1,6 +1,6 @@
 {
-  "name": "AutogyroDash",
-  "short_name": "AutogyroDash",
+  "name": "monplandevol.fr",
+  "short_name": "monplandevol.fr",
   "description": "Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse",
   "lang": "fr",
   "start_url": "./",
