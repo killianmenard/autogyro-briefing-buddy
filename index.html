@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v1.95 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v1.96 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -783,6 +783,13 @@
         <button id="add-step-btn" class="text-xs text-blue-600 hover:text-blue-800 mt-2">
           <i data-lucide="plus" class="inline h-3 w-3"></i> ajouter une étape (max 3)
         </button>
+        <!-- Encadré upsell étapes (gating trajet) : affiché en Free à la place du bouton ci-dessus -->
+        <div id="ag-step-upsell" class="hidden" style="border:1px dashed var(--border);border-radius:10px;padding:10px 12px;margin-top:8px;">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span class="text-xs">🔒 <strong>Étapes intermédiaires — offre Pro</strong> · préparez des navigations jusqu'à 3 étapes</span>
+            <button id="ag-step-upsell-btn" class="px-3 py-1.5 rounded" style="background:var(--accent);color:var(--accent-ink);font-size:12px;font-weight:600;border:none;cursor:pointer;">Passer Pro</button>
+          </div>
+        </div>
         <div class="flex items-center gap-3 flex-wrap">
           <label class="flex items-center gap-2 text-sm">
             <input type="checkbox" id="loop-checkbox" />
@@ -2030,6 +2037,55 @@ function agTripUpsellToast(msg) {
   if (typeof showToast === 'function') showToast(msg || 'Offre Free : trajet départ → arrivée. Passez Pro pour ajouter des étapes intermédiaires.', 'warn', 5000);
 }
 
+// UI trajet Free (lot rayons/UI) : en Free, les slots étapes VIDES sont masqués et le
+// bouton « ajouter une étape » est remplacé par l'encadré upsell #ag-step-upsell.
+// Un slot étape déjà rempli (période fail-open) n'est JAMAIS masqué ni vidé.
+function agApplyTripFreeUi() {
+  const gated = agTripGated();
+  const addBtn = document.getElementById('add-step-btn');
+  const upsell = document.getElementById('ag-step-upsell');
+  if (addBtn) addBtn.classList.toggle('hidden', gated || STATE.visibleStops >= 3);
+  if (upsell) upsell.classList.toggle('hidden', !gated);
+  [1, 2, 3].forEach((i) => {
+    const slot = document.querySelector(`[data-trip-slot="${i}"]`);
+    if (!slot) return;
+    if (gated && !STATE.trip[i]) {
+      slot.classList.add('hidden');
+      slot.classList.remove('ag-step-visible', 'ag-step-visible-pinned');
+    } else if (!gated && i <= STATE.visibleStops) {
+      slot.classList.remove('hidden');
+    }
+  });
+}
+(function agWireTripFreeUi() {
+  // Même pattern d'attente que le gating historique (extensions.js) : la plomberie
+  // Pro est définie plus bas dans le fichier ; fail-open si absente.
+  let tries = 0;
+  const t = setInterval(function () {
+    tries++;
+    if (typeof window.agOnProChange === 'function') {
+      clearInterval(t);
+      window.agOnProChange(function () { try { agApplyTripFreeUi(); } catch (e) {} });
+    } else if (tries > 120) clearInterval(t);
+  }, 250);
+  document.addEventListener('click', function (e) {
+    if (!e.target || !e.target.closest) return;
+    if (e.target.closest('#ag-step-upsell-btn')) {
+      document.getElementById('account-circle')?.click();
+    } else if (e.target.closest('.ag-radius-upsell')) {
+      e.preventDefault();
+      document.getElementById('account-circle')?.click();
+    }
+  });
+})();
+
+// Rayon effectif Free (exception assumée règle sécurité : message UI explicite
+// obligatoire dans les sections avitaillement et POI — voir renderFuelNearList/renderPoiList).
+// Les valeurs réglées (15-40 km) ne sont jamais modifiées : un passage Pro les retrouve.
+const AG_FREE_RADIUS_KM = 5;
+function agEffFuelRadiusKm() { return agTripGated() ? AG_FREE_RADIUS_KM : FUEL_RADIUS_KM; }
+function agEffPoiRadiusKm() { return agTripGated() ? AG_FREE_RADIUS_KM : POI_RADIUS_KM; }
+
 function setupAdInput(idx) {
   const input = document.getElementById(`ad-input-${idx}`);
   const suggBox = document.getElementById(`ad-suggestions-${idx}`);
@@ -2305,9 +2361,17 @@ function renderFuelNearList() {
   if (!block || !listEl) return;
   block.classList.remove('hidden');
   const n = _fuelNearCache.length;
+  // Gating rayons : message UI explicite OBLIGATOIRE en Free (exception assumée
+  // à la règle « aucune donnée de sécurité gatée » — l'avitaillement des terrains
+  // du trajet lui-même reste toujours affiché, distance 0 < 5 km).
+  const _agFuelGated = agTripGated();
+  const _agEffR = agEffFuelRadiusKm();
+  const _agFreeBanner = _agFuelGated
+    ? '<div style="border:1px dashed var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px;">🔒 <strong>Offre Free :</strong> rayon de recherche limité à <strong>' + AG_FREE_RADIUS_KM + ' km</strong> autour du trajet — des terrains avec carburant peuvent exister au-delà. L\'avitaillement des terrains de votre trajet reste toujours affiché. <a href="#" class="ag-radius-upsell" style="font-weight:600;">Passer Pro (15-40 km) ›</a></div>'
+    : '';
   if (countEl) countEl.textContent = n === 0 ? '0' : `${n} terrain${n > 1 ? 's' : ''}`;
   if (n === 0) {
-    listEl.innerHTML = '<p class="text-xs text-muted">Aucun terrain avec carburant essence (100LL / UL91 / SP98) confirmé dans ' + FUEL_RADIUS_KM + ' km du trajet.</p>';
+    listEl.innerHTML = _agFreeBanner + '<p class="text-xs text-muted">Aucun terrain avec carburant essence (100LL / UL91 / SP98) confirmé dans ' + _agEffR + ' km du trajet.</p>';
     listEl.classList.remove('br-list-capped');
     if (voirToutEl) voirToutEl.classList.add('hidden');
     return;
@@ -2335,7 +2399,7 @@ function renderFuelNearList() {
       ${note}
     </div>`;
   }).join('');
-  listEl.innerHTML = itemsHtml;
+  listEl.innerHTML = _agFreeBanner + itemsHtml;
   // v1.0.43 — au-delà de 5 terrains : hauteur plafonnée + scroll interne + bouton "voir tout"
   // (remplace l'ancien plafond ad hoc à 10/640px, désormais cohérent avec zones/RTBA)
   if (voirToutEl) {
@@ -2361,7 +2425,7 @@ function updateFuelNearOnRoute() {
     block.classList.add('hidden');
     return;
   }
-  _fuelNearCache = detectFuelNearRoute(trip.points, FUEL_RADIUS_KM);
+  _fuelNearCache = detectFuelNearRoute(trip.points, agEffFuelRadiusKm());
   renderFuelNearList();
 }
 
@@ -2470,7 +2534,18 @@ function renderPoiList() {
   if (countEl) countEl.textContent = String(items.length);
   if (!items.length) {
     listEl.className = '';
-    listEl.innerHTML = '<p class="text-xs text-muted">Aucun POI notable dans ' + POI_RADIUS_KM + ' km du trajet.</p>';
+    listEl.innerHTML = '<p class="text-xs text-muted">Aucun POI notable dans ' + agEffPoiRadiusKm() + ' km du trajet.</p>';
+    return;
+  }
+  // Gating POI : en Free, 2 POI affichés (les plus proches) + encadré upsell explicite.
+  if (agTripGated()) {
+    const top = [...items].sort((a, b) => a.distKm - b.distKm).slice(0, 2);
+    if (countEl) countEl.textContent = String(top.length);
+    listEl.className = '';
+    listEl.innerHTML =
+      '<div style="border:1px dashed var(--border);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px;">🔒 <strong>Offre Free :</strong> 2 POI affichés, rayon limité à ' + AG_FREE_RADIUS_KM + ' km du trajet. <a href="#" class="ag-radius-upsell" style="font-weight:600;">Passer Pro (POI illimités, 15-40 km) ›</a></div>'
+      + top.map((p) => _poiRowHtml(p, esc)).join('');
+    try { _checkPoiWikipedia(); } catch (e) {}
     return;
   }
   // Plafond aligné sur le pattern "voir tout" (zones/RTBA/avitaillement) : le
@@ -2715,7 +2790,7 @@ function _onPoiViewChange() {
 function updatePoiOnRoute() {
   const trip = (typeof computeTrip === 'function') ? computeTrip() : null;
   const pts = (trip && trip.points && trip.points.length >= 2) ? trip.points : null;
-  _poiNearCache = pts ? detectPoiNearRoute(pts, POI_RADIUS_KM).capped : [];
+  _poiNearCache = pts ? detectPoiNearRoute(pts, agEffPoiRadiusKm()).capped : [];
   renderPoiList();
   _renderPoiMarkers(pts);
 }
@@ -4293,7 +4368,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v1.95`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v1.96`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;
@@ -5110,7 +5185,8 @@ function resetAll() {
   document.querySelector('[data-trip-slot="3"]').classList.add('hidden');
   document.getElementById('add-step-btn').classList.remove('hidden');
   document.getElementById('loop-checkbox').checked = false;
-  
+  if (typeof agApplyTripFreeUi === 'function') agApplyTripFreeUi(); // gating trajet : ré-applique l'UI Free
+
   // Vider les inputs ACFT
   ['acft-immat','acft-model','acft-mtow','acft-vcr','acft-conso','acft-tank','acft-fuel','acft-radio','acft-xpdr'].forEach(id => {
     const el = document.getElementById(id);
@@ -6569,6 +6645,7 @@ function init() {
     document.querySelector('[data-trip-slot="3"]').classList.add('hidden');
     document.getElementById('add-step-btn').classList.remove('hidden');
     document.getElementById('loop-checkbox').checked = false;
+    if (typeof agApplyTripFreeUi === 'function') agApplyTripFreeUi(); // gating trajet : ré-applique l'UI Free
     onTripChange();
   });
 
