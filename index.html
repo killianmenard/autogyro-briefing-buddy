@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v1.97 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v1.98 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -145,6 +145,8 @@
   .header-pill .divider {
     width: 1px; height: 22px; background: var(--header-pill-border);
   }
+  /* Titre cliquable → retour onglet brief pré-vol */
+  .header-pill-brand { cursor: pointer; }
   .header-pill-extras {
     display: inline-flex;
     align-items: center;
@@ -220,10 +222,17 @@
     }
     .header-pill.menu-open .header-pill-extras { display: flex; }
     
-    /* Quand menu ouvert, pilule devient un rectangle arrondi (pas pilule pure) */
+    /* Quand menu ouvert, pilule devient un rectangle arrondi (pas pilule pure)
+       + dépli PLEINE LARGEUR du conteneur */
     .header-pill.menu-open {
       border-radius: 20px;
       padding: 10px 16px 14px 16px;
+      width: 100%;
+    }
+    /* Menu ouvert : la bulle profil reste alignée en HAUT, au niveau de la pilule */
+    .header-pill.menu-open + #account-circle {
+      align-self: flex-start;
+      margin-top: 6px;
     }
     
     /* Sur mobile, les dividers verticaux deviennent horizontaux */
@@ -675,7 +684,6 @@
       <div class="flex items-center gap-2 header-pill-brand">
         <i data-lucide="plane" class="h-4 w-4"></i>
         <span class="font-semibold text-sm" style="text-transform:none;letter-spacing:0;">monplandevol.fr</span>
-        <span class="text-xs text-muted pre-mono">v0.4.4</span>
       </div>
       
       <!-- Toggle hamburger : visible seulement sur mobile -->
@@ -4386,7 +4394,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v1.97`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v1.98`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;
@@ -6626,6 +6634,14 @@ function init() {
         ? '<i data-lucide="x" class="h-4 w-4"></i>'
         : '<i data-lucide="menu" class="h-4 w-4"></i>';
       lucide.createIcons();
+    });
+  }
+
+  // ============= TITRE CLIQUABLE : retour au brief pré-vol =============
+  const brandEl = document.querySelector('.header-pill-brand');
+  if (brandEl) {
+    brandEl.addEventListener('click', () => {
+      document.querySelector('.tab-btn[data-tab="plan"]')?.click();
     });
   }
   
