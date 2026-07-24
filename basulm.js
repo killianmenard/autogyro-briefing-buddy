@@ -723,6 +723,7 @@
           <p class="text-xs text-muted mb-2">Terrains avec carburant essence affichés dans ce rayon autour du trajet (écran + PDF).</p>
           <input type="range" id="p-fuel-radius" min="15" max="40" step="5" value="25" style="width:100%;" />
           <div class="text-xs mt-1">Rayon : <strong><span class="fuel-radius-val">25</span> km</strong></div>
+          <div class="ag-radius-lock text-xs" style="display:none;margin-top:6px;border:1px dashed var(--border);border-radius:8px;padding:6px 8px;">🔒 <strong>Offre Free :</strong> rayon fixé à 5 km — réglage réservé à l'offre Pro.</div>
         </div>
 
         <div class="muted-bg p-3 rounded">
@@ -730,6 +731,7 @@
           <p class="text-xs text-muted mb-2">Sites notables (châteaux, lacs, viaducs, sommets) affichés dans ce rayon autour du trajet (écran + PDF) — indépendant du rayon avitaillement.</p>
           <input type="range" id="p-poi-radius" min="15" max="40" step="5" value="25" style="width:100%;" />
           <div class="text-xs mt-1">Rayon : <strong><span class="poi-radius-val">25</span> km</strong></div>
+          <div class="ag-radius-lock text-xs" style="display:none;margin-top:6px;border:1px dashed var(--border);border-radius:8px;padding:6px 8px;">🔒 <strong>Offre Free :</strong> rayon fixé à 5 km — réglage réservé à l'offre Pro.</div>
         </div>
 
         <div class="muted-bg p-3 rounded">
@@ -804,6 +806,16 @@
     const _prv = (typeof window.getPoiRadiusKm === 'function') ? window.getPoiRadiusKm() : (parseInt(localStorage.getItem('autogyrodash_poi_radius'), 10) || 25);
     if (_pr) _pr.value = _prv;
     document.querySelectorAll('.poi-radius-val').forEach(el => el.textContent = _prv);
+    // Gating rayons (offre Free) : sliders masqués + note verrou. FAIL-OPEN : statut
+    // Pro non résolu ou plomberie absente => sliders normaux. Les getters d'index.html
+    // renvoient déjà le rayon effectif (5 km en Free), donc les libellés sont justes.
+    const _agRadiusGated = (typeof window._agShouldGate === 'function' && window._agShouldGate() === true);
+    [_fr, _pr].forEach(function (inp) {
+      if (!inp) return;
+      inp.disabled = _agRadiusGated;
+      inp.style.display = _agRadiusGated ? 'none' : '';
+    });
+    document.querySelectorAll('.ag-radius-lock').forEach(function (el) { el.style.display = _agRadiusGated ? '' : 'none'; });
   }
 
   function setupParamsHandlers() {

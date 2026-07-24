@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v1.96 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v1.97 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -2065,7 +2065,15 @@ function agApplyTripFreeUi() {
     tries++;
     if (typeof window.agOnProChange === 'function') {
       clearInterval(t);
-      window.agOnProChange(function () { try { agApplyTripFreeUi(); } catch (e) {} });
+      window.agOnProChange(function () {
+        try { agApplyTripFreeUi(); } catch (e) {}
+        // Fix gating rayons : re-filtrer listes et libellés dès la résolution du statut Pro
+        // (sans attendre un changement de trajet).
+        try { if (typeof _syncFuelRadiusLabels === 'function') _syncFuelRadiusLabels(); } catch (e) {}
+        try { if (typeof _syncPoiRadiusLabels === 'function') _syncPoiRadiusLabels(); } catch (e) {}
+        try { if (typeof updateFuelNearOnRoute === 'function') updateFuelNearOnRoute(); } catch (e) {}
+        try { if (typeof updatePoiOnRoute === 'function') updatePoiOnRoute(); } catch (e) {}
+      });
     } else if (tries > 120) clearInterval(t);
   }, 250);
   document.addEventListener('click', function (e) {
@@ -2431,9 +2439,11 @@ function updateFuelNearOnRoute() {
 
 // v0.8.45 — SL3 : rayon avitaillement réglable (pont global pour basulm.js buildParamsHtml)
 function _syncFuelRadiusLabels() {
-  document.querySelectorAll('.fuel-radius-val').forEach(el => { el.textContent = FUEL_RADIUS_KM; });
+  // Gating rayons : les libellés affichent partout le rayon EFFECTIF (5 km en Free)
+  document.querySelectorAll('.fuel-radius-val').forEach(el => { el.textContent = agEffFuelRadiusKm(); });
 }
-window.getFuelRadiusKm = function () { return FUEL_RADIUS_KM; };
+// Gating rayons : le getter expose le rayon effectif (basulm.js s'y synchronise)
+window.getFuelRadiusKm = function () { return agEffFuelRadiusKm(); };
 window.setFuelRadiusKm = function (km) {
   const v = Math.max(15, Math.min(40, parseInt(km, 10) || 25));
   FUEL_RADIUS_KM = v;
@@ -2444,9 +2454,11 @@ window.setFuelRadiusKm = function (km) {
 
 // v1.0.45 — rayon POI, réglage indépendant (auparavant recalculé aussi depuis setFuelRadiusKm)
 function _syncPoiRadiusLabels() {
-  document.querySelectorAll('.poi-radius-val').forEach(el => { el.textContent = POI_RADIUS_KM; });
+  // Gating rayons : libellés = rayon EFFECTIF (5 km en Free)
+  document.querySelectorAll('.poi-radius-val').forEach(el => { el.textContent = agEffPoiRadiusKm(); });
 }
-window.getPoiRadiusKm = function () { return POI_RADIUS_KM; };
+// Gating rayons : getter = rayon effectif (basulm.js s'y synchronise)
+window.getPoiRadiusKm = function () { return agEffPoiRadiusKm(); };
 window.setPoiRadiusKm = function (km) {
   const v = Math.max(15, Math.min(40, parseInt(km, 10) || 25));
   POI_RADIUS_KM = v;
@@ -2790,7 +2802,13 @@ function _onPoiViewChange() {
 function updatePoiOnRoute() {
   const trip = (typeof computeTrip === 'function') ? computeTrip() : null;
   const pts = (trip && trip.points && trip.points.length >= 2) ? trip.points : null;
-  _poiNearCache = pts ? detectPoiNearRoute(pts, agEffPoiRadiusKm()).capped : [];
+  let _agCapped = pts ? detectPoiNearRoute(pts, agEffPoiRadiusKm()).capped : [];
+  // Gating POI : en Free le cache lui-même est plafonné aux 2 plus proches, pour que
+  // la CARTE (marqueurs vue trajet) et la LISTE affichent exactement les mêmes POI.
+  if (agTripGated() && _agCapped.length > 2) {
+    _agCapped = [..._agCapped].sort((a, b) => a.distKm - b.distKm).slice(0, 2);
+  }
+  _poiNearCache = _agCapped;
   renderPoiList();
   _renderPoiMarkers(pts);
 }
@@ -4368,7 +4386,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v1.96`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v1.97`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;
