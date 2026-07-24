@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v1.98 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v1.99 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -147,6 +147,9 @@
   }
   /* Titre cliquable → retour onglet brief pré-vol */
   .header-pill-brand { cursor: pointer; }
+  /* Item « profil » du menu mobile (créé par basulm.js) : jamais affiché sur desktop */
+  .ag-menu-profile { display: none; }
+  @media (max-width: 768px) { .header-pill.menu-open .ag-menu-profile { display: block; } }
   .header-pill-extras {
     display: inline-flex;
     align-items: center;
@@ -229,10 +232,10 @@
       padding: 10px 16px 14px 16px;
       width: 100%;
     }
-    /* Menu ouvert : la bulle profil reste alignée en HAUT, au niveau de la pilule */
+    /* Menu ouvert : la bulle profil disparaît de la marge (remplacée par l'item
+       « profil » intégré au menu, créé par basulm.js) → le dépli prend toute la largeur */
     .header-pill.menu-open + #account-circle {
-      align-self: flex-start;
-      margin-top: 6px;
+      display: none;
     }
     
     /* Sur mobile, les dividers verticaux deviennent horizontaux */
@@ -4394,7 +4397,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v1.98`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v1.99`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;

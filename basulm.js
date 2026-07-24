@@ -660,6 +660,22 @@
     sourcesTab.parentNode.insertBefore(tab, sourcesTab.nextSibling);
     if (window.lucide) window.lucide.createIcons();
 
+    // Item « profil » du menu mobile : inséré SOUS le ⚙️, visible uniquement menu déplié
+    // (CSS .ag-menu-profile dans index.html). Relaie le cercle compte (#account-circle),
+    // qui porte déjà toute la logique d'ouverture de l'onglet Compte.
+    if (!document.querySelector('.ag-menu-profile')) {
+      const prof = document.createElement('span');
+      prof.className = 'tab-btn ag-menu-profile';
+      prof.textContent = 'profil';
+      prof.title = 'mon compte';
+      prof.setAttribute('aria-label', 'mon compte');
+      tab.parentNode.insertBefore(prof, tab.nextSibling);
+      prof.addEventListener('click', () => {
+        document.getElementById('account-circle')?.click();
+        closeMobileMenu();
+      });
+    }
+
     const main = document.querySelector('main');
     if (!main) return;
     const section = document.createElement('section');
