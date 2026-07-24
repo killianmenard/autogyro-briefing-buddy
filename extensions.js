@@ -423,6 +423,20 @@
   }
   function restoreFlight(item) {
     if (!item || !item.points || item.points.length < 2) return;
+    // Gating trajet : un vol >2 points (hors doublon boucle) est réservé Pro.
+    // Blocage total assumé (décision 24/07/2026) : le vol reste INTACT en base, on ne
+    // le restaure simplement pas en Free (invariant PDF : aucun contenu Pro dans le DOM).
+    // Fail-open : statut Pro non résolu => restauration normale.
+    if (agShouldGate()) {
+      let ptsCheck = item.points.slice();
+      if (item.loop && ptsCheck.length >= 3 && ptsCheck[ptsCheck.length - 1].icao === ptsCheck[0].icao) {
+        ptsCheck = ptsCheck.slice(0, -1);
+      }
+      if (ptsCheck.length > 2) {
+        if (typeof showToast === 'function') showToast('Ce vol contient des étapes intermédiaires (offre Pro). Il est conservé — passez Pro pour le rouvrir.', 'warn', 6000);
+        return;
+      }
+    }
     document.getElementById('clear-trip')?.click();
     setTimeout(() => {
       // v0.6.34 — FIX restauration : computeTrip() rajoute le point de départ
@@ -593,6 +607,7 @@
     const addBtn = document.getElementById('add-step-btn');
     if (addBtn) {
       addBtn.addEventListener('click', function() {
+        if (agShouldGate()) return; // gating trajet : pas de révélation de slot en Free
         setTimeout(function() {
           // Révéler uniquement le premier slot vide non encore visible, dans l'ordre strict
           for (var idx = 1; idx <= 3; idx++) {

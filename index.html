@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v1.94 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v1.95 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -2016,6 +2016,20 @@ function deleteAcft() {
 // ============================================================
 // SÉLECTION AÉRODROME — auto-complétion
 // ============================================================
+// ============================================================
+// GATING TRAJET (lot gating-trajet) — Free : départ → arrivée (2 points)
+// FAIL-OPEN strict (même contrat que l'historique dans extensions.js) :
+// on ne limite QUE si le statut Pro est résolu ET vaut Free.
+// Statut inconnu => aucune limite. Étapes intermédiaires (slots 1-3) = Pro.
+// ============================================================
+function agTripGated() {
+  try { return typeof window._agShouldGate === 'function' && window._agShouldGate() === true; }
+  catch (e) { return false; }
+}
+function agTripUpsellToast(msg) {
+  if (typeof showToast === 'function') showToast(msg || 'Offre Free : trajet départ → arrivée. Passez Pro pour ajouter des étapes intermédiaires.', 'warn', 5000);
+}
+
 function setupAdInput(idx) {
   const input = document.getElementById(`ad-input-${idx}`);
   const suggBox = document.getElementById(`ad-suggestions-${idx}`);
@@ -2047,6 +2061,13 @@ function setupAdInput(idx) {
     suggBox.classList.remove('hidden');
     suggBox.querySelectorAll('.ad-suggestion').forEach(el => {
       el.addEventListener('click', () => {
+        // gating trajet : slots étapes (1-3) réservés Pro
+        if (idx >= 1 && idx <= 3 && agTripGated()) {
+          agTripUpsellToast();
+          suggBox.classList.add('hidden');
+          input.value = '';
+          return;
+        }
         const isBasulm = el.dataset.basulm === '1';
         const pool = isBasulm ? basulm : AERODROMES_ALL;
         const ad = pool.find(x => x.icao === el.dataset.icao);
@@ -2861,6 +2882,15 @@ function addAdToTrip(ad) {
     STATE.trip[4] = ad;
     document.getElementById('ad-input-4').value = `${ad.icao} · ${ad.name}`;
   } else {
+    // gating trajet : en Free, jamais d'étape via la carte.
+    // Le nouveau point remplace l'arrivée (comportement le moins destructif).
+    if (agTripGated()) {
+      STATE.trip[4] = ad;
+      document.getElementById('ad-input-4').value = `${ad.icao} · ${ad.name}`;
+      agTripUpsellToast(`Offre Free : ${ad.icao} défini comme arrivée. Les étapes intermédiaires sont réservées au Pro.`);
+      onTripChange();
+      return;
+    }
     for (let i = 1; i <= 3; i++) {
       const slotEl = document.querySelector(`[data-trip-slot="${i}"]`);
       if (slotEl && !slotEl.classList.contains('hidden') && STATE.trip[i] === null) {
@@ -2884,6 +2914,7 @@ function addAdToTrip(ad) {
 }
 
 function addStepSlot() {
+  if (agTripGated()) { agTripUpsellToast(); return; } // gating trajet — étapes réservées Pro
   if (STATE.visibleStops >= 3) return;
   STATE.visibleStops += 1;
   const idx = STATE.visibleStops;
@@ -4262,7 +4293,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v1.94`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v1.95`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;
