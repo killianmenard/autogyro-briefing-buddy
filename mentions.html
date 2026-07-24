@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#eef1f9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0b1326" media="(prefers-color-scheme: dark)">
 <meta name="robots" content="noindex">
-<title>Mentions légales — AutogyroDash</title>
+<title>Mentions légales — Mon Plan de Vol</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -41,8 +41,8 @@
 <div class="wrap">
   <a class="back" href="./">&larr; Retour &agrave; l'application</a>
   <div class="card">
-<h1>Mentions légales — AutogyroDash</h1>
-<p><strong>Dernière mise à jour : 25 juin 2026</strong></p>
+<h1>Mentions légales — Mon Plan de Vol</h1>
+<p><strong>Dernière mise à jour : 24 juillet 2026</strong></p>
 <hr />
 <h2>Éditeur du site</h2>
 <ul>
@@ -56,16 +56,16 @@
 <hr />
 <h2>Hébergement</h2>
 <ul>
-<li><strong>Application (fichiers du site) :</strong> GitHub Pages — GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis.</li>
+<li><strong>Application (fichiers du site) :</strong> Cloudflare Pages — Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, États-Unis.</li>
 <li><strong>Données de compte (backend) :</strong> Google Firebase — Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irlande (données hébergées en région européenne).</li>
 <li><strong>Nom de domaine :</strong> enregistré via OVH SAS, 2 rue Kellermann, 59100 Roubaix, France.</li>
 </ul>
 <hr />
 <h2>Propriété intellectuelle</h2>
-<p>L'application AutogyroDash, son code, son interface et ses contenus originaux sont protégés par le droit de la propriété intellectuelle. Toute reproduction ou réutilisation non autorisée est interdite. Les données aéronautiques affichées proviennent de sources tierces dont les crédits et licences figurent ci-dessous.</p>
+<p>L'application Mon Plan de Vol, son code, son interface et ses contenus originaux sont protégés par le droit de la propriété intellectuelle. Toute reproduction ou réutilisation non autorisée est interdite. Les données aéronautiques affichées proviennent de sources tierces dont les crédits et licences figurent ci-dessous.</p>
 <hr />
 <h2>Sources de données et crédits</h2>
-<p>AutogyroDash agrège des données issues de sources officielles et publiques, sous leurs licences respectives :</p>
+<p>Mon Plan de Vol agrège des données issues de sources officielles et publiques, sous leurs licences respectives :</p>
 <ul>
 <li><strong>Plateformes ULM :</strong> © FFPLUM / BASULM.</li>
 <li><strong>Données cartographiques :</strong> © contributeurs OpenStreetMap (licence ODbL) ; OpenAIP.</li>
@@ -75,7 +75,7 @@
 </ul>
 <hr />
 <h2>⚠️ Avertissement — Limitation de responsabilité</h2>
-<p><strong>AutogyroDash est un outil d'aide à la PRÉPARATION de vol, utilisé au SOL. Il ne constitue en aucun cas un dispositif de navigation en vol, ni un briefing officiel.</strong></p>
+<p><strong>Mon Plan de Vol est un outil d'aide à la PRÉPARATION de vol, utilisé au SOL. Il ne constitue en aucun cas un dispositif de navigation en vol, ni un briefing officiel.</strong></p>
 <p>Les informations présentées (météo, espaces aériens, zones RTBA/AZBA, avitaillement, points d'intérêt, etc.) sont fournies <strong>à titre purement indicatif</strong>. Elles peuvent être incomplètes, erronées ou périmées, et <strong>ne dispensent en aucun cas le pilote de consulter les sources officielles</strong> (SIA, NOTAM, AZBA, briefing météo officiel) avant et pendant chaque vol.</p>
 <p><strong>Le pilote commandant de bord demeure seul et entièrement responsable</strong> de la préparation, de la conduite et de la sécurité de son vol. L'éditeur décline toute responsabilité quant à l'usage fait des informations fournies par l'application et quant aux décisions prises par l'utilisateur.</p>
 <hr />
@@ -85,7 +85,20 @@
 <h2>Droit applicable</h2>
 <p>Les présentes mentions légales sont régies par le droit français.</p>
   </div>
-  <footer>AutogyroDash &middot; outil d'aide &agrave; la pr&eacute;paration de vol au sol &middot; <a href="./">app.monplandevol.fr</a></footer>
+  <footer>Mon Plan de Vol &middot; outil d'aide &agrave; la pr&eacute;paration de vol au sol &middot; <a href="./">app.monplandevol.fr</a></footer>
 </div>
+<script>
+// Fil d'ariane : arrivée depuis le site vitrine (…?from=site) → le lien de retour
+// ramène au site, et les liens entre pages légales propagent le contexte.
+(function(){
+  try {
+    if (new URLSearchParams(location.search).get('from') !== 'site') return;
+    document.querySelectorAll('a.back').forEach(function(a){ a.textContent = '← Retour au site'; a.setAttribute('href', 'https://monplandevol.fr'); });
+    document.querySelectorAll('a[href="cgu.html"], a[href="politique.html"], a[href="mentions.html"]').forEach(function(a){
+      a.setAttribute('href', a.getAttribute('href') + '?from=site');
+    });
+  } catch(e){}
+})();
+</script>
 </body>
 </html>

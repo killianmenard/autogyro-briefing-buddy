@@ -38,7 +38,7 @@
   <a class="back" href="./">&larr; Retour &agrave; l'application</a>
   <div class="card">
 <h1>Conditions Générales d'Utilisation — Mon Plan de Vol</h1>
-<p><strong>Dernière mise à jour : 17 juillet 2026</strong></p>
+<p><strong>Dernière mise à jour : 24 juillet 2026</strong></p>
 <hr />
 
 <h2>Article 1 — Objet</h2>
@@ -57,7 +57,7 @@
 <p>3.4. L'Éditeur se réserve le droit de suspendre ou supprimer un compte en cas de violation des présentes CGU ou d'usage abusif du Service.</p>
 
 <h2>Article 4 — Offres et limites</h2>
-<p>4.1. <strong>Offre Free</strong> : accès gratuit avec les limites suivantes : préparation en mode « vol local » (un seul terrain) illimitée ; un (1) vol enregistré dans l'historique ; profil d'aéronef utilisable pour les calculs mais non sauvegardé d'une session à l'autre ; affichage de deux (2) points d'intérêt par trajet ou vol local ; rayon de recherche des points d'intérêt et des terrains d'avitaillement/déroutement limité à 5 km ; onglet « Ressources » non accessible ; synchronisation limitée à un (1) appareil ; export PDF limité au contenu accessible dans l'offre Free, avec filigrane.</p>
+<p>4.1. <strong>Offre Free</strong> : accès gratuit avec les limites suivantes : préparation d'un <strong>vol local</strong> (un seul terrain) illimitée ; préparation d'un <strong>trajet simple départ → arrivée</strong> (deux terrains, sans étape intermédiaire) illimitée — les étapes intermédiaires sont réservées à l'offre Pro ; un (1) vol enregistré dans l'historique ; profil d'aéronef utilisable pour les calculs mais non sauvegardé d'une session à l'autre ; affichage de deux (2) points d'intérêt et rayon de recherche des points d'intérêt et des terrains d'avitaillement/déroutement limité à 5 km autour du trajet ; synchronisation limitée à un (1) appareil ; export PDF limité au contenu accessible dans l'offre Free, avec filigrane.</p>
 <blockquote><strong>Les données à portée de sécurité aéronautique</strong> (météo, espaces aériens et fréquences, zones réglementées, avitaillement du ou des terrains figurant sur le vol préparé) restent intégralement accessibles dans l'offre Free, sans limitation.</blockquote>
 <p>4.2. <strong>Offre Pro</strong> : accès à l'ensemble des fonctionnalités du Service, moyennant un abonnement payant au tarif de <strong>4,99 € par mois</strong> ou <strong>49,90 € par an</strong>. Prix toutes taxes comprises — TVA non applicable, article 293 B du Code général des impôts. L'Éditeur se réserve la possibilité de proposer des offres promotionnelles ponctuelles.</p>
 <p>4.3. <strong>Paiement et renouvellement</strong> : le paiement s'effectue par carte bancaire via le prestataire de paiement sécurisé <strong>Stripe</strong>. L'abonnement est à <strong>reconduction tacite</strong> : il se renouvelle automatiquement à chaque échéance (mensuelle ou annuelle selon la formule choisie), sauf résiliation avant la fin de la période en cours. En cas d'échec de paiement au renouvellement, l'accès à l'offre Pro est suspendu après les tentatives de prélèvement infructueuses ; le compte bascule alors en offre Free, sans perte des données.</p>
@@ -103,5 +103,18 @@ Mon Plan de Vol — outil de préparation au sol, à ne jamais utiliser pour la 
 </footer>
   </div>
 </div>
+<script>
+// Fil d'ariane : arrivée depuis le site vitrine (…?from=site) → le lien de retour
+// ramène au site, et les liens entre pages légales propagent le contexte.
+(function(){
+  try {
+    if (new URLSearchParams(location.search).get('from') !== 'site') return;
+    document.querySelectorAll('a.back').forEach(function(a){ a.textContent = '← Retour au site'; a.setAttribute('href', 'https://monplandevol.fr'); });
+    document.querySelectorAll('a[href="cgu.html"], a[href="politique.html"], a[href="mentions.html"]').forEach(function(a){
+      a.setAttribute('href', a.getAttribute('href') + '?from=site');
+    });
+  } catch(e){}
+})();
+</script>
 </body>
 </html>
