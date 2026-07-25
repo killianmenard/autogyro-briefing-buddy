@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v1.99 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.00 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -4397,7 +4397,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v1.99`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v2.00`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;

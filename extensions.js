@@ -156,6 +156,10 @@
     return `
       <div class="card p-4 space-y-4">
         <h2 class="section-title text-sm">ressources</h2>
+        <div style="border:1px dashed var(--accent-bd);background:var(--accent-soft);border-radius:10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <span class="text-sm">💡 Une idée pour améliorer Mon Plan de Vol ?</span>
+          <a href="https://tally.so/r/gDxBJP" target="_blank" rel="noopener" style="font-weight:600;font-size:13px;color:var(--accent);text-decoration:none;">Proposer une amélioration ›</a>
+        </div>
         <div class="flex gap-1 border-b border-thin -mx-4 px-4 pb-0 flex-wrap">
           <button class="res-subtab px-3 py-2 text-sm border-b-2 border-transparent" data-sub="lexicon">📖 Sigles aéro</button>
           <button class="res-subtab px-3 py-2 text-sm border-b-2 border-transparent" data-sub="temsi">🌧 Symboles TEMSI</button>
