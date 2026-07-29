@@ -1,0 +1,116 @@
+name: Sonde de disponibilité
+
+on:
+  schedule:
+    # Toutes les 15 minutes. GitHub peut décaler l'exécution de quelques
+    # minutes aux heures de pointe — c'est une sonde, pas une horloge.
+    - cron: "*/15 * * * *"
+  workflow_dispatch:        # permet de lancer une vérification à la main
+
+permissions:
+  issues: write             # nécessaire pour ouvrir/fermer l'issue d'alerte
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier les points d'entrée
+        id: probe
+        run: |
+          set +e
+          FAILS=""
+
+          # --- Pages servies : on exige un 200 ---
+          check_page () {
+            NAME="$1"; URL="$2"
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" -m 20 -L "$URL")
+            echo "$NAME -> $CODE"
+            if [ "$CODE" != "200" ]; then
+              FAILS="${FAILS}- **${NAME}** (${URL}) : HTTP ${CODE}"$'\n'
+            fi
+          }
+
+          # --- Fonctions Cloud Run : un GET renvoie une erreur métier,
+          #     ce qui est SAIN. On refuse seulement l'absence de réponse
+          #     ou une erreur serveur (>= 500). Volontairement tolérant :
+          #     on ne suppose pas le code exact renvoyé. ---
+          check_fn () {
+            NAME="$1"; URL="$2"
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" -m 20 "$URL")
+            echo "$NAME -> $CODE"
+            if [ "$CODE" = "000" ] || [ "$CODE" -ge 500 ]; then
+              FAILS="${FAILS}- **${NAME}** (${URL}) : HTTP ${CODE}"$'\n'
+            fi
+          }
+
+          check_page "Application"  "https://app.monplandevol.fr"
+          check_page "Vitrine"      "https://monplandevol.fr"
+
+          check_fn "Stripe · création de paiement" \
+            "https://create-checkout-session-13095790986.europe-west1.run.app"
+          check_fn "Stripe · portail client" \
+            "https://create-portal-session-13095790986.europe-west1.run.app"
+
+          # Le webhook Stripe n'est pas sondé : il attend des POST signés,
+          # et Stripe alerte lui-même sur les échecs de livraison.
+
+          if [ -n "$FAILS" ]; then
+            {
+              echo "status=down"
+              echo "report<<REPORT_EOF"
+              echo "$FAILS"
+              echo "REPORT_EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "status=up" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Ouvrir une alerte
+        if: steps.probe.outputs.status == 'down'
+        uses: actions/github-script@v7
+        env:
+          REPORT: ${{ steps.probe.outputs.report }}
+        with:
+          script: |
+            const TITLE = "🔴 Sonde : un service ne répond pas";
+            const { owner, repo } = context.repo;
+            const open = await github.rest.issues.listForRepo({
+              owner, repo, state: "open", labels: "sonde"
+            });
+            const body = [
+              "Détecté le " + new Date().toISOString(),
+              "",
+              process.env.REPORT,
+              "",
+              "_Cette issue se ferme toute seule au retour à la normale._"
+            ].join("\n");
+
+            if (open.data.length) {
+              // Alerte déjà ouverte : on commente au lieu de spammer.
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: open.data[0].number, body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner, repo, title: TITLE, body, labels: ["sonde"]
+              });
+            }
+
+      - name: Refermer l'alerte
+        if: steps.probe.outputs.status == 'up'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const open = await github.rest.issues.listForRepo({
+              owner, repo, state: "open", labels: "sonde"
+            });
+            for (const issue of open.data) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issue.number,
+                body: "✅ Retour à la normale — " + new Date().toISOString()
+              });
+              await github.rest.issues.update({
+                owner, repo, issue_number: issue.number, state: "closed"
+              });
+            }
