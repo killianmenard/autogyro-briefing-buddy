@@ -9,7 +9,7 @@
  * - Pass-through (no-cache) : appels API live (METAR, vent, météo). Toujours réseau.
  *   Le cache de fraîcheur des données est géré dans l'app via localStorage (TTL court).
  */
-const VERSION = 'v2.02';
+const VERSION = 'v2.03';
 const CACHE_STATIC = `monplandevol-static-${VERSION}`;
 const CACHE_TILES = `monplandevol-tiles-${VERSION}`;
 
@@ -56,6 +56,14 @@ const API_HOSTS = [
   'api.allorigins.win',
   'embed.windy.com',
   'aeroweb.meteo.fr',
+  // v2.03 — Workers Cloudflare maison. SANS ces deux entrées, ces hôtes ne sont ni "tile",
+  // ni same-origin, ni *.json : ils tombaient dans la branche 5 (cache-first) et servaient
+  // indéfiniment la première réponse mise en cache. Bug réel depuis la v2.01 sur la carte
+  // météo France (données figées jusqu'au prochain bump de VERSION) ; corrigé ici, et évité
+  // pour le METAR. NE PAS remplacer par 'monplandevol.fr' : isApiRequest utilise
+  // hostname.includes(), ce qui capturerait app.monplandevol.fr et casserait le mode hors-ligne.
+  'meteo.monplandevol.fr',
+  'metar.monplandevol.fr',
 ];
 
 function isTileRequest(url) {
