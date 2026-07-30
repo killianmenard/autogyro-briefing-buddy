@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.04 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.05 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -1271,13 +1271,27 @@
         <span class="text-sm font-medium">Zones aériennes traversées</span>
         <span class="ml-auto text-xs text-muted">cochez les zones à inclure ci-dessus</span>
       </label>
-      
+
+      <!-- v2.05 — la section RTBA s'imprimait systématiquement, sans case pour l'exclure. -->
+      <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
+        <input type="checkbox" id="pdf-section-rtba" checked />
+        <span class="text-sm font-medium">Réseau RTBA traversé</span>
+        <span class="ml-auto text-xs text-muted">tronçons très basse altitude</span>
+      </label>
+
       <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
         <input type="checkbox" id="pdf-section-fuel" checked />
         <span class="text-sm font-medium">Logistique AD</span>
         <span class="ml-auto text-xs text-muted">carburants, contacts, horaires</span>
       </label>
-      
+
+      <!-- v2.05 — même oubli que pour le RTBA : ce bloc s'imprimait sans être pilotable. -->
+      <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
+        <input type="checkbox" id="pdf-section-services" checked />
+        <span class="text-sm font-medium">Services au sol à proximité</span>
+        <span class="ml-auto text-xs text-muted">restauration, hébergement, transport</span>
+      </label>
+
       <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
         <input type="checkbox" id="pdf-section-poi" checked />
         <span class="text-sm font-medium">POI à survoler</span>
@@ -1297,6 +1311,16 @@
       </label>
     </div>
     
+    <!-- v2.05 — annonce honnête de ce que contiendra le PDF en offre Free. Affiché par
+         openPdfModal() uniquement si le statut est connu ET Free (fail-open). Aucune section
+         n'est retirée au Free : seules les limites déjà appliquées à l'écran sont rappelées. -->
+    <div id="pdf-free-upsell" class="mt-4 text-xs" style="display:none;border:1px solid var(--border);border-left:3px solid #F59E0B;border-radius:8px;padding:10px;background:rgba(245,158,11,0.06);">
+      <p class="mb-1"><strong>Offre Free</strong> — votre PDF contiendra :</p>
+      <p class="mb-1" style="color:var(--muted-foreground,#6b7280);">2 points d'intérêt au maximum et un rayon de recherche de 5 km (avitaillement à proximité et POI), comme à l'écran. Un filigrane « Édition Free » est apposé sur chaque page.</p>
+      <p class="mb-2" style="color:var(--muted-foreground,#6b7280);"><strong>Météo, espaces aériens et fréquences, RTBA et avitaillement des terrains de votre vol restent complets</strong> : ces données de sécurité ne sont jamais limitées.</p>
+      <button type="button" id="pdf-free-upsell-btn" class="px-3 py-1.5 rounded" style="background:var(--primary,#2563eb);color:#fff;font-size:12px;">Passer Pro</button>
+    </div>
+
     <div class="info-box mt-4 text-xs">
       <i data-lucide="info" class="inline h-4 w-4"></i>
       <span class="ml-1">Pour les zones aériennes : cochez/décochez chaque zone individuellement dans la section "zones aériennes traversées" ci-dessus avant de générer le PDF.</span>
@@ -2090,6 +2114,11 @@ function agApplyTripFreeUi() {
   document.addEventListener('click', function (e) {
     if (!e.target || !e.target.closest) return;
     if (e.target.closest('#ag-step-upsell-btn')) {
+      document.getElementById('account-circle')?.click();
+    } else if (e.target.closest('#pdf-free-upsell-btn')) {
+      // v2.05 — la modale PDF est en position:fixed au-dessus de tout : on la ferme
+      // avant d'ouvrir le panneau compte, sinon l'utilisateur ne le verrait pas.
+      if (typeof closePdfModal === 'function') closePdfModal();
       document.getElementById('account-circle')?.click();
     } else if (e.target.closest('.ag-radius-upsell')) {
       e.preventDefault();
@@ -4416,7 +4445,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v2.04`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v2.05`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;
@@ -4799,7 +4828,8 @@ async function _doGeneratePdf(opts) {
       }
 
       // ----- Services au sol (a proximite, <= 3 km des AD) — cache ecran uniquement -----
-      {
+      // v2.05 : bloc anonyme converti en section pilotable (case `pdf-section-services`).
+      if (opts.services !== false) {
         const svcAds = uniquePoints.filter(ad => {
           const c = (typeof _servicesReadCache === 'function') ? _servicesReadCache(ad.icao) : null;
           return c && c.services && c.services.length;
@@ -4987,10 +5017,34 @@ async function _doGeneratePdf(opts) {
         });
       }
 
-      // ============= FOOTER DISCLAIMER (sur chaque page) =============
+      // ============= FILIGRANE OFFRE FREE + FOOTER DISCLAIMER (sur chaque page) =============
       const totalPages = pdf.internal.getNumberOfPages();
+      // v2.05 — filigrane apposé en offre Free (CGU art. 4.1). Décision figée en amont par
+      // confirmPdfGeneration, jamais relue ici. Opacité volontairement très basse : le
+      // filigrane est dessiné APRÈS le contenu, donc par-dessus, et un briefing doit rester
+      // lisible — on ne dégrade pas la lecture d'un METAR ou d'une fréquence pour un motif
+      // commercial. La mention en pied de page porte l'information de façon nette.
+      const _watermark = opts.gated === true;
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
+        if (_watermark) {
+          let _gsSaved = false;
+          try {
+            pdf.saveGraphicsState(); _gsSaved = true;
+            pdf.setGState(new pdf.GState({ opacity: 0.07 }));
+            pdf.setFont(PDF_FONT, 'bold');
+            pdf.setFontSize(46);
+            pdf.setTextColor(0, 0, 0);
+            pdf.text('ÉDITION FREE', pageW / 2, pageH / 2, { align: 'center', angle: 34 });
+          } catch (e) {
+            // jsPDF sans support GState : on renonce au filigrane diagonal plutôt que de
+            // risquer un aplat opaque par-dessus le briefing. La mention de pied de page
+            // ci-dessous reste apposée dans tous les cas.
+            console.warn('[PDF] filigrane diagonal non appliqué :', e.message);
+          } finally {
+            if (_gsSaved) { try { pdf.restoreGraphicsState(); } catch (e2) { /* ignore */ } }
+          }
+        }
         pdf.setFont(PDF_FONT, 'normal');
         pdf.setFontSize(PDF_STYLE.fontSize.micro);
         pdf.setTextColor(...PDF_STYLE.colTextMuted);
@@ -5004,6 +5058,13 @@ async function _doGeneratePdf(opts) {
         pdf.setFont(PDF_FONT, 'normal'); pdf.setTextColor(...PDF_STYLE.colTextMuted);
         pdf.text("Données indicatives - le pilote reste seul responsable de la vérification SIA / METAR / TAF / NOTAM / AZBA avant le vol.",
           margin, pageH - 6, { maxWidth: pageW - 2 * margin - 25 });
+        // v2.05 — mention d'édition, au-dessus du filet de footer (le contenu s'arrête à
+        // pageH - margin - 8 = 277 mm, cette ligne est à 284,5 mm : aucun chevauchement).
+        if (_watermark) {
+          pdf.setFontSize(PDF_STYLE.fontSize.micro);
+          pdf.setTextColor(...PDF_STYLE.colTextMuted);
+          pdf.text('Édition Free — contenu limité · monplandevol.fr', pageW - margin, pageH - 12.5, { align: 'right' });
+        }
         pdf.setTextColor(0);
       }
 
@@ -5062,7 +5123,20 @@ function openPdfModal() {
   document.getElementById('pdf-section-poi').checked = prefs.poi !== false;
   document.getElementById('pdf-section-meteo-img').checked = prefs.meteoImg !== false;
   document.getElementById('pdf-section-notes').checked = prefs.notes;
-  
+  // v2.05 — nouvelles cases : absentes des préférences enregistrées avant ce lot, donc
+  // `!== false` pour qu'elles soient cochées par défaut (comportement identique à avant,
+  // où ces deux sections s'imprimaient toujours).
+  document.getElementById('pdf-section-rtba').checked = prefs.rtba !== false;
+  document.getElementById('pdf-section-services').checked = prefs.services !== false;
+
+  // v2.05 — encadré Free : annonce ce que contiendra le PDF avant de le générer.
+  // Fail-open : rien n'est affiché tant que le statut d'abonnement n'est pas résolu.
+  const freeBox = document.getElementById('pdf-free-upsell');
+  if (freeBox) {
+    const gated = (typeof agTripGated === 'function') ? agTripGated() : false;
+    freeBox.style.display = gated ? 'block' : 'none';
+  }
+
   const modal = document.getElementById('pdf-modal');
   modal.classList.remove('hidden');
   modal.style.display = 'flex';
@@ -5107,7 +5181,9 @@ async function confirmPdfGeneration() {
     fuel: document.getElementById('pdf-section-fuel').checked,
     poi: document.getElementById('pdf-section-poi').checked,
     meteoImg: document.getElementById('pdf-section-meteo-img').checked,
-    notes: document.getElementById('pdf-section-notes').checked
+    notes: document.getElementById('pdf-section-notes').checked,
+    rtba: document.getElementById('pdf-section-rtba').checked,
+    services: document.getElementById('pdf-section-services').checked
   };
   const opts = { ...sections };
 
@@ -5139,7 +5215,10 @@ async function confirmPdfGeneration() {
       opts.selectedAirspaces = _crossedAirspacesCache;
     }
   }
-  opts.rtbaCrossed = _rtbaCrossedCache; // Lot RTBA (v0.8.33) — tronçons croisés (indépendant du filtre/checkbox zones)
+  // Lot RTBA (v0.8.33) — tronçons croisés (indépendant du filtre/checkbox zones).
+  // v2.05 : désormais pilotable par sa propre case. RTBA reste une donnée de sécurité,
+  // jamais gatée par l'offre — c'est un choix d'impression, pas une limite Free.
+  opts.rtbaCrossed = opts.rtba ? _rtbaCrossedCache : [];
   
   // v2.04 — on ne persiste QUE les cases cochées. Auparavant tout `opts` était sérialisé,
   // ce qui écrivait selectedAirspaces et rtbaCrossed (géométries complètes) dans
