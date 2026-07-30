@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.03 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.04 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -4416,7 +4416,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v2.03`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v2.04`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;
@@ -4744,12 +4744,15 @@ async function _doGeneratePdf(opts) {
           }
         }
 
-        // ----- Avitaillement à proximité (≤ FUEL_RADIUS_KM du trajet) — sous-section v0.8.44 -----
+        // ----- Avitaillement à proximité (≤ rayon EFFECTIF du trajet) — sous-section v0.8.44 -----
+        // v2.04 : rayon décidé en amont dans confirmPdfGeneration (5 km en Free, réglage Pro
+        // sinon). Fallback sur le rayon brut si opts vient d'un appel externe : fail-open.
+        const _fuelRadiusKm = (typeof opts.fuelRadiusKm === 'number') ? opts.fuelRadiusKm : FUEL_RADIUS_KM;
         const fuelNear = (typeof detectFuelNearRoute === 'function' && trip && trip.points && trip.points.length >= 2)
-          ? detectFuelNearRoute(trip.points, FUEL_RADIUS_KM) : [];
+          ? detectFuelNearRoute(trip.points, _fuelRadiusKm) : [];
         if (fuelNear.length) {
           y = ensureSpace(pdf, y, 30);
-          y = pdfSectionTitle(pdf, 'Avitaillement à proximité (≤ ' + FUEL_RADIUS_KM + ' km du trajet)', y);
+          y = pdfSectionTitle(pdf, 'Avitaillement à proximité (≤ ' + _fuelRadiusKm + ' km du trajet)', y);
           for (const f of fuelNear) {
             y = ensureSpace(pdf, y, 24);
             y = pdfSubTitle(pdf, f.icao + ' — ' + f.name, y);
@@ -4843,13 +4846,20 @@ async function _doGeneratePdf(opts) {
         }
       }
 
-      // ----- POI à survoler (≤ POI_RADIUS_KM du trajet) — section v0.8.52 -----
+      // ----- POI à survoler (≤ rayon EFFECTIF du trajet) — section v0.8.52 -----
       if (opts.poi && trip && trip.points && trip.points.length >= 2) {
-        const poiNear = (typeof detectPoiNearRoute === 'function')
-          ? detectPoiNearRoute(trip.points, POI_RADIUS_KM).capped : [];
+        // v2.04 : mêmes rayon et plafond qu'à l'écran (cf. updatePoiOnRoute). En Free,
+        // 2 POI les plus proches dans 5 km ; le PDF ne doit pas être une porte dérobée
+        // vers le contenu Pro. Fallback fail-open si opts vient d'un appel externe.
+        const _poiRadiusKm = (typeof opts.poiRadiusKm === 'number') ? opts.poiRadiusKm : POI_RADIUS_KM;
+        let poiNear = (typeof detectPoiNearRoute === 'function')
+          ? detectPoiNearRoute(trip.points, _poiRadiusKm).capped : [];
+        if (opts.gated === true && poiNear.length > 2) {
+          poiNear = [...poiNear].sort((a, b) => a.distKm - b.distKm).slice(0, 2);
+        }
         if (poiNear.length) {
           y = ensureSpace(pdf, y, 30);
-          y = pdfSectionTitle(pdf, 'POI à survoler (≤ ' + POI_RADIUS_KM + ' km du trajet)', y);
+          y = pdfSectionTitle(pdf, 'POI à survoler (≤ ' + _poiRadiusKm + ' km du trajet)', y);
           for (const t of ['chateau', 'lac', 'viaduc', 'naturel']) {
             const grp = poiNear.filter(p => p.type === t);
             if (!grp.length) continue;
@@ -5087,7 +5097,8 @@ async function generatePdf() {
 }
 
 async function confirmPdfGeneration() {
-  const opts = {
+  // Choix utilisateur des sections — c'est LA SEULE partie persistée (voir savePdfPrefs plus bas).
+  const sections = {
     acft: document.getElementById('pdf-section-acft').checked,
     trip: document.getElementById('pdf-section-trip').checked,
     map: document.getElementById('pdf-section-map').checked,
@@ -5098,7 +5109,21 @@ async function confirmPdfGeneration() {
     meteoImg: document.getElementById('pdf-section-meteo-img').checked,
     notes: document.getElementById('pdf-section-notes').checked
   };
-  
+  const opts = { ...sections };
+
+  // v2.04 — GATING : la décision de tier est prise ICI, une seule fois, puis transportée
+  // par opts. Le rendu ne doit JAMAIS relire le statut Pro : pdfBox exécute son contenu
+  // deux fois (mesure de hauteur, puis dessin) et un basculement de statut entre les deux
+  // passes produirait un cadre dimensionné pour un contenu et rempli d'un autre.
+  // Fail-open cohérent avec _agShouldGate : statut inconnu = pas de bridage.
+  opts.gated = (typeof agTripGated === 'function') ? agTripGated() : false;
+  // Rayons EFFECTIFS, identiques à ceux appliqués à l'écran. Avant la v2.04 le PDF
+  // recalculait à partir des rayons bruts : un compte Free obtenait dans son PDF plus de
+  // POI et d'avitaillement que ce que l'application lui montrait — le gating des v1.96-97
+  // se contournait en cliquant sur « générer le pdf ».
+  opts.fuelRadiusKm = (typeof agEffFuelRadiusKm === 'function') ? agEffFuelRadiusKm() : FUEL_RADIUS_KM;
+  opts.poiRadiusKm = (typeof agEffPoiRadiusKm === 'function') ? agEffPoiRadiusKm() : POI_RADIUS_KM;
+
   // Récupérer les zones cochées dans la section zones aériennes
   if (opts.airspaces) {
     const checkedIds = new Set();
@@ -5116,7 +5141,12 @@ async function confirmPdfGeneration() {
   }
   opts.rtbaCrossed = _rtbaCrossedCache; // Lot RTBA (v0.8.33) — tronçons croisés (indépendant du filtre/checkbox zones)
   
-  savePdfPrefs(opts);
+  // v2.04 — on ne persiste QUE les cases cochées. Auparavant tout `opts` était sérialisé,
+  // ce qui écrivait selectedAirspaces et rtbaCrossed (géométries complètes) dans
+  // localStorage à chaque génération : inutile, et un risque de saturation du quota sur
+  // un long trajet. Le tier et les rayons effectifs ne sont pas persistés non plus — ils
+  // sont recalculés à chaque ouverture, un passage Pro doit être pris en compte aussitôt.
+  savePdfPrefs(sections);
   closePdfModal();
   await _doGeneratePdf(opts);
 }
