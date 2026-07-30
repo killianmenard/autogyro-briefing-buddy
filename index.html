@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.01 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.02 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -3249,7 +3249,9 @@ async function fetchMetarForAd(ad) {
   return { data: null, station: primary, fallback: null };
 }
 
-async function fetchWind(lat, lon) {
+const AG_WIND_ENABLED = false; // v2.02 — Open-Meteo suspendu : tier gratuit non-commercial, incompatible avec un abonnement payant. Retablir via le pipeline Meteo-France (AROME).
+    async function fetchWind(lat, lon) {
+      if (!AG_WIND_ENABLED) return null;
   // Cache 1h par coordonnées (arrondies à 0.01° pour grouper les requêtes proches)
   const cacheKey = `autogyrodash_wind_${lat.toFixed(2)}_${lon.toFixed(2)}`;
   try {
@@ -3931,8 +3933,8 @@ function renderMetarSection(data, ad, fallback = null) {
 
 function renderWindSection(d) {
   if (!d || !d.current) {
-    return `${reliabilityBadge("yellow", "open-meteo.com")}
-      <p class="text-sm mt-2" style="color: #B91C1C;">Données vent indisponibles</p>`;
+    return `
+      <p class="text-sm mt-2" style="color: #B91C1C;">Vent en altitude momentanément indisponible — consulter WINTEM / AEROWEB avant le vol.</p>`;
   }
   const c = d.current;
   const h = d.hourly;
@@ -4397,7 +4399,7 @@ async function _doGeneratePdf(opts) {
       pdf.setFontSize(PDF_STYLE.fontSize.small);
       pdf.setTextColor(...PDF_STYLE.colTextMuted);
       const now = new Date();
-      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v2.01`;
+      const dateStr = `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}  ·  monplandevol.fr v2.02`;
       pdf.text(dateStr, margin, y);
       pdf.setTextColor(0);
       y += 8;
@@ -4621,7 +4623,7 @@ async function _doGeneratePdf(opts) {
             if (cache?.wind?.current) {
               iy += 2;
               pdf.setFont(PDF_FONT, 'bold');
-              pdf.text('Vent (open-meteo)', margin + 3, iy);
+              pdf.text('Vent en altitude', margin + 3, iy);
               iy += 3.5;
               const c = cache.wind.current;
               const h = cache.wind.hourly;
