@@ -18,7 +18,8 @@
  *                  ⚠️ partager la page « Board — board.monplandevol.fr » ET la page
  *                  « Decision Log » avec cette intégration (menu ··· → Connexions).
  *
- * Version : board-api v1.1 — 31/07/2026 (ajout /api/health). Copie versionnée : repo + doc projet.
+ * Version : board-api v1.2 — 05/08/2026 (sonde METAR : ?ids= au lieu de ?icao=, seuil ok durci,
+ *           contrôle de corps non vide). Copie versionnée : repo + doc projet.
  */
 
 const NOTION = 'https://api.notion.com/v1';
@@ -139,7 +140,7 @@ async function getBoard(request, env, ctx, url, cors) {
 }
 
 
-// ---------- Health checks réels (v1.1) ----------
+// ---------- Health checks réels (v1.2) ----------
 
 const HEALTH_TTL = 60; // secondes
 const HEALTH_TARGETS = [
@@ -149,7 +150,7 @@ const HEALTH_TARGETS = [
     action: 'La vitrine ne répond pas — dash Cloudflare → monplandevol-site, vérifier le dernier déploiement.' },
   { id: 'meteo',   nom: 'Carte météo France', url: 'https://meteo.monplandevol.fr/france-cities?part=1',
     action: "Worker meteo-proxy en panne — l'éditer dans le dash Cloudflare. L'app garde son cache 30 min." },
-  { id: 'metar',   nom: 'METAR/TAF',          url: 'https://metar.monplandevol.fr/metar?icao=LFLC',
+  { id: 'metar',   nom: 'METAR/TAF',          url: 'https://metar.monplandevol.fr/metar?ids=LFLC', expectBody: true,
     action: "Worker mpdv-metar muet — l'app bascule seule sur les 7 proxies publics (repli v2.03). Vérifier dans le dash Cloudflare." },
 ];
 
@@ -163,19 +164,27 @@ async function checkOne(t) {
   try {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 6000);
-    const r = await fetch(t.url, { signal: ctl.signal, cf: { cacheTtl: 0 }, headers: { 'User-Agent': 'mpdv-board-health/1.1' } });
+    const r = await fetch(t.url, { signal: ctl.signal, cf: { cacheTtl: 0 }, headers: { 'User-Agent': 'mpdv-board-health/1.2' } });
     clearTimeout(timer);
     const ms = Date.now() - t0;
-    // Vivant si la réponse arrive et n'est pas une erreur serveur.
-    // (Un 4xx = le service répond ; seul le format d'appel diffère.)
-    const ok = r.status < 500;
+    // v1.2 — seuil durci : SEULES les cibles dont on maîtrise l'URL sont sondées, donc un 4xx
+    // n'est pas « le service répond », c'est NOTRE appel qui est faux. Le seuil < 500 masquait
+    // le 400 missing_ids de la sonde METAR (?icao= au lieu de ?ids=) et affichait « vivant ».
+    let ok = r.status < 400;
     let version = null;
+    let vide = false;
     if (t.id === 'app' && ok) {
       const html = (await r.text()).slice(0, 2000);
       const m = html.match(/v\d+\.\d+/);
       if (m) version = m[0];
+    } else if (t.expectBody && ok) {
+      // Un 200 au corps vide est un faux positif : le Worker répond mais ne sert plus de donnée.
+      const body = await r.text();
+      if (!body || !body.trim()) { ok = false; vide = true; }
     }
-    return { id: t.id, nom: t.nom, ok, status: r.status, ms, version, action: ok ? null : t.action };
+    return { id: t.id, nom: t.nom, ok, status: r.status, ms, version,
+             action: ok ? null : t.action,
+             ...(vide ? { erreur: 'réponse 200 au corps vide' } : {}) };
   } catch (e) {
     return { id: t.id, nom: t.nom, ok: false, status: 0, ms: Date.now() - t0, version: null,
              action: t.action, erreur: String(e && e.name === 'AbortError' ? 'timeout 6 s' : e && e.message || e) };

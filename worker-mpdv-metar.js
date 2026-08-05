@@ -19,7 +19,7 @@
  * Retirer le domaine personnalisé metar.monplandevol.fr : le client retombe automatiquement
  * sur les proxies publics (comportement v2.02 à l'identique), sans redéployer l'app.
  *
- * SAUVEGARDE : repo killianmenard/mpdv-workers.
+ * SAUVEGARDE : repo killianmenard/autogyro-briefing-buddy (racine) — worker-mpdv-metar.js.
  */
 
 const UPSTREAM = 'https://aviationweather.gov/api/data/metar';
