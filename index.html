@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.07 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.08 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -3323,25 +3323,37 @@ async function fetchMetarForAd(ad) {
   return { data: null, station: primary || ad.icao, fallback: null };
 }
 
-const AG_WIND_ENABLED = false; // v2.02 — Open-Meteo suspendu : tier gratuit non-commercial, incompatible avec un abonnement payant. Retablir via le pipeline Meteo-France (AROME).
+// v2.08 — VENT EN ALTITUDE RÉTABLI. Coupé depuis la v2.02 : l'offre gratuite d'Open-Meteo
+// est réservée au non-commercial, incompatible avec un abonnement Stripe. La source est
+// désormais AROME (Météo-France) via le Worker maison `arome-proxy` — Licence Ouverte 2.0,
+// réutilisation commerciale autorisée, attribution OBLIGATOIRE à l'écran et dans le PDF.
+const AG_WIND_ENABLED = true;
+const AG_AROME_WORKER = 'https://arome.monplandevol.fr/wind';
+
     async function fetchWind(lat, lon) {
       if (!AG_WIND_ENABLED) return null;
-  // Cache 1h par coordonnées (arrondies à 0.01° pour grouper les requêtes proches)
-  const cacheKey = `autogyrodash_wind_${lat.toFixed(2)}_${lon.toFixed(2)}`;
+  // Clé distincte de l'ancienne (`_wind_`) : le format de réponse a changé, un blob
+  // Open-Meteo resté en cache ne doit jamais être servi au nouveau rendu.
+  const cacheKey = `autogyrodash_wind_v2_${lat.toFixed(2)}_${lon.toFixed(2)}`;
   try {
     const result = await cachedFetch(cacheKey, async () => {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,wind_speed_80m,wind_direction_80m,wind_speed_120m,wind_direction_120m&hourly=wind_speed_950hPa,wind_direction_950hPa,wind_speed_925hPa,wind_direction_925hPa&forecast_days=1&wind_speed_unit=kn`;
-      const r = await fetchWithTimeout(url, {}, 8000);
+      const url = `${AG_AROME_WORKER}?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+      // 12 s : sur défaut de cache, le Worker enchaîne 10 sous-requêtes WCS (5 niveaux
+      // × composantes U et V). 8 s ne suffisaient pas.
+      const r = await fetchWithTimeout(url, {}, 12000);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return await r.json();
-    }, 60 * 60 * 1000); // TTL 1h
-    if (result.stale) {
-      /* toast retiré (spam) */
-    }
+      const j = await r.json();
+      // Le Worker répond toujours en 200 et signale l'échec par ok:false (fail-soft) :
+      // on valide donc la forme, jamais le seul code HTTP.
+      if (!j || j.ok !== true || !Array.isArray(j.levels) || !j.levels.length) {
+        throw new Error((j && j.error) || 'réponse vide');
+      }
+      return j;
+    }, 60 * 60 * 1000); // TTL 1h ; le Worker cache déjà par cellule de grille AROME
     return result.data;
   } catch (e) {
-    // Pas de toast ici : le vent est multi-points, éviter le spam
-    console.warn('[WIND] fetch failed:', e.message);
+    // Pas de toast : le vent est multi-points, et la carte affiche déjà le message de repli.
+    console.warn('[WIND] AROME indisponible :', e.message);
     return null;
   }
 }
@@ -4069,37 +4081,45 @@ function renderMetarSection(data, ad, fallback = null) {
   `;
 }
 
+// v2.08 — rendu du vent AROME. Les niveaux sont des HAUTEURS-SOL, pas des surfaces
+// isobares : un pilote raisonne en pieds sol, et « 950 hPa ≈ 1640 ft » est une
+// équivalence qui bouge avec le QNH du jour. Direction et force arrivent déjà calculées
+// par le Worker (conversion U/V + vérification d'écho du niveau servi).
 function renderWindSection(d) {
-  if (!d || !d.current) {
+  if (!d || !Array.isArray(d.levels) || !d.levels.length) {
     return `
       <p class="text-sm mt-2" style="color: #B91C1C;">Vent en altitude momentanément indisponible — consulter WINTEM / AEROWEB avant le vol.</p>`;
   }
-  const c = d.current;
-  const h = d.hourly;
-  const layers = [
-    { label: "Surface (10m)", dir: c.wind_direction_10m, spd: c.wind_speed_10m, gust: c.wind_gusts_10m },
-    { label: "80m (260 ft)", dir: c.wind_direction_80m, spd: c.wind_speed_80m },
-    { label: "120m (390 ft)", dir: c.wind_direction_120m, spd: c.wind_speed_120m },
-    { label: "950 hPa (1640 ft)", dir: h.wind_direction_950hPa[0], spd: h.wind_speed_950hPa[0] },
-    { label: "925 hPa (2480 ft)", dir: h.wind_direction_925hPa[0], spd: h.wind_speed_925hPa[0] }
-  ];
-  const maxKt = Math.max(...layers.map(l => l.spd), c.wind_gusts_10m || 0);
+  const layers = d.levels;
+  const maxKt = Math.max(...layers.map(l => Number(l.kt) || 0));
   const maxColor = maxKt > 20 ? "pill-mvfr" : "pill-vfr";
+  const topFt = layers[layers.length - 1].ft;
+  // Une prévision sans son heure de validité est trompeuse : on l'affiche toujours.
+  let validTxt = '';
+  try {
+    if (d.time) {
+      validTxt = new Date(d.time).toLocaleString('fr-FR', {
+        weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+      });
+    }
+  } catch (e) {}
 
   return `
     <div class="flex items-center justify-between">
-      <h4 class="text-xs font-medium uppercase tracking-wide text-muted">vent (surface → 2480 ft)</h4>
-      <span class="pill ${maxColor}">max ${Math.round(maxKt)} kt</span>
+      <h4 class="text-xs font-medium uppercase tracking-wide text-muted">vent (surface → ${topFt} ft sol)</h4>
+      <span class="pill ${maxColor}">max ${maxKt} kt</span>
     </div>
-    ${reliabilityBadge("yellow", "Modèle ECMWF · open-meteo.com")}
+    ${reliabilityBadge("green", "Météo-France · modèle AROME (Licence Ouverte 2.0)")}
+    ${validTxt ? `<p class="text-xs text-muted mt-1">Prévision valable le ${validTxt} (heure locale)</p>` : ""}
     <ul class="mt-2 rounded-md border border-thin overflow-hidden">
       ${layers.map(l => `
         <li class="flex items-center justify-between text-sm py-1.5 px-2 border-t border-thin first:border-t-0">
-          <span class="text-xs">${l.label}</span>
-          <span class="pre-mono text-xs">${Math.round(l.dir)}° ${degToCompass(l.dir)} · ${Math.round(l.spd)} kt${l.gust ? ` (raf. ${Math.round(l.gust)})` : ""}</span>
+          <span class="text-xs">${l.m === 10 ? "Surface (10 m)" : `${l.m} m (${l.ft} ft sol)`}</span>
+          <span class="pre-mono text-xs">${l.dirDeg}° ${l.dirCard} · ${l.kt} kt</span>
         </li>
       `).join("")}
     </ul>
+    ${d.partial ? `<p class="text-xs mt-1" style="color:#92400E;">Certains niveaux n'ont pas pu être vérifiés et ne sont pas affichés.</p>` : ""}
   `;
 }
 
@@ -4491,7 +4511,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.07';
+const AG_PDF_VERSION = 'v2.08';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -4810,27 +4830,29 @@ async function _doGeneratePdf(opts) {
               iy += 3.5;
             }
 
-            if (cache?.wind?.current) {
+            // v2.08 — le bloc lisait `cache.wind.current` (format Open-Meteo). Avec la
+            // bascule sur AROME ce test serait devenu faux en silence et le vent aurait
+            // simplement DISPARU du PDF, sans erreur. Format de sortie du Worker.
+            if (cache?.wind?.levels?.length) {
               iy += 2;
               pdf.setFont(PDF_FONT, 'bold');
               pdf.text('Vent en altitude', margin + 3, iy);
               iy += 3.5;
-              const c = cache.wind.current;
-              const h = cache.wind.hourly;
-              const layers = [
-                ['Surface', c.wind_direction_10m, c.wind_speed_10m, c.wind_gusts_10m],
-                ['80 m', c.wind_direction_80m, c.wind_speed_80m, null],
-                ['120 m', c.wind_direction_120m, c.wind_speed_120m, null],
-                ['950 hPa (~1640 ft)', h.wind_direction_950hPa[0], h.wind_speed_950hPa[0], null],
-                ['925 hPa (~2480 ft)', h.wind_direction_925hPa[0], h.wind_speed_925hPa[0], null]
-              ];
               pdf.setFont(PDF_FONT, 'normal');
-              layers.forEach(([lbl, dir, spd, gust]) => {
-                let l = `${lbl.padEnd(20, ' ')}  ${Math.round(dir)}° ${degToCompass(dir)}  ${Math.round(spd)} kt`;
-                if (gust) l += `  (raf. ${Math.round(gust)} kt)`;
-                pdf.text(l, margin + 4, iy);
+              cache.wind.levels.forEach(l => {
+                const lbl = (l.m === 10) ? 'Surface (10 m)' : `${l.m} m (~${l.ft} ft sol)`;
+                pdf.text(`${lbl.padEnd(20, ' ')}  ${l.dirDeg}° ${l.dirCard}  ${l.kt} kt`, margin + 4, iy);
                 iy += 3.5;
               });
+              // Attribution : obligation de la Licence Ouverte 2.0, écran ET document.
+              pdf.setFontSize(PDF_STYLE.fontSize.micro);
+              pdf.setTextColor(...PDF_STYLE.colTextMuted);
+              let src = 'Météo-France - modèle AROME (Licence Ouverte 2.0)';
+              if (cache.wind.time) src += ' - prévision ' + String(cache.wind.time).replace('T', ' ').replace(':00:00Z', ' h UTC');
+              pdf.text(src, margin + 4, iy);
+              pdf.setFontSize(PDF_STYLE.fontSize.small);
+              pdf.setTextColor(0);
+              iy += 3.5;
             }
 
             return iy;
