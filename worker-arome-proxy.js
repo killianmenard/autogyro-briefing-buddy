@@ -15,7 +15,19 @@
  * Licence des données : Licence Ouverte 2.0 — réutilisation commerciale autorisée.
  * ⚠️ Attribution « Météo-France — modèle AROME » OBLIGATOIRE à l'écran.
  *
- * Version : arome-proxy v1.0 — 06/08/2026.
+ * Version : arome-proxy v1.1 — 06/08/2026.
+ *
+ * CHANGELOG
+ *  v1.1 · Concurrence bornée + une nouvelle tentative sur erreur transitoire.
+ *         Constaté en production le 06/08 : appelé seul, le Worker rend ses 5 niveaux ;
+ *         appelé par l'app sur un trajet de 3 terrains, un niveau manquait. L'app lance
+ *         un appel par terrain EN PARALLÈLE et chaque appel lançait 10 sous-requêtes
+ *         simultanées → une trentaine d'appels d'un coup chez Météo-France, pour un
+ *         quota de 50/min PARTAGÉ entre tous les utilisateurs. Quelques-uns tombaient
+ *         en 429. On plafonne donc à 4 sous-requêtes concurrentes et on réessaie une
+ *         fois les erreurs transitoires. ⚠️ Une erreur d'ÉCHO n'est jamais réessayée :
+ *         ce n'est pas un aléa réseau, c'est une réponse fausse.
+ *  v1.0 · version initiale.
  *
  * ────────────────────────────────────────────────────────────────────────────
  * CE QUI A ÉTÉ ÉTABLI EMPIRIQUEMENT LE 06/08 (ne pas « simplifier » sans relire)
@@ -36,7 +48,7 @@
  * ────────────────────────────────────────────────────────────────────────────
  */
 
-const VERSION = 'arome-proxy v1.0';
+const VERSION = 'arome-proxy v1.1';
 
 const BASE = 'https://public-api.meteofrance.fr/public/arome/1.0/wcs/'
            + 'MF-NWP-HIGHRES-AROME-0025-FRANCE-WCS/GetCoverage';
@@ -60,6 +72,8 @@ const RUN_LAG_H = 4;        // marge de publication ; on ne demande pas un run t
 const RUN_FALLBACKS = 3;    // si le run le plus récent échoue, on remonte
 const MAX_LEAD_H = 51;      // dernière échéance disponible
 const FETCH_TIMEOUT_MS = 6000;
+const CONCURRENCY = 4;        // sous-requêtes simultanées vers Météo-France (v1.1)
+const RETRY_DELAY_MS = 400;   // pause avant l'unique nouvelle tentative
 const CACHE_TTL_S = 3 * 3600;   // un run vaut 3 h : au-delà, il y en a un nouveau
 
 const ALLOWED_ORIGINS = ['https://app.monplandevol.fr'];
@@ -121,8 +135,39 @@ function candidateRuns(now) {
   return out;
 }
 
-/** Une requête = une valeur. Renvoie { value, height, time } ou lève. */
+/** Exécute fn sur items avec au plus `limit` promesses en vol. Préserve l'ordre. */
+async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const i = next++;
+      if (i >= items.length) return;
+      out[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(runners);
+  return out;
+}
+
+/**
+ * v1.1 — une seule nouvelle tentative sur erreur TRANSITOIRE (429 quota, 5xx, timeout).
+ * Les erreurs d'écho hauteur/temps ne sont volontairement PAS réessayées : elles ne
+ * traduisent pas un aléa réseau mais une réponse au mauvais niveau, qu'il faut refuser.
+ */
 async function fetchPoint(env, coverageId, lon, lat, timeIso, heightM) {
+  try {
+    return await fetchPointOnce(env, coverageId, lon, lat, timeIso, heightM);
+  } catch (e) {
+    const msg = String((e && e.message) || e);
+    if (!/HTTP (429|5\d\d)|timeout|abort/i.test(msg)) throw e;
+    await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+    return await fetchPointOnce(env, coverageId, lon, lat, timeIso, heightM);
+  }
+}
+
+/** Une requête = une valeur. Renvoie { value, height, time } ou lève. */
+async function fetchPointOnce(env, coverageId, lon, lat, timeIso, heightM) {
   const qs = [
     'service=WCS',
     'version=2.0.1',
@@ -237,20 +282,36 @@ async function handleWind(request, env, ctx, url, cors) {
     const cidU = `${FIELD_U}___${rid}`;
     const cidV = `${FIELD_V}___${rid}`;
 
-    // 10 sous-requêtes en parallèle (limite Workers : 50 par invocation).
-    const settled = await Promise.all(
-      LEVELS_M.map(async (m) => {
-        try {
-          const [u, v] = await Promise.all([
-            fetchPoint(env, cidU, gLon, gLat, timeIso, m),
-            fetchPoint(env, cidV, gLon, gLat, timeIso, m),
-          ]);
-          return { m, ft: Math.round(m * 3.28084), ...uvToWind(u.value, v.value) };
-        } catch (e) {
-          return { m, error: String((e && e.message) || e) };
-        }
-      })
-    );
+    // v1.1 — 10 sous-requêtes (5 niveaux × U et V), mais au plus CONCURRENCY en vol.
+    // Voir le CHANGELOG : la rafale simultanée provoquait des 429 sur un trajet à
+    // plusieurs terrains, et donc des niveaux manquants à l'écran.
+    const jobs = [];
+    for (const m of LEVELS_M) {
+      jobs.push({ m, cid: cidU, comp: 'u' });
+      jobs.push({ m, cid: cidV, comp: 'v' });
+    }
+    const raw = await mapLimit(jobs, CONCURRENCY, async (j) => {
+      try {
+        return { ...j, res: await fetchPoint(env, j.cid, gLon, gLat, timeIso, j.m) };
+      } catch (e) {
+        return { ...j, error: String((e && e.message) || e) };
+      }
+    });
+
+    const byLevel = new Map();
+    for (const x of raw) {
+      if (!byLevel.has(x.m)) byLevel.set(x.m, {});
+      byLevel.get(x.m)[x.comp] = x;
+    }
+    // Un niveau n'est retenu que si SES DEUX composantes sont valides : une direction
+    // calculée sur un U sans son V n'aurait aucun sens.
+    const settled = LEVELS_M.map((m) => {
+      const p = byLevel.get(m) || {};
+      if (!p.u || !p.v || p.u.error || p.v.error) {
+        return { m, error: (p.u && p.u.error) || (p.v && p.v.error) || 'composante manquante' };
+      }
+      return { m, ft: Math.round(m * 3.28084), ...uvToWind(p.u.res.value, p.v.res.value) };
+    });
 
     const levels = settled.filter((l) => !l.error);
     if (!levels.length) {
