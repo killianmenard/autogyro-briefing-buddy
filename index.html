@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.08.2 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -4519,7 +4519,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.08.2';
+const AG_PDF_VERSION = 'v2.09';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -7411,6 +7411,459 @@ function init() {
 }
 
 init();
+
+// ============================================================
+// v2.09 — ACCUEIL, ESSAI 30 JOURS & GUIDE « MON PREMIER VOL »
+// ============================================================
+// Entonnoir unique : accueillir → activer → convertir. Solde le garde-fou n°1 de
+// spec_comptes_utilisateurs_v4.md (13/07) : le compte obligatoire a des conséquences sur
+// l'onboarding et la conversion, jamais traitées depuis.
+//
+// PRINCIPE : ce bloc OBSERVE les états existants (STATE.trip, _localBasePoint,
+// #airspaces-count, confirmPdfGeneration). Il ne reconstruit JAMAIS #ad-cards et ne
+// dépend d'aucun hook posé dans le code métier — leçon v2.05.1 : la couche v062x
+// d'extensions.js réécrit les cartes ~2,5 s après rendu et emporte toute ancre DOM.
+// Tous les styles sont inline pour la même raison.
+//
+// Pas de « visite guidée spotlight » : chaque lot UI casserait le positionnement.
+// ============================================================
+(function () {
+  'use strict';
+
+  var AG_ONB_KEY = 'autogyrodash_onboarding';
+  var AG_GUIDE_URL = 'guide.html';
+  var AG_PROMO_CODE = 'PREMIERVOL30';
+
+  // ---------- état persisté ----------
+  // { state: 'done' | 'skipped' | 'step-N', seen: { metar: bool, pdf: bool } }
+  // seen mémorise les étapes ÉVÉNEMENTIELLES (consulter le METAR, générer le PDF) : elles
+  // ne laissent aucune trace observable dans le DOM, un rechargement les perdrait sinon.
+  function _onbRead() {
+    try {
+      var raw = localStorage.getItem(AG_ONB_KEY);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      return (o && typeof o === 'object') ? o : null;
+    } catch (_) { return null; }
+  }
+  function _onbWrite(o) {
+    try { localStorage.setItem(AG_ONB_KEY, JSON.stringify(o || {})); } catch (_) {}
+  }
+  function _onbState() { var o = _onbRead(); return o && o.state ? String(o.state) : null; }
+  function _onbSeen() { var o = _onbRead(); return (o && o.seen && typeof o.seen === 'object') ? o.seen : {}; }
+  function _onbSetSeen(k) {
+    var o = _onbRead() || { state: 'step-1' };
+    o.seen = o.seen || {};
+    if (o.seen[k] === true) return;
+    o.seen[k] = true;
+    _onbWrite(o);
+  }
+  function _onbSetState(s) {
+    var o = _onbRead() || {};
+    o.state = s;
+    _onbWrite(o);
+  }
+
+  function _onbHasFlights() {
+    try {
+      var h = localStorage.getItem('autogyrodash_history_v1');
+      if (h && h !== '[]' && h !== 'null' && h !== '') {
+        var arr = JSON.parse(h);
+        if (Array.isArray(arr) && arr.length > 0) return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  function _trial() {
+    try {
+      var t = window._agTrialInfo();
+      if (t && typeof t === 'object') return t;
+    } catch (_) {}
+    return { enabled: false, active: false, daysLeft: 0 };
+  }
+
+  function _esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  // ============================================================
+  // 1. BADGE « ESSAI — J-n »
+  // ============================================================
+  // Permanent pendant toute la durée de l'essai (arbitrage Killian du 06/08), pas seulement
+  // à J-7 : l'écran d'accueil ne se déclenche que pour les comptes SANS vol enregistré,
+  // alors que l'essai vaut pour tout compte de moins de 30 jours. Sans badge permanent, un
+  // inscrit qui a enregistré un vol avant d'avoir vu l'accueil serait en essai sans le
+  // savoir, puis se ferait brider à J+30 sans explication.
+  function _agTrialRefreshBadge() {
+    var t = _trial();
+    var el = document.getElementById('ag-trial-badge');
+    if (!t.enabled || !t.active) { if (el) el.style.display = 'none'; return; }
+    if (!el) {
+      var host = document.querySelector('.header-pill');
+      if (!host) return;
+      el = document.createElement('button');
+      el.id = 'ag-trial-badge';
+      el.type = 'button';
+      el.title = 'Essai Pro en cours — voir le guide';
+      // Styles inline : la couche v062x réécrit les conteneurs, aucune classe ne survit.
+      el.style.cssText = 'margin-left:8px;padding:3px 9px;border-radius:999px;border:1px solid #B45309;'
+        + 'background:rgba(245,158,11,0.14);color:#B45309;font-size:11px;font-weight:700;'
+        + 'line-height:1.4;cursor:pointer;white-space:nowrap;';
+      el.addEventListener('click', function () { _onbOpenWelcome(true); });
+      try { host.appendChild(el); } catch (_) { return; }
+    }
+    el.style.display = '';
+    el.textContent = t.daysLeft <= 1 ? 'Essai Pro — dernier jour' : ('Essai Pro — J-' + t.daysLeft);
+    // Passage en rouge sur la dernière semaine : c'est la fenêtre de conversion.
+    if (t.daysLeft <= 7) {
+      el.style.borderColor = '#B91C1C';
+      el.style.color = '#B91C1C';
+      el.style.background = 'rgba(185,28,28,0.10)';
+    }
+  }
+  window._agTrialRefreshBadge = function () {
+    _agTrialRefreshBadge();
+    _agTrialRefreshUpsell();
+  };
+
+  // ============================================================
+  // 2. ÉCRAN D'ACCUEIL FUSIONNÉ (promo + tutoriel)
+  // ============================================================
+  // Un seul écran d'entrée : deux écrans concurrents (l'un pour l'essai, l'autre pour le
+  // tutoriel) se seraient sabotés. Non bloquant, fermable.
+  function _onbOpenWelcome(fromBadge) {
+    if (document.getElementById('ag-onb-welcome')) return;
+    var t = _trial();
+    var ov = document.createElement('div');
+    ov.id = 'ag-onb-welcome';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:2600;display:flex;align-items:center;'
+      + 'justify-content:center;padding:18px;background:rgba(15,23,42,0.55);overflow-y:auto;';
+
+    var promoHtml = '';
+    if (t.enabled && t.active) {
+      // Vanne ouverte ET essai en cours : on peut promettre, c'est vrai et daté.
+      promoHtml = '<p style="margin:0 0 12px;padding:10px 12px;border-radius:8px;'
+        + 'background:rgba(245,158,11,0.12);border:1px solid #F59E0B;font-size:13px;line-height:1.5;">'
+        + '<strong>' + (t.daysLeft <= 1 ? 'Dernier jour' : t.daysLeft + ' jours') + ' d\'essai Pro</strong> — sans carte bancaire. '
+        + 'Rayons de recherche jusqu\'à 40&nbsp;km, points d\'intérêt illimités, profil aéronef sauvegardé, '
+        + 'briefing PDF complet et sans filigrane.</p>';
+    }
+
+    // ⚠️ L'avertissement sécurité est ici, au premier contact — pas enfoui dans les CGU
+    // (cohérence art. 5). C'est le seul moment où on est certain qu'il est lu.
+    ov.innerHTML =
+      '<div style="background:var(--card,#fff);color:var(--foreground,#111);border:1px solid var(--border,#e5e7eb);'
+      + 'border-radius:14px;max-width:520px;width:100%;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.28);">'
+      + '<h2 style="margin:0 0 6px;font-size:19px;font-weight:700;">Bienvenue sur monplandevol.fr</h2>'
+      + '<p style="margin:0 0 14px;font-size:13px;color:var(--muted-foreground,#6b7280);line-height:1.5;">'
+      + 'Préparez votre vol VFR au sol : terrains, météo, espaces aériens, RTBA, avitaillement, briefing PDF.</p>'
+      + promoHtml
+      + '<p style="margin:0 0 14px;padding:10px 12px;border-radius:8px;background:rgba(185,28,28,0.07);'
+      + 'border-left:3px solid #B91C1C;font-size:12.5px;line-height:1.5;">'
+      + '<strong>⚠️ Planification au sol uniquement.</strong> Cette application ne remplace pas le briefing '
+      + 'officiel avant vol et ne doit jamais être utilisée en vol. Vous restez seul responsable de la '
+      + 'préparation et de la conduite de votre vol.</p>'
+      + '<p style="margin:0 0 16px;font-size:13px;line-height:1.5;">'
+      + 'Cinq étapes suffisent pour produire votre premier briefing. On les fait ensemble&nbsp;?</p>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+      + '<button type="button" id="ag-onb-start" style="flex:1;min-width:170px;background:var(--accent,#2563eb);'
+      + 'color:var(--accent-ink,#fff);border:none;padding:10px 14px;border-radius:8px;font-weight:600;'
+      + 'font-size:13px;cursor:pointer;">Planifions ton premier vol</button>'
+      + '<button type="button" id="ag-onb-later" style="min-width:110px;background:transparent;'
+      + 'color:var(--muted-foreground,#6b7280);border:1px solid var(--border,#e5e7eb);padding:10px 14px;'
+      + 'border-radius:8px;font-size:13px;cursor:pointer;">Plus tard</button>'
+      + '</div>'
+      + '<p style="margin:12px 0 0;font-size:12px;text-align:center;">'
+      + '<a href="' + AG_GUIDE_URL + '" style="color:var(--muted-foreground,#6b7280);">Consulter le guide complet ›</a></p>'
+      + '</div>';
+
+    document.body.appendChild(ov);
+
+    var close = function () { try { ov.remove(); } catch (_) {} };
+    var btnStart = ov.querySelector('#ag-onb-start');
+    var btnLater = ov.querySelector('#ag-onb-later');
+    if (btnStart) btnStart.addEventListener('click', function () {
+      close();
+      if (!fromBadge || _onbState() !== 'done') _onbSetState('step-1');
+      _onbOpenChecklist();
+    });
+    if (btnLater) btnLater.addEventListener('click', function () {
+      close();
+      // « Plus tard » n'est pas « jamais » : on mémorise skipped, l'utilisateur relance
+      // depuis guide.html ou le badge. Mais l'écran ne se re-propose plus tout seul.
+      if (!fromBadge) _onbSetState('skipped');
+    });
+    ov.addEventListener('click', function (e) {
+      if (e.target === ov) { close(); if (!fromBadge) _onbSetState('skipped'); }
+    });
+  }
+
+  // ============================================================
+  // 3. CHECKLIST « MON PREMIER VOL » (5 étapes)
+  // ============================================================
+  var AG_STEPS = [
+    { k: 'ad',      t: 'Choisir son terrain',        d: 'Cherchez votre terrain de départ et sélectionnez-le.' },
+    { k: 'local',   t: 'Configurer le vol local',    d: 'Un seul point sélectionné = vol local. Choisissez votre rayon.' },
+    { k: 'metar',   t: 'Lire le METAR / TAF',        d: 'Ouvrez le bloc METAR-TAF pour la météo observée et prévue.' },
+    { k: 'zones',   t: 'Vérifier zones & RTBA',      d: 'Les espaces aériens et zones RTBA du cercle de vol local.' },
+    { k: 'pdf',     t: 'Générer le briefing PDF',    d: 'Votre briefing, à emporter au sol.' }
+  ];
+  var _onbTimer = null;
+
+  function _stepDone(k) {
+    try {
+      if (k === 'ad') {
+        return Array.isArray(STATE && STATE.trip) && STATE.trip.filter(function (x) { return x !== null; }).length >= 1;
+      }
+      if (k === 'local') {
+        if (typeof _localBasePoint !== 'function' || !_localBasePoint()) return false;
+        var ls = document.getElementById('local-summary');
+        return !!(ls && !ls.classList.contains('hidden'));
+      }
+      if (k === 'metar') return _onbSeen().metar === true;
+      if (k === 'zones') {
+        var sec = document.getElementById('airspaces-section');
+        if (!sec || sec.classList.contains('hidden')) return false;
+        var c = document.getElementById('airspaces-count');
+        var v = c ? String(c.textContent || '').trim() : '';
+        return v !== '' && v !== '—';
+      }
+      if (k === 'pdf') return _onbSeen().pdf === true;
+    } catch (_) {}
+    return false;
+  }
+
+  function _onbOpenChecklist() {
+    if (document.getElementById('ag-onb-check')) { _onbRenderChecklist(); return; }
+    var box = document.createElement('div');
+    box.id = 'ag-onb-check';
+    box.style.cssText = 'position:fixed;z-index:2400;right:14px;bottom:14px;width:288px;max-width:calc(100vw - 28px);'
+      + 'background:var(--card,#fff);color:var(--foreground,#111);border:1px solid var(--border,#e5e7eb);'
+      + 'border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.20);padding:13px 14px;font-size:12.5px;';
+    document.body.appendChild(box);
+    _onbRenderChecklist();
+    if (_onbTimer) clearInterval(_onbTimer);
+    // Poller plutôt que des hooks dans le code métier : aucune ancre à maintenir, immunisé
+    // aux réécritures de la couche v062x. 1,5 s = imperceptible, coût nul (5 lectures DOM).
+    _onbTimer = setInterval(_onbRenderChecklist, 1500);
+  }
+
+  function _onbCloseChecklist() {
+    if (_onbTimer) { clearInterval(_onbTimer); _onbTimer = null; }
+    var b = document.getElementById('ag-onb-check');
+    if (b) { try { b.remove(); } catch (_) {} }
+  }
+
+  function _onbRenderChecklist() {
+    var box = document.getElementById('ag-onb-check');
+    if (!box) { if (_onbTimer) { clearInterval(_onbTimer); _onbTimer = null; } return; }
+
+    var doneCount = 0, firstOpen = -1, i;
+    var flags = [];
+    for (i = 0; i < AG_STEPS.length; i++) {
+      var ok = _stepDone(AG_STEPS[i].k);
+      flags.push(ok);
+      if (ok) doneCount++;
+      else if (firstOpen < 0) firstOpen = i;
+    }
+
+    if (doneCount >= AG_STEPS.length) { _onbFinish(); return; }
+    // Reprise possible : on mémorise l'étape courante à chaque rendu.
+    _onbSetState('step-' + (firstOpen + 1));
+
+    var rows = '';
+    for (i = 0; i < AG_STEPS.length; i++) {
+      var cur = (i === firstOpen);
+      var mark = flags[i] ? '✓' : (cur ? '▸' : '·');
+      var col = flags[i] ? 'var(--good,#16a34a)' : (cur ? 'var(--foreground,#111)' : 'var(--muted-foreground,#9ca3af)');
+      rows += '<li style="display:flex;gap:8px;align-items:flex-start;margin:0 0 6px;color:' + col + ';">'
+        + '<span style="width:12px;flex:0 0 12px;font-weight:700;">' + mark + '</span>'
+        + '<span style="line-height:1.4;' + (flags[i] ? 'text-decoration:line-through;opacity:.65;' : '') + '">'
+        + '<strong style="font-weight:' + (cur ? '700' : '500') + ';">' + _esc(AG_STEPS[i].t) + '</strong>'
+        + (cur ? '<br><span style="font-size:11.5px;color:var(--muted-foreground,#6b7280);text-decoration:none;">' + _esc(AG_STEPS[i].d) + '</span>' : '')
+        + '</span></li>';
+    }
+
+    box.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px;">'
+      + '<strong style="font-size:13px;">Mon premier vol · ' + doneCount + '/' + AG_STEPS.length + '</strong>'
+      + '<button type="button" id="ag-onb-skip" title="Reprendre plus tard" style="background:transparent;border:none;'
+      + 'color:var(--muted-foreground,#6b7280);font-size:17px;line-height:1;cursor:pointer;padding:0 2px;">×</button>'
+      + '</div>'
+      + '<ul style="list-style:none;margin:0;padding:0;">' + rows + '</ul>'
+      + '<p style="margin:9px 0 0;font-size:11.5px;">'
+      + '<a href="' + AG_GUIDE_URL + '" style="color:var(--muted-foreground,#6b7280);">Guide détaillé ›</a></p>';
+
+    var sk = box.querySelector('#ag-onb-skip');
+    if (sk) sk.addEventListener('click', function () {
+      _onbSetState('step-' + (firstOpen + 1)); // l'étape courante est mémorisée : reprise au même point
+      _onbCloseChecklist();
+    });
+  }
+
+  function _onbFinish() {
+    _onbCloseChecklist();
+    _onbSetState('done');
+    if (document.getElementById('ag-onb-done')) return;
+    var ov = document.createElement('div');
+    ov.id = 'ag-onb-done';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:2600;display:flex;align-items:center;justify-content:center;'
+      + 'padding:18px;background:rgba(15,23,42,0.55);overflow-y:auto;';
+    ov.innerHTML =
+      '<div style="background:var(--card,#fff);color:var(--foreground,#111);border:1px solid var(--border,#e5e7eb);'
+      + 'border-radius:14px;max-width:460px;width:100%;padding:22px;box-shadow:0 18px 50px rgba(0,0,0,.28);">'
+      + '<h2 style="margin:0 0 8px;font-size:18px;font-weight:700;">Briefing généré — bravo 👍</h2>'
+      + '<p style="margin:0 0 12px;font-size:13px;line-height:1.5;">Vous savez préparer un vol local de bout en bout. '
+      + 'Le même parcours fonctionne pour un trajet départ → arrivée.</p>'
+      + '<p style="margin:0 0 16px;padding:10px 12px;border-radius:8px;background:rgba(185,28,28,0.07);'
+      + 'border-left:3px solid #B91C1C;font-size:12.5px;line-height:1.5;">'
+      + '<strong>⚠️ Rappel.</strong> Ce briefing est une aide à la préparation au sol. Il ne remplace ni le briefing '
+      + 'officiel, ni les NOTAM, ni votre jugement de commandant de bord.</p>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+      + '<a href="' + AG_GUIDE_URL + '" style="flex:1;min-width:150px;text-align:center;background:var(--accent,#2563eb);'
+      + 'color:var(--accent-ink,#fff);padding:10px 14px;border-radius:8px;font-weight:600;font-size:13px;'
+      + 'text-decoration:none;">Ouvrir le guide</a>'
+      + '<button type="button" id="ag-onb-done-close" style="min-width:110px;background:transparent;'
+      + 'color:var(--muted-foreground,#6b7280);border:1px solid var(--border,#e5e7eb);padding:10px 14px;'
+      + 'border-radius:8px;font-size:13px;cursor:pointer;">Fermer</button>'
+      + '</div></div>';
+    document.body.appendChild(ov);
+    var c = ov.querySelector('#ag-onb-done-close');
+    if (c) c.addEventListener('click', function () { try { ov.remove(); } catch (_) {} });
+    ov.addEventListener('click', function (e) { if (e.target === ov) { try { ov.remove(); } catch (_) {} } });
+  }
+
+  // ---------- capteurs des étapes événementielles ----------
+  // Délégation en phase de capture sur document : survit à toute réécriture du bouton par
+  // la couche v062x, et ne modifie aucun gestionnaire existant.
+  document.addEventListener('click', function (e) {
+    try {
+      var el = e.target && e.target.closest ? e.target.closest('#metartaf-open-btn') : null;
+      if (el) _onbSetSeen('metar');
+    } catch (_) {}
+  }, true);
+
+  // Étape 5 : on enveloppe confirmPdfGeneration au lieu de la modifier. ⚠️ Toujours
+  // rappeler l'originale et renvoyer sa valeur — c'est une async function dont le retour
+  // est attendu ailleurs.
+  (function _wrapPdf() {
+    var tries = 0;
+    var iv = setInterval(function () {
+      tries++;
+      if (typeof window.confirmPdfGeneration === 'function' && !window.confirmPdfGeneration.__agOnb) {
+        var orig = window.confirmPdfGeneration;
+        var wrapped = function () {
+          try { _onbSetSeen('pdf'); } catch (_) {}
+          return orig.apply(this, arguments);
+        };
+        wrapped.__agOnb = true;
+        window.confirmPdfGeneration = wrapped;
+        clearInterval(iv);
+      } else if (tries > 40) { clearInterval(iv); }
+    }, 250);
+  })();
+
+  // ============================================================
+  // 4. DÉCLENCHEUR — appelé par le finally de syncOnLogin (après rapatriement Firestore)
+  // ============================================================
+  window._agOnboardingMaybeStart = function () {
+    try {
+      _agTrialRefreshBadge();
+      _onbEnsureMenuEntry();
+
+      // Relance demandee par guide.html (bouton « (Re)lancer le tutoriel » -> ./?tuto=1).
+      // On nettoie l'URL pour qu'un rechargement ne relance pas le tutoriel en boucle.
+      try {
+        if (new URLSearchParams(window.location.search).get('tuto') === '1') {
+          history.replaceState(null, '', window.location.origin + window.location.pathname);
+          window._agOnboardingRestart();
+          return;
+        }
+      } catch (_) {}
+
+      var st = _onbState();
+      if (st === 'done' || st === 'skipped') return;
+
+      // Un compte qui a déjà des vols (le testeur principal : le père) reçoit le flag
+      // « done » silencieusement et ne voit jamais rien.
+      if (_onbHasFlights()) { _onbSetState('done'); return; }
+
+      if (st && st.indexOf('step-') === 0) { _onbOpenChecklist(); return; }
+
+      // Laisser l'app finir son premier rendu avant de poser une modale par-dessus.
+      setTimeout(function () { _onbOpenWelcome(false); }, 900);
+    } catch (_) {}
+  };
+
+  // Relance manuelle depuis guide.html (?tuto=1) ou le badge.
+  window._agOnboardingRestart = function () {
+    _onbSetState('step-1');
+    _onbCloseChecklist();
+    _onbOpenChecklist();
+  };
+
+  // ============================================================
+  // 5. ENTRÉE MENU « Guide »
+  // ============================================================
+  // ⚠️ Même pattern que .ag-menu-profile (créée par basulm.js) : garde anti-doublon et
+  // append dans .header-pill, sans jamais toucher aux éléments existants.
+  function _onbEnsureMenuEntry() {
+    try {
+      if (document.querySelector('.ag-menu-guide')) return;
+      var host = document.querySelector('.header-pill');
+      if (!host) return;
+      var a = document.createElement('a');
+      a.className = 'tab-btn ag-menu-guide';
+      a.href = AG_GUIDE_URL;
+      a.textContent = 'Guide';
+      a.style.cssText = 'text-decoration:none;color:inherit;font-size:13px;';
+      host.appendChild(a);
+    } catch (_) {}
+  }
+
+  // ============================================================
+  // 6. UPSELL DE SORTIE D'ESSAI
+  // ============================================================
+  // À l'expiration, _agShouldGate() reprend seul : les bandeaux « Offre Free » réapparaissent
+  // sans qu'aucun code de gating ne change. On ajoute seulement la mention du code promo.
+  function _agTrialUpsellText() {
+    var t = _trial();
+    if (!t.enabled || t.active) return '';
+    return 'Votre essai est terminé — le code ' + AG_PROMO_CODE + ' vous offre 30 % sur la première année.';
+  }
+
+  // Injecte la mention dans l'encadré Free du PDF, sans jamais toucher à son display :
+  // c'est le code de gating existant qui décide de l'afficher, et il réapparaît tout seul
+  // à l'expiration puisque _agShouldGate() redevient true.
+  function _agTrialRefreshUpsell() {
+    try {
+      var host = document.getElementById('pdf-free-upsell');
+      if (!host) return;
+      var txt = _agTrialUpsellText();
+      var el = document.getElementById('ag-trial-promo');
+      if (!txt) { if (el) el.style.display = 'none'; return; }
+      if (!el) {
+        el = document.createElement('p');
+        el.id = 'ag-trial-promo';
+        el.style.cssText = 'margin:8px 0 0;font-weight:600;color:#B45309;';
+        host.appendChild(el);
+      }
+      el.style.display = '';
+      el.textContent = txt;
+    } catch (_) {}
+  }
+
+  // Le badge doit aussi apparaître pour un utilisateur déjà connecté au chargement, sans
+  // attendre un cycle de synchro.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(_agTrialRefreshBadge, 1200); });
+  } else {
+    setTimeout(_agTrialRefreshBadge, 1200);
+  }
+})();
 </script>
 <!-- Pop-up de création de compte -->
 <div id="signup-modal" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(11,19,38,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;">
@@ -7475,6 +7928,81 @@ init();
   // Checkout refuse un prix inactif, le bouton « Passer Pro — annuel » tomberait.
   const AG_PRICE_YEARLY = "price_1U1YcW1rgPKfGt9UsGjfSSIf";
 
+  // ============================================================
+  // v2.09 — ESSAI 30 JOURS SANS CARTE BANCAIRE
+  // ============================================================
+  // Stripe n'intervient pas : un essai Stripe imposerait une page de paiement, puis à J+30
+  // sans moyen de paiement un impayé suivi d'une annulation — on ferait transiter chaque
+  // inscrit par un état d'échec de facturation pour rien.
+  //
+  // Source de vérité = auth.currentUser.metadata.creationTime, émis par le serveur
+  // d'authentification, NON MODIFIABLE par l'utilisateur, déjà disponible côté client.
+  // Rien n'est écrit : ni Firestore (l'utilisateur pourrait réécrire son propre document
+  // et se prolonger), ni localStorage. L'essai est une soustraction, recalculée à chaque
+  // appel — donc l'expiration en cours de session se corrige d'elle-même au prochain gate.
+  //
+  // 🔴 VANNE. AG_TRIAL_ENABLED reste à false jusqu'à validation du wording CGU par la
+  // juriste (art. 4.2 ne décrit aujourd'hui que deux tarifs secs, sans essai ni promotion ;
+  // un essai gratuit menant à un service payant impose une information précontractuelle
+  // claire — durée, prix appliqué ensuite, modalités d'arrêt). Passer cette constante à
+  // true est le SEUL geste du lot v2.09.1. Aucun autre code à toucher.
+  //
+  // ⚠️ FAIL-SAFE VERS false, à l'inverse du fail-open habituel du gating : ici se tromper
+  // en faveur de l'utilisateur créerait un Pro perpétuel. Pas d'utilisateur, date illisible,
+  // horloge client en arrière → pas d'essai.
+  //
+  // ⚠️ Pas de date plancher (arbitrage Killian du 06/08) : à la bascule, les comptes de
+  // moins de 30 jours reçoivent le reliquat. Cadeau assumé, une constante en moins.
+  const AG_TRIAL_ENABLED = false;
+  const AG_TRIAL_DAYS = 30;
+  const AG_TRIAL_MS = AG_TRIAL_DAYS * 86400000;
+
+  // On met en cache le TIMESTAMP, jamais le booléen : _agTrialActive() est appelé à chaque
+  // gate (donc des dizaines de fois par rendu de cartes). Date.parse une seule fois par
+  // utilisateur, comparaison à Date.now() à chaque appel — l'expiration reste exacte.
+  let _agTrialMs = null;
+  let _agTrialUid = null;
+
+  function _agTrialCreationMs() {
+    var u = null;
+    try { u = auth.currentUser; } catch (_) { u = null; }
+    if (!u) { _agTrialMs = null; _agTrialUid = null; return null; }
+    if (_agTrialUid === u.uid && typeof _agTrialMs === 'number') return _agTrialMs;
+    var ms = null;
+    try {
+      var raw = u.metadata && u.metadata.creationTime;
+      var t = raw ? Date.parse(raw) : NaN;
+      if (isFinite(t) && t > 0) ms = t;
+    } catch (_) { ms = null; }
+    _agTrialUid = u.uid;
+    _agTrialMs = ms;
+    return ms;
+  }
+
+  function _agTrialActive() {
+    if (AG_TRIAL_ENABLED !== true) return false;
+    try {
+      var ms = _agTrialCreationMs();
+      if (typeof ms !== 'number') return false;
+      var elapsed = Date.now() - ms;
+      if (!(elapsed >= 0)) return false; // horloge client incohérente → pas d'essai
+      return elapsed < AG_TRIAL_MS;
+    } catch (_) { return false; }
+  }
+
+  // Lu par l'UI (badge « J-n », écran d'accueil, upsell). Ne décide rien : la seule
+  // primitive de gating reste _agShouldGate().
+  window._agTrialInfo = function () {
+    if (AG_TRIAL_ENABLED !== true) return { enabled: false, active: false, daysLeft: 0 };
+    var active = _agTrialActive();
+    var daysLeft = 0;
+    if (active) {
+      var ms = _agTrialCreationMs();
+      daysLeft = Math.max(0, Math.ceil((ms + AG_TRIAL_MS - Date.now()) / 86400000));
+    }
+    return { enabled: true, active: active, daysLeft: daysLeft };
+  };
+
   let _agProCache = false;
   window._agIsPro = function () { return _agProCache === true; };
 
@@ -7489,7 +8017,14 @@ init();
   const _agProSubs = [];
   // Unique primitive que le code de gating doit interroger :
   // true = statut connu ET Free. Inconnu ou Pro => false => aucune limite.
-  window._agShouldGate = function () { return _agProResolved === true && _agProCache !== true; };
+  // v2.09 — POINT D'ACCROCHE UNIQUE DE L'ESSAI. Vérifié sur main le 06/08 : _agIsPro()
+  // n'est appelé nulle part, tout le gating (rayons, POI, services au sol, PDF + filigrane,
+  // historique, profil ACFT, étapes intermédiaires) passe par cette seule primitive.
+  // Patcher ici suffit — ne JAMAIS dupliquer le test d'essai ailleurs.
+  window._agShouldGate = function () {
+    if (_agTrialActive() === true) return false; // essai en cours = aucun bridage
+    return _agProResolved === true && _agProCache !== true;
+  };
   window._agProKnown = function () { return _agProResolved === true; };
   window.agOnProChange = function (cb) {
     if (typeof cb !== 'function') return function () {};
@@ -7528,9 +8063,14 @@ init();
     // Sans reponse du serveur on ne "sait" pas : on reste fail-open plutot que de brider
     // un abonne Pro sur un simple echec reseau (frequent sur un terrain d'aviation).
     if (answered) _agProResolved = true;
-    if (tierEl) tierEl.textContent = isPro ? "Pro" : "Free";
-    if (freeEl) freeEl.style.display = isPro ? "none" : "";
+    // v2.09 — pendant l'essai l'onglet Compte doit dire « Pro (essai) », pas « Free » :
+    // afficher Free à quelqu'un dont les rayons 40 km fonctionnent est incompréhensible.
+    var _tri = { enabled: false, active: false, daysLeft: 0 };
+    try { _tri = window._agTrialInfo(); } catch (_) {}
+    if (tierEl) tierEl.textContent = isPro ? "Pro" : (_tri.active ? ("Pro (essai — " + _tri.daysLeft + " j)") : "Free");
+    if (freeEl) freeEl.style.display = (isPro || _tri.active) ? "none" : "";
     if (actEl) actEl.style.display = isPro ? "" : "none";
+    try { if (typeof window._agTrialRefreshBadge === 'function') window._agTrialRefreshBadge(); } catch (_) {}
     _agNotifyPro();
     return _agProCache;
   }
@@ -7729,7 +8269,11 @@ init();
     'autogyrodash_dist_unit', 'autogyrodash_speed_unit', 'autogyrodash_fuel_radius', 'autogyrodash_poi_radius', 'autogyrodash_local_radius', 'autogyrodash_metar_mode',
     'autogyrodash_collapse_v1',
     'autogyrodash_profile_name', 'autogyrodash_profile_photo',
-    'autogyrodash_openaip_key', 'autogyrodash_basulm_visible'
+    'autogyrodash_openaip_key', 'autogyrodash_basulm_visible',
+    // v2.09 — sans synchro, la réinstallation de la PWA iPhone (procédure standard de mise
+    // à jour) ferait réapparaître le tutoriel à chaque version, et un tutoriel terminé sur
+    // Mac se re-proposerait sur iPhone.
+    'autogyrodash_onboarding'
   ];
   const RESOLVED_KEY = 'autogyrodash_sync_resolved_hash'; // hash du cloud déjà résolu (persistant)
   function localBlob() {
@@ -7872,6 +8416,12 @@ init();
       }
     } finally {
       _syncBusy = false;
+      // v2.09 — l'accueil ne peut être décidé qu'APRÈS la synchro : le flag onboarding ET
+      // l'historique arrivent de Firestore. Le déclencher dans onAuthStateChanged testerait
+      // un localStorage pas encore rapatrié → tutoriel re-proposé sur le 2e appareil.
+      // finally est atteint sur TOUS les chemins de sortie de syncOnLogin (y compris les
+      // return précoces « à jour » et « conflit résolu »).
+      try { if (typeof window._agOnboardingMaybeStart === 'function') window._agOnboardingMaybeStart(); } catch (_) {}
     }
   }
 

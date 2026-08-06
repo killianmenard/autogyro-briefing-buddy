@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#eef1f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1326" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex">
+<title>Guide — Mon Plan de Vol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="aero-glass-tokens.css">
+<script>document.documentElement.setAttribute('data-theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');</script>
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;min-height:100vh;background:linear-gradient(158deg,var(--bg-0),var(--bg-1)) fixed;color:var(--text);font-family:'Hanken Grotesk',system-ui,-apple-system,sans-serif;line-height:1.62;font-size:15px;-webkit-text-size-adjust:100%;}
+  .wrap{max-width:760px;margin:0 auto;padding:26px 18px 64px;}
+  .back{display:inline-block;margin-bottom:18px;color:var(--accent);text-decoration:none;font-weight:600;font-size:14px;}
+  .back:hover{text-decoration:underline;}
+  .card{background:var(--ag-card);border:1px solid var(--card-bd);border-radius:18px;padding:30px 28px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 14px 40px rgba(20,32,60,.10);}
+  h1{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:26px;line-height:1.2;margin:0 0 6px;color:var(--text);}
+  h2{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:18px;margin:30px 0 8px;color:var(--text);}
+  h3{font-weight:700;font-size:15px;margin:18px 0 6px;color:var(--text);}
+  p{margin:10px 0;}
+  a{color:var(--accent);}
+  strong{color:var(--text);font-weight:700;}
+  ul{padding-left:20px;margin:10px 0;}
+  li{margin:5px 0;}
+  hr{border:none;border-top:1px solid var(--card-bd);margin:24px 0;}
+  blockquote{margin:14px 0;padding:12px 16px;border-left:3px solid var(--accent-bd);background:var(--accent-soft);border-radius:0 10px 10px 0;color:var(--text-2);}
+  .warn{margin:16px 0;padding:14px 16px;border-left:3px solid #B91C1C;background:rgba(185,28,28,.07);border-radius:0 10px 10px 0;}
+  .step{margin:16px 0;padding:14px 16px;border:1px solid var(--card-bd);border-radius:12px;}
+  .step .n{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:var(--accent);color:#fff;font-weight:700;font-size:13px;margin-right:8px;}
+  .cta{display:inline-block;margin-top:8px;background:var(--accent);color:#fff;text-decoration:none;padding:10px 16px;border-radius:9px;font-weight:600;font-size:14px;border:none;cursor:pointer;font-family:inherit;}
+  footer{margin-top:22px;text-align:center;color:var(--text-3);font-size:12px;}
+  footer a{color:var(--text-3);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./">&larr; Retour &agrave; l'application</a>
+  <div class="card">
+
+<h1>Guide — Mon Plan de Vol</h1>
+<p><strong>Préparer un vol VFR de bout en bout, au sol.</strong></p>
+
+<div class="warn">
+  <p style="margin:0;"><strong>⚠️ Planification au sol uniquement.</strong> Mon Plan de Vol est une aide à la préparation. Il <strong>ne remplace ni le briefing officiel, ni les NOTAM, ni votre jugement de commandant de bord</strong>, et ne doit jamais être utilisé en vol. Vous restez seul responsable de la préparation et de la conduite de votre vol.</p>
+</div>
+
+<hr />
+
+<h2>Mon premier vol — les 5 étapes</h2>
+<p>Le parcours ci-dessous produit un briefing PDF complet pour un <strong>vol local</strong> : un seul terrain, un rayon autour de lui. C'est le scénario le plus courant en autogire et en ULM, et le plus rapide à maîtriser.</p>
+
+<div class="step">
+  <h3><span class="n">1</span>Choisir son terrain</h3>
+  <p>Cherchez votre terrain de départ par son nom ou son code (OACI comme <code>LFLQ</code>, ou code FFPLUM pour les plateformes ULM) et sélectionnez-le. Il devient le point de référence de tout le briefing.</p>
+</div>
+
+<div class="step">
+  <h3><span class="n">2</span>Configurer le vol local</h3>
+  <p>Avec <strong>un seul terrain sélectionné</strong>, l'application bascule automatiquement en mode vol local. Choisissez le rayon de votre zone d'évolution : 25, 50 ou 100 km. Ce rayon détermine les terrains de déroutement proposés, ainsi que les espaces aériens et zones RTBA analysés.</p>
+</div>
+
+<div class="step">
+  <h3><span class="n">3</span>Lire le METAR / TAF</h3>
+  <p>Ouvrez le bloc METAR-TAF : observation météo réelle du terrain et prévision d'aérodrome. Si votre plateforme n'a pas de station météo — c'est le cas de la plupart des terrains ULM — l'application interroge automatiquement la station officielle la plus proche et vous indique laquelle.</p>
+</div>
+
+<div class="step">
+  <h3><span class="n">4</span>Vérifier zones &amp; RTBA</h3>
+  <p>La liste des espaces aériens et des zones RTBA présents dans votre cercle de vol local, avec leurs plafonds, planchers et fréquences. <strong>Ces informations ne sont jamais restreintes</strong>, quelle que soit votre offre : ce sont des données de sécurité.</p>
+  <p>Les RTBA sont mises à jour à chaque cycle AIRAC depuis les publications du SIA. Vérifiez toujours leur activation réelle avant de voler.</p>
+</div>
+
+<div class="step">
+  <h3><span class="n">5</span>Générer le briefing PDF</h3>
+  <p>Choisissez les sections à inclure et générez votre PDF. Il rassemble terrain, carte, météo, espaces aériens, RTBA, avitaillement, points d'intérêt et vos notes — à imprimer ou à garder sur votre téléphone, au sol.</p>
+</div>
+
+<p><button type="button" class="cta" id="restart-tuto">(Re)lancer le tutoriel dans l'application</button></p>
+
+<hr />
+
+<h2>Questions fréquentes</h2>
+
+<h3>Pourquoi un compte est-il obligatoire ?</h3>
+<p>Le compte permet de retrouver vos vols, votre profil aéronef et vos préférences sur tous vos appareils, et de ne pas les perdre lors d'une réinstallation de l'application. Sans compte, chaque changement de navigateur ou de téléphone repartirait de zéro. La création est gratuite : une adresse email et un mot de passe.</p>
+
+<h3>Free ou Pro — quelle différence ?</h3>
+<p>L'offre <strong>Free</strong> permet de préparer un vol local ou un trajet départ → arrivée, sans limite de fréquence. L'offre <strong>Pro</strong> ajoute les étapes intermédiaires, l'historique illimité, la sauvegarde du profil aéronef, des rayons de recherche de 15 à 40 km, les points d'intérêt illimités et un PDF complet sans filigrane. Le détail figure à l'<a href="cgu.html">article 4 des CGU</a>.</p>
+<p><strong>Les données de sécurité ne sont jamais restreintes</strong> : METAR/TAF, espaces aériens, fréquences, zones RTBA et avitaillement du terrain de votre vol restent accessibles à tous.</p>
+
+<h3>D'où viennent les données, et quelles sont leurs limites ?</h3>
+<ul>
+  <li><strong>METAR / TAF</strong> — stations d'observation officielles. Une observation peut avoir jusqu'à une heure, et de nombreuses plateformes ULM n'ont pas de station : la plus proche est alors utilisée, ce qui peut être trompeur en relief.</li>
+  <li><strong>Espaces aériens et RTBA</strong> — publications du SIA, mises à jour à chaque cycle AIRAC. L'activation réelle d'une zone doit toujours être vérifiée par les voies officielles.</li>
+  <li><strong>Météo générale</strong> — MET Norway (CC BY 4.0) et Météo-France (Licence Ouverte 2.0).</li>
+  <li><strong>Plateformes ULM</strong> — base BASULM de la FFPLUM.</li>
+  <li><strong>Services au sol et points d'intérêt</strong> — OpenStreetMap, contributions bénévoles : ni exhaustives, ni garanties à jour.</li>
+</ul>
+<p>Aucune de ces sources ne constitue une publication d'information aéronautique officielle. En cas de divergence, <strong>la publication officielle fait foi</strong>.</p>
+
+<h3>L'application fonctionne-t-elle sans réseau ?</h3>
+<p>Partiellement. L'interface et les données embarquées (terrains, RTBA, avitaillement) restent disponibles hors ligne. La météo, les METAR/TAF et les fonds de carte non consultés récemment nécessitent une connexion. Préparez votre vol avant de perdre le réseau.</p>
+
+<h3>Comment me contacter ?</h3>
+<p>Par email à <a href="mailto:contact@monplandevol.fr">contact@monplandevol.fr</a>. Les coordonnées complètes figurent dans les <a href="mentions.html">mentions légales</a>.</p>
+
+<hr />
+<p style="font-size:13px;color:var(--text-3);">Voir aussi : <a href="cgu.html">CGU</a> · <a href="politique.html">Politique de confidentialité</a> · <a href="mentions.html">Mentions légales</a></p>
+
+  </div>
+  <footer><p>monplandevol.fr — planification de vol VFR au sol.</p></footer>
+</div>
+<script>
+  // Relance du tutoriel : l'application lit ?tuto=1 au chargement (window._agOnboardingRestart).
+  document.getElementById('restart-tuto').addEventListener('click', function () {
+    window.location.href = './?tuto=1';
+  });
+</script>
+</body>
+</html>
