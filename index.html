@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.08 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.08.1 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -4095,12 +4095,20 @@ function renderWindSection(d) {
   const maxColor = maxKt > 20 ? "pill-mvfr" : "pill-vfr";
   const topFt = layers[layers.length - 1].ft;
   // Une prévision sans son heure de validité est trompeuse : on l'affiche toujours.
+  // v2.08.1 — 🔴 le rendu précédent n'imposait AUCUN fuseau : toLocaleString suivait celui
+  // de la MACHINE. Le même instant 19:00Z s'affichait « 12:00 » sur un poste réglé en
+  // UTC-7 et « 21:00 » en France, le tout étiqueté « heure locale ». Sur une donnée météo
+  // lue avant un vol, c'est inacceptable. On affiche desormais l'heure UTC — la référence
+  // aéronautique, cohérente avec les METAR/TAF juste au-dessus — ET l'heure française,
+  // explicitement nommées toutes les deux.
   let validTxt = '';
   try {
     if (d.time) {
-      validTxt = new Date(d.time).toLocaleString('fr-FR', {
-        weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+      const dt = new Date(d.time);
+      const f = (tz) => dt.toLocaleString('fr-FR', {
+        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: tz
       });
+      validTxt = `${f('UTC')} UTC (${f('Europe/Paris')} en France)`;
     }
   } catch (e) {}
 
@@ -4110,7 +4118,7 @@ function renderWindSection(d) {
       <span class="pill ${maxColor}">max ${maxKt} kt</span>
     </div>
     ${reliabilityBadge("green", "Météo-France · modèle AROME (Licence Ouverte 2.0)")}
-    ${validTxt ? `<p class="text-xs text-muted mt-1">Prévision valable le ${validTxt} (heure locale)</p>` : ""}
+    ${validTxt ? `<p class="text-xs text-muted mt-1">Prévision valable le ${validTxt}</p>` : ""}
     <ul class="mt-2 rounded-md border border-thin overflow-hidden">
       ${layers.map(l => `
         <li class="flex items-center justify-between text-sm py-1.5 px-2 border-t border-thin first:border-t-0">
@@ -4511,7 +4519,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.08';
+const AG_PDF_VERSION = 'v2.08.1';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
