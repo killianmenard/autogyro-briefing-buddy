@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.06 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.07 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -1250,8 +1250,8 @@
       
       <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
         <input type="checkbox" id="pdf-section-trip" checked />
-        <span class="text-sm font-medium">Trajet</span>
-        <span class="ml-auto text-xs text-muted">segments, distance, temps, conso</span>
+        <span class="text-sm font-medium" id="pdf-label-trip">Trajet</span>
+        <span class="ml-auto text-xs text-muted" id="pdf-hint-trip">segments, distance, temps, conso</span>
       </label>
       
       <label class="flex items-center gap-2 p-2 muted-bg rounded cursor-pointer">
@@ -4491,7 +4491,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.06';
+const AG_PDF_VERSION = 'v2.07';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -4569,7 +4569,50 @@ async function _doGeneratePdf(opts) {
 
       // ============= TRAJET =============
       const trip = computeTrip();
-      if (opts.trip) {
+      // v2.07 — le mode vient d'opts, jamais relu ici (invariant regle 10).
+      const _localMode = opts.localMode === true && !!opts.localBase;
+
+      // ============= VOL LOCAL ============= (v2.07)
+      if (opts.trip && _localMode) {
+        const _lb = opts.localBase;
+        const _lr = (typeof opts.localRadiusKm === 'number') ? opts.localRadiusKm : 50;
+        const _lders = Array.isArray(opts.localDeroutements) ? opts.localDeroutements : [];
+        y = ensureSpace(pdf, y, 40);
+        y = pdfSectionTitle(pdf, 'Vol local', y);
+        y = pdfBox(pdf, y, (yy) => {
+          let iy = yy;
+          pdf.setFont(PDF_FONT, 'bold');
+          pdf.setFontSize(PDF_STYLE.fontSize.body);
+          pdf.text(`${_lb.icao || ''}${_lb.name ? '  ·  ' + _lb.name : ''}`, margin + 3, iy);
+          iy += 5;
+          pdf.setFont(PDF_FONT, 'normal');
+          pdf.setFontSize(PDF_STYLE.fontSize.body);
+          pdf.text(`Rayon retenu : ${_lr} km  ·  ${_lders.length} déroutement${_lders.length > 1 ? 's' : ''}`, margin + 3, iy);
+          iy += 4.5;
+          return iy;
+        });
+        // Pas de segments, pas de distance totale, pas d'alerte autonomie : en vol local il
+        // n'y a ni route ni duree a confronter a l'autonomie. La fiche Aeronef reste seule
+        // porteuse de ces donnees (arbitrage Killian du 05/08).
+        if (_lders.length) {
+          y = ensureSpace(pdf, y, 8 + _lders.length * 5);
+          y = pdfSubTitle(pdf, 'Déroutements possibles', y + 1);
+          pdf.setFont(PDF_FONT, 'normal');
+          pdf.setFontSize(PDF_STYLE.fontSize.body);
+          _lders.forEach(x => {
+            const _ad = x && x.ad ? x.ad : x;
+            if (!_ad || !_ad.icao) return;
+            const _dTxt = (typeof x.d === 'number') ? `   ≈ ${Math.round(x.d)} km` : '';
+            pdf.text(`${_ad.icao}${_ad.name ? ' — ' + _ad.name : ''}${_dTxt}`, margin + 4, y);
+            y += 4.5;
+          });
+          y += 1;
+        }
+        y += 2;
+      }
+
+      // ============= TRAJET =============
+      if (opts.trip && trip) {
         y = ensureSpace(pdf, y, 50);
         y = pdfSectionTitle(pdf, 'Trajet', y);
 
@@ -4683,8 +4726,13 @@ async function _doGeneratePdf(opts) {
       // Préparer uniquePoints (utilisé par météo ET logistique)
       const uniquePoints = [];
       const _seen = new Set();
-      trip.points.forEach(p => {
-        if (!_seen.has(p.icao)) { uniquePoints.push(p); _seen.add(p.icao); }
+      // v2.07 — en vol local : la base + les MEMES deroutements qu'a l'ecran (coherence
+      // ecran/PDF, cf. v2.04). trip est null ici, d'ou la garde.
+      const _pdfPoints = _localMode
+        ? [opts.localBase].concat((opts.localDeroutements || []).map(x => (x && x.ad) ? x.ad : x))
+        : (trip && trip.points ? trip.points : []);
+      _pdfPoints.forEach(p => {
+        if (p && p.icao && !_seen.has(p.icao)) { uniquePoints.push(p); _seen.add(p.icao); }
       });
 
       // ============= MÉTÉO PAR AD =============
@@ -4873,11 +4921,20 @@ async function _doGeneratePdf(opts) {
         // v2.04 : rayon décidé en amont dans confirmPdfGeneration (5 km en Free, réglage Pro
         // sinon). Fallback sur le rayon brut si opts vient d'un appel externe : fail-open.
         const _fuelRadiusKm = (typeof opts.fuelRadiusKm === 'number') ? opts.fuelRadiusKm : FUEL_RADIUS_KM;
-        const fuelNear = (typeof detectFuelNearRoute === 'function' && trip && trip.points && trip.points.length >= 2)
-          ? detectFuelNearRoute(trip.points, _fuelRadiusKm) : [];
+        // v2.07 — en vol local : meme astuce que agRefreshLocalLists (segment degenere
+        // [base, base]) et RAYON DES LISTES, plafonne en Free. Jamais localRadiusKm ici :
+        // ce sont des listes de confort, pas des donnees de securite.
+        const _fuelR = _localMode
+          ? ((typeof opts.localListRadiusKm === 'number') ? opts.localListRadiusKm : _fuelRadiusKm)
+          : _fuelRadiusKm;
+        const _fuelPts = _localMode
+          ? [opts.localBase, opts.localBase]
+          : ((trip && trip.points && trip.points.length >= 2) ? trip.points : null);
+        const fuelNear = (typeof detectFuelNearRoute === 'function' && _fuelPts)
+          ? detectFuelNearRoute(_fuelPts, _fuelR) : [];
         if (fuelNear.length) {
           y = ensureSpace(pdf, y, 30);
-          y = pdfSectionTitle(pdf, 'Avitaillement à proximité (≤ ' + _fuelRadiusKm + ' km du trajet)', y);
+          y = pdfSectionTitle(pdf, 'Avitaillement à proximité (≤ ' + _fuelR + (_localMode ? ' km de la base)' : ' km du trajet)'), y);
           for (const f of fuelNear) {
             y = ensureSpace(pdf, y, 24);
             y = pdfSubTitle(pdf, f.icao + ' — ' + f.name, y);
@@ -4986,19 +5043,24 @@ async function _doGeneratePdf(opts) {
       }
 
       // ----- POI à survoler (≤ rayon EFFECTIF du trajet) — section v0.8.52 -----
-      if (opts.poi && trip && trip.points && trip.points.length >= 2) {
+      if (opts.poi && (_localMode || (trip && trip.points && trip.points.length >= 2))) {
         // v2.04 : mêmes rayon et plafond qu'à l'écran (cf. updatePoiOnRoute). En Free,
         // 2 POI les plus proches dans 5 km ; le PDF ne doit pas être une porte dérobée
         // vers le contenu Pro. Fallback fail-open si opts vient d'un appel externe.
         const _poiRadiusKm = (typeof opts.poiRadiusKm === 'number') ? opts.poiRadiusKm : POI_RADIUS_KM;
+        // v2.07 — vol local : rayon des listes (plafonne en Free), segment degenere.
+        const _poiR = _localMode
+          ? ((typeof opts.localListRadiusKm === 'number') ? opts.localListRadiusKm : _poiRadiusKm)
+          : _poiRadiusKm;
+        const _poiPts = _localMode ? [opts.localBase, opts.localBase] : trip.points;
         let poiNear = (typeof detectPoiNearRoute === 'function')
-          ? detectPoiNearRoute(trip.points, _poiRadiusKm).capped : [];
+          ? detectPoiNearRoute(_poiPts, _poiR).capped : [];
         if (opts.gated === true && poiNear.length > 2) {
           poiNear = [...poiNear].sort((a, b) => a.distKm - b.distKm).slice(0, 2);
         }
         if (poiNear.length) {
           y = ensureSpace(pdf, y, 30);
-          y = pdfSectionTitle(pdf, 'POI à survoler (≤ ' + _poiRadiusKm + ' km du trajet)', y);
+          y = pdfSectionTitle(pdf, 'POI à survoler (≤ ' + _poiR + (_localMode ? ' km de la base)' : ' km du trajet)'), y);
           for (const t of ['chateau', 'lac', 'viaduc', 'naturel']) {
             const grp = poiNear.filter(p => p.type === t);
             if (!grp.length) continue;
@@ -5178,7 +5240,12 @@ async function _doGeneratePdf(opts) {
       }
 
       // SAVE
-      const filename = `briefing_${trip.points.map(p => p.icao).join('-')}_${now.toISOString().slice(0,10)}.pdf`;
+      // v2.07 — trip est null en vol local : cette ligne levait un TypeError avant toute
+      // ecriture, hors de toute condition. C'est ce qui rendait le PDF impossible en local.
+      const _slug = _localMode
+        ? `local_${(opts.localBase && opts.localBase.icao) ? opts.localBase.icao : 'base'}`
+        : ((trip && trip.points) ? trip.points.map(p => p.icao).join('-') : 'vol');
+      const filename = `briefing_${_slug}_${now.toISOString().slice(0,10)}.pdf`;
       pdf.save(filename);
       // Toast de succès
       const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -5237,6 +5304,19 @@ function openPdfModal() {
   // où ces deux sections s'imprimaient toujours).
   document.getElementById('pdf-section-rtba').checked = prefs.rtba !== false;
   document.getElementById('pdf-section-services').checked = prefs.services !== false;
+
+  // v2.07 — en vol local la section « Trajet » n'a ni segments ni distance : le libellé
+  // suit le mode réellement actif, sinon la case promet un contenu qui n'existe pas.
+  try {
+    const _lbase = (typeof _localBasePoint === 'function') ? _localBasePoint() : null;
+    const _isLocal = !!_lbase && (typeof computeTrip === 'function') && computeTrip() === null;
+    const _lblTrip = document.getElementById('pdf-label-trip');
+    const _hntTrip = document.getElementById('pdf-hint-trip');
+    if (_lblTrip) _lblTrip.textContent = _isLocal ? 'Vol local' : 'Trajet';
+    if (_hntTrip) _hntTrip.textContent = _isLocal
+      ? 'base, rayon retenu, déroutements'
+      : 'segments, distance, temps, conso';
+  } catch (e) {}
 
   // v2.05 — encadré Free : annonce ce que contiendra le PDF avant de le générer.
   // Fail-open : rien n'est affiché tant que le statut d'abonnement n'est pas résolu.
@@ -5337,6 +5417,29 @@ async function confirmPdfGeneration() {
   // localStorage à chaque génération : inutile, et un risque de saturation du quota sur
   // un long trajet. Le tier et les rayons effectifs ne sont pas persistés non plus — ils
   // sont recalculés à chaque ouverture, un passage Pro doit être pris en compte aussitôt.
+  // v2.07 — CONTEXTE VOL LOCAL, decide ICI comme le tier et les rayons (invariant regle 10 :
+  // pdfBox execute son contenu deux fois, mesure puis dessin — rien ne doit etre relu pendant
+  // le rendu). computeTrip() renvoie null sous 2 points et n'est jamais modifie.
+  try {
+    const _lb = (typeof _localBasePoint === 'function') ? _localBasePoint() : null;
+    opts.localMode = !!_lb && (typeof computeTrip === 'function') && computeTrip() === null;
+    opts.localBase = opts.localMode ? _lb : null;
+    if (opts.localMode) {
+      // DEUX rayons distincts, et c'est volontaire :
+      //  - localRadiusKm     : zones + RTBA + deroutements — JAMAIS gates (regle inviolable 5)
+      //  - localListRadiusKm : avitaillement + POI — plafonnes en Free, comme a l'ecran
+      // Les confondre masquerait du RTBA a un compte Free, ou offrirait dans le PDF des
+      // listes plus larges que l'ecran (le contournement corrige en v2.04).
+      opts.localRadiusKm = (typeof LOCAL_RADIUS_KM === 'number') ? LOCAL_RADIUS_KM : 50;
+      opts.localListRadiusKm = (typeof agLocalListRadiusKm === 'function')
+        ? agLocalListRadiusKm() : opts.localRadiusKm;
+      opts.localDeroutements = (typeof _localDeroutements === 'function')
+        ? _localDeroutements(_lb, opts.localRadiusKm) : [];
+    } else {
+      opts.localRadiusKm = null; opts.localListRadiusKm = null; opts.localDeroutements = [];
+    }
+  } catch (e) { opts.localMode = false; opts.localBase = null; opts.localDeroutements = []; }
+
   savePdfPrefs(sections);
   closePdfModal();
   await _doGeneratePdf(opts);
@@ -6245,7 +6348,9 @@ onTripChange = function () {
     try { document.getElementById('poi-band').classList.remove('hidden'); } catch (e) {}
     try { const nc = document.getElementById('pilot-notes-card'), nb = document.getElementById('pilot-notes-band'); if (nc && nb && nc.parentNode !== nb) nb.appendChild(nc); } catch (e) {}
     try { if (typeof addNotamAndWebcamToCards === 'function') setTimeout(addNotamAndWebcamToCards, 150); } catch (e) {}
-    if (pdfBtn) { pdfBtn.disabled = true; pdfBtn.title = 'PDF disponible en mode trajet (≥ 2 terrains). Vol local : export PDF à venir.'; }
+    // v2.07 — le PDF est desormais genere en vol local (section Vol local + deroutements,
+    // zones/RTBA sur le rayon choisi, listes au rayon effectif).
+    if (pdfBtn) { pdfBtn.disabled = false; pdfBtn.title = 'Générer le briefing PDF de ce vol local'; }
     try { applyTripLayerPreset(true); } catch (e) {}
   } else {
     // ---- NON LOCAL (vide OU trajet ≥2) : nettoyer les artefacts du mode local ----
