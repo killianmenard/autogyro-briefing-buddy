@@ -9,7 +9,7 @@
  * - Pass-through (no-cache) : appels API live (METAR, vent, météo). Toujours réseau.
  *   Le cache de fraîcheur des données est géré dans l'app via localStorage (TTL court).
  */
-const VERSION = 'v2.07';
+const VERSION = 'v2.08';
 const CACHE_STATIC = `monplandevol-static-${VERSION}`;
 const CACHE_TILES = `monplandevol-tiles-${VERSION}`;
 
@@ -63,6 +63,7 @@ const API_HOSTS = [
   // pour le METAR. NE PAS remplacer par 'monplandevol.fr' : isApiRequest utilise
   // hostname.includes(), ce qui capturerait app.monplandevol.fr et casserait le mode hors-ligne.
   'meteo.monplandevol.fr',
+  'arome.monplandevol.fr', // v2.08 — Worker arome-proxy (vent en altitude AROME)
   'metar.monplandevol.fr',
 ];
 
