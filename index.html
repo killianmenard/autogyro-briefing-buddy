@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.08.1 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.08.2 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -4519,7 +4519,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.08.1';
+const AG_PDF_VERSION = 'v2.08.2';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -7467,7 +7467,13 @@ init();
   const AG_FN_CHECKOUT = "https://create-checkout-session-13095790986.europe-west1.run.app";
   const AG_FN_PORTAL = "https://create-portal-session-13095790986.europe-west1.run.app";
   const AG_PRICE_MONTHLY = "price_1TtX7J1rgPKfGt9UV4pVzOqT";
-  const AG_PRICE_YEARLY = "price_1TtX8q1rgPKfGt9U6F6ElbEH";
+  // v2.08.2 — 🔴 l'ancien tarif annuel (price_1TtX8q…) facturait 49,99 € alors que
+  // cgu.html annonce « 49,90 € par an » (art. 4.2). Le prix contractuel et le prix
+  // prélevé divergeaient. Nouveau tarif aligné sur les CGU, créé le 06/08/2026.
+  // Les boutons Pro n'affichent aucun montant : le seul prix opposable est celui des CGU.
+  // ⚠️ L'ancien ne doit être archivé chez Stripe QU'APRÈS déploiement de cette version :
+  // Checkout refuse un prix inactif, le bouton « Passer Pro — annuel » tomberait.
+  const AG_PRICE_YEARLY = "price_1U1YcW1rgPKfGt9UsGjfSSIf";
 
   let _agProCache = false;
   window._agIsPro = function () { return _agProCache === true; };
