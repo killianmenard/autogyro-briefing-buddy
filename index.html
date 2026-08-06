@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.1 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -141,6 +141,18 @@
     flex-wrap: wrap;
     justify-content: center;
     position: relative;
+  }
+  /* v2.09.1 — l'horloge UTC se rafraîchit chaque seconde ; en chiffres proportionnels
+     chaque changement de seconde modifiait la largeur du texte, donc celle de la pilule
+     entière, qui « respirait » en continu. tabular-nums fige la chasse des chiffres ;
+     min-width couvre les polices qui n'exposent pas la fonte tabulaire. 9 caractères
+     affichés (« 22:45:52Z »), inline-block pour que la largeur s'applique. */
+  #briefing-time {
+    display: inline-block;
+    min-width: 9ch;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
   }
   .header-pill .divider {
     width: 1px; height: 22px; background: var(--header-pill-border);
@@ -4519,7 +4531,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09';
+const AG_PDF_VERSION = 'v2.09.1';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -7810,17 +7822,31 @@ init();
   // ============================================================
   // ⚠️ Même pattern que .ag-menu-profile (créée par basulm.js) : garde anti-doublon et
   // append dans .header-pill, sans jamais toucher aux éléments existants.
+  // v2.09.1 — l'entrée doit se placer AVANT l'engrenage ⚙️ (.tab-btn[data-tab="params"],
+  // créé par basulm.js), pas en fin de pilule : le guide est un onglet de contenu, les
+  // réglages ferment la série. On utilise un <span class="tab-btn"> et non un <a> — un
+  // lien hérite de la couleur d'accent et détonnait en bleu au milieu des autres onglets.
+  //
+  // ⚠️ basulm.js construit l'engrenage de façon asynchrone : si le repère n'existe pas
+  // encore, on retente. Sans cela l'entrée retombe en fin de pilule une fois sur deux
+  // selon l'ordre d'exécution.
+  var _onbMenuTries = 0;
   function _onbEnsureMenuEntry() {
     try {
       if (document.querySelector('.ag-menu-guide')) return;
-      var host = document.querySelector('.header-pill');
-      if (!host) return;
-      var a = document.createElement('a');
-      a.className = 'tab-btn ag-menu-guide';
-      a.href = AG_GUIDE_URL;
-      a.textContent = 'Guide';
-      a.style.cssText = 'text-decoration:none;color:inherit;font-size:13px;';
-      host.appendChild(a);
+      var gear = document.querySelector('.tab-btn[data-tab="params"]');
+      if (!gear || !gear.parentNode) {
+        if (_onbMenuTries++ < 20) setTimeout(_onbEnsureMenuEntry, 300);
+        return;
+      }
+      var t = document.createElement('span');
+      t.className = 'tab-btn ag-menu-guide';
+      t.textContent = 'guide';
+      t.title = 'guide et FAQ';
+      t.setAttribute('aria-label', 'guide');
+      t.style.cursor = 'pointer';
+      t.addEventListener('click', function () { window.location.href = AG_GUIDE_URL; });
+      gear.parentNode.insertBefore(t, gear);
     } catch (_) {}
   }
 
