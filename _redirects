@@ -1,1 +1,18 @@
+# ============================================================
+# Cloudflare Pages — _redirects
+# LE DÉPÔT EST LA RACINE PUBLIÉE : tout fichier committé est
+# téléchargeable sur app.monplandevol.fr (vérifié le 06/08/2026).
+# Aucune clé n'y fuit — AROME_APIKEY et NOTION_TOKEN sont des
+# secrets Cloudflare — mais ces chemins exposent gratuitement
+# l'architecture interne.
+# Les redirections Pages sont évaluées AVANT les fichiers
+# statiques : c'est ce qui permet de masquer un fichier présent.
+# Un 404 est impossible ici (_redirects n'accepte que les 30x).
+# Un seul splat (*) par règle. Les fichiers restent VERSIONNÉS,
+# ils cessent seulement d'être PUBLIÉS.
+# ============================================================
 
+/worker-*   /   302
+/src/*      /   302
+/scripts/*  /   302
+/.github/*  /   302
