@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.6 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.7 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -4638,7 +4638,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.6';
+const AG_PDF_VERSION = 'v2.09.7';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8002,17 +8002,13 @@ init();
       // 1) icone lucide deja rendue en <svg>, ou balise <i data-lucide> pas encore rendue
       var ico = btn.querySelector('svg, i[data-lucide]');
       if (ico) { ico.classList.add('ag-rot'); return ico; }
-      // 2) emoji en noeud texte : on l'isole dans un span pour pouvoir le faire tourner.
+      // 2) emoji 🔄 : on le REMPLACE par l'icone lucide refresh-cw, la meme que le
+      // bouton « charger » de la carte meteo. Deux raisons : l'unite visuelle des
+      // quatre boutons, et la disparition d'une classe de bugs — 🔄 (U+1F504) est
+      // hors du plan multilingue de base et occupe deux unites de code UTF-16, ce
+      // qui avait produit deux caracteres de remplacement en v2.09.4.
       //
-      // 🔴 LE FLAG /u EST OBLIGATOIRE. U+1F504 (🔄) est hors du plan multilingue de
-      // base : il occupe DEUX unites de code UTF-16 (paire de substitution). Sans
-      // /u, la classe de caracteres matche la moitie haute seule ("\ud83d",
-      // length 1) — on decoupait alors l'emoji en deux moities invalides, rendues
-      // par le navigateur en deux caracteres de remplacement. Incident constate en
-      // v2.09.4 sur #p-refresh et #p-openaip-reload.
-      //
-      // On reconstruit le noeud plutot que d'utiliser splitText() : les index de
-      // splitText sont en unites UTF-16 et ramenent exactement le meme piege.
+      // Le flag /u reste obligatoire pour LOCALISER l'emoji sans le couper en deux.
       var RE_ICON = /[\u{1F504}\u{1F503}\u21BB\u21BA\u27F3]/u;
       for (var i = 0; i < btn.childNodes.length; i++) {
         var n = btn.childNodes[i];
@@ -8024,12 +8020,17 @@ init();
         var tail = n.nodeValue.slice(mm.index + glyph.length);
         var span = document.createElement('span');
         span.className = 'ag-rot';
-        span.textContent = glyph;
+        span.style.cssText = 'width:15px;height:15px;align-items:center;justify-content:center;';
+        var ic = document.createElement('i');
+        ic.setAttribute('data-lucide', 'refresh-cw');
+        ic.style.cssText = 'width:15px;height:15px;';
+        span.appendChild(ic);
         var frag = document.createDocumentFragment();
         if (head) frag.appendChild(document.createTextNode(head));
         frag.appendChild(span);
         if (tail) frag.appendChild(document.createTextNode(tail));
         btn.replaceChild(frag, n);
+        try { if (window.lucide) window.lucide.createIcons(); } catch (_) {}
         return span;
       }
       return null;
@@ -8037,12 +8038,35 @@ init();
 
     // Expose le pilotage : le handler de refreshWeather s'en sert pour encadrer
     // exactement la duree reelle de son travail asynchrone.
+    // Duree minimale visible. Sans elle, un cache chaud rend la rotation invisible :
+    // cachedFetch a un TTL de 30 min, donc #wf-status passe par « chargement... »
+    // puis revient a « a jour » en quelques millisecondes, et l'arret arrive avant
+    // qu'une seule image ait ete rendue. Une animation de 8 ms n'existe pas pour
+    // l'oeil — l'utilisateur conclut que le bouton ne repond pas.
+    var MIN_MS = 700;
+
     window.agBusy = function (btn, on) {
       try {
         if (typeof btn === 'string') btn = document.getElementById(btn);
         if (!btn) return;
+        if (on === false) {
+          // Demande d'arret : on la differe si le minimum n'est pas ecoule.
+          var left = (parseInt(btn.dataset.agMinUntil || '0', 10)) - Date.now();
+          if (left > 0) {
+            if (btn.dataset.agStopQueued === '1') return; // un arret est deja programme
+            btn.dataset.agStopQueued = '1';
+            setTimeout(function () {
+              btn.dataset.agStopQueued = '0';
+              btn.classList.remove('ag-busy');
+            }, left);
+            return;
+          }
+          btn.classList.remove('ag-busy');
+          return;
+        }
         rotTarget(btn);
-        btn.classList.toggle('ag-busy', on !== false);
+        btn.dataset.agMinUntil = String(Date.now() + MIN_MS);
+        btn.classList.add('ag-busy');
       } catch (_) {}
     };
 
