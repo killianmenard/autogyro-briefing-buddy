@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.10.11 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.11 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -333,6 +333,99 @@
        d'eviter : on revient au curseur systeme. */
     #ag-plane { display: none !important; }
     .ag-plane-on, .ag-plane-on * { cursor: auto !important; }
+  }
+
+  /* ===== v2.11 — TRANSFERT DES EFFETS DU SITE VITRINE =====
+
+     Le site et l'app doivent se ressembler : c'est la meme marque, et un pilote
+     qui passe de l'un a l'autre ne doit pas avoir l'impression de changer
+     d'outil. Trois effets sont transferes tels quels, un quatrieme est
+     volontairement rogne.
+
+     ------------------------------------------------------------------
+     a) FOND POINTILLE
+     Sur le site il est pose en pseudo-element avec un z-index. Ici il passe par
+     background-image sur <body> : le motif est peint PAR-DESSUS la couleur de
+     fond et SOUS tout le contenu, sans creer de contexte d'empilement. Dans une
+     app qui superpose deja Leaflet, des pop-ups, des suggestions et une pilule
+     collante, ajouter un z-index de plus etait le moyen le plus sur de casser
+     quelque chose.
+     Pas de degrade d'effacement, contrairement au site : la page vitrine se lit
+     du haut vers le bas, l'app se lit par blocs. Une texture uniforme et tres
+     faible, qu'on ne remarque pas, est ce qu'il faut ici. */
+  :root { --ag-dot: rgba(26,26,26,.075); }
+  [data-theme="dark"] { --ag-dot: rgba(255,255,255,.055); }
+  body {
+    background-image: radial-gradient(circle at 1px 1px, var(--ag-dot) 1px, transparent 0);
+    background-size: 22px 22px;
+    background-attachment: fixed;
+  }
+  /* La carte Leaflet et les surfaces pleines ne doivent pas laisser voir le
+     motif : il n'a de sens que sur le fond de page. */
+  .leaflet-container { background-image: none; }
+
+  /* ------------------------------------------------------------------
+     b) CARTES : OMBRE EN COUCHES, SURVOL, BALAYAGE LUMINEUX
+     Repris des cartes du site (AnimatedList + ShinyButton). L'echelle au survol
+     est a 1.008 et non 1.03 : sur le site les cartes sont des vignettes qu'on
+     survole en passant, ici ce sont des surfaces de travail qui contiennent des
+     champs et des boutons. Une carte qui grandit de 3 % sous le pointeur
+     deplacerait la case a cocher qu'on visait. */
+  .card {
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(10,20,40,.03), 0 2px 4px rgba(10,20,40,.05), 0 12px 24px rgba(10,20,40,.05);
+    transition: transform .2s ease-in-out, border-color .2s ease-in-out, box-shadow .2s ease-in-out;
+  }
+  [data-theme="dark"] .card { box-shadow: 0 -20px 80px -20px rgba(255,255,255,.10) inset; }
+  .card:hover { transform: scale(1.008); border-color: var(--accent-bd, rgba(7,146,166,.3)); }
+
+  .card::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit;
+    pointer-events: none; opacity: 0; padding: 1px;
+    background: linear-gradient(-75deg,
+                transparent 0%, transparent 36%,
+                var(--accent, #0792a6) 47%, var(--accent, #0792a6) 53%,
+                transparent 64%, transparent 100%);
+    background-size: 280% 100%; background-position: 130% 0;
+    -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
+            mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    transition: opacity .2s ease;
+  }
+  .card:hover::after { opacity: .8; animation: agShine 1.5s cubic-bezier(.4,0,.2,1); }
+  @keyframes agShine { from { background-position: 130% 0; } to { background-position: -50% 0; } }
+  /* La feuille « mon compte » contient des .card : un balayage a l'interieur
+     d'une fenetre modale ferait clignoter le fond de la modale. */
+  #ag-acct .card::after, #ag-acct .card:hover { display: none; transform: none; }
+
+  /* ------------------------------------------------------------------
+     c) DEPLI/REPLI FLUIDE DES <details>
+     <details> bascule instantanement : le contenu apparait d'un coup et la page
+     saute. On anime la hauteur d'un conteneur pose au vol autour du contenu.
+     La classe est portee par le <details> lui-meme pour que le CSS n'ait besoin
+     d'aucune connaissance de la structure interne des cartes, que extensions.js
+     reecrit ~2,5 s apres le rendu. */
+  .ag-det-body { overflow: hidden; }
+  .ag-det-anim > .ag-det-body {
+    transition: height .26s cubic-bezier(.4,0,.2,1), opacity .2s ease;
+  }
+  details > summary { transition: color .15s ease; }
+
+  /* ------------------------------------------------------------------
+     d) BOUTONS MAGNETIQUES — PORTEE VOLONTAIREMENT REDUITE
+     Sur le site, tous les boutons sont magnetiques : il y en a six, ils sont
+     gros, et rater un clic n'a aucune consequence. Ici il y a des dizaines de
+     petits controles a cote de donnees de securite. Un bouton qui se deplace
+     sous le pointeur est une source d'erreur de clic, pas un agrement.
+     L'effet est donc reserve aux appels a l'action pleine largeur, listes
+     nommement dans le script. */
+  .ag-mag { will-change: transform; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card, .card:hover { transition: none; transform: none; }
+    .card::after, .card:hover::after { animation: none; }
+    .ag-det-anim > .ag-det-body { transition: none; }
+    body { background-image: none; }
   }
 
   /* ===== v2.10.7 — ONDE AU CLIC (ripple) =====
@@ -1210,7 +1303,7 @@
             <input type="text" id="ad-input-0" class="ad-input mt-1" placeholder="ex: LFLQ ou Montélimar" autocomplete="off" />
             <div id="ad-suggestions-0" class="ad-suggestions hidden"></div>
           </div>
-          <div class="relative" data-trip-slot="1">
+          <div class="relative hidden" data-trip-slot="1">
             <label class="text-xs text-muted">étape 1</label>
             <div class="flex gap-2">
               <input type="text" id="ad-input-1" class="ad-input mt-1" placeholder="ex: LFHO" autocomplete="off" />
@@ -1333,7 +1426,7 @@
             <button id="metartaf-open-btn" type="button" style="flex:1;min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#0891B2;color:#fff;border:none;padding:9px 14px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;">
               <i data-lucide="external-link" class="ag-ico" style="width:14px;height:14px;"></i><span>ouvrir metar-taf.com</span>
             </button>
-            <a href="https://aviation.meteo.fr/login.php" target="_blank" rel="noreferrer" style="flex:1;min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#000;color:#fff;padding:9px 14px;border-radius:6px;font-weight:600;font-size:13px;text-decoration:none;">
+            <a href="https://aviation.meteo.fr/login.php" target="_blank" rel="noreferrer" style="flex:1;min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--accent,#0792a6);color:var(--accent-ink,#fff);padding:9px 14px;border-radius:6px;font-weight:600;font-size:13px;text-decoration:none;">
               <i data-lucide="external-link" class="h-3.5 w-3.5"></i><span>ouvrir aviation.meteo.fr</span>
             </a>
           </div>
@@ -2281,7 +2374,7 @@ const STATE = {
   wintemPdf: null,
   notes: "",
   weatherCache: {},
-  visibleStops: 1
+  visibleStops: 0
 };
 
 // ============================================================
@@ -3494,9 +3587,8 @@ function addAdToTrip(ad) {
         return;
       }
     }
-    if (STATE.visibleStops < 3) {
-      addStepSlot();
-      const newIdx = STATE.visibleStops;
+    const newIdx = addStepSlot();   // v2.11 — l'index vient de la fonction
+    if (newIdx) {
       STATE.trip[newIdx] = ad;
       document.getElementById(`ad-input-${newIdx}`).value = `${ad.icao} · ${ad.name}`;
     } else {
@@ -3509,16 +3601,27 @@ function addAdToTrip(ad) {
 
 function addStepSlot() {
   if (agTripGated()) { agTripUpsellToast(); return; } // gating trajet — étapes réservées Pro
-  if (STATE.visibleStops >= 3) return;
-  STATE.visibleStops += 1;
-  const idx = STATE.visibleStops;
-  const slotEl = document.querySelector(`[data-trip-slot="${idx}"]`);
-  if (slotEl) {
-    slotEl.classList.remove('hidden');
+  // v2.11 — on ouvre le PREMIER slot masque au lieu de visibleStops + 1.
+  // L'ancienne version supposait que les slots visibles etaient toujours 1..n
+  // dans l'ordre. Faux des qu'on retire l'etape 1 puis qu'on en rajoute une :
+  // removeStepSlot ne decremente pas visibleStops, on ouvrait donc le slot 2 en
+  // laissant un trou. Avec l'etape 1 masquee par defaut, ce cas devient courant.
+  let idx = 0;
+  for (let i = 1; i <= 3; i++) {
+    const el = document.querySelector(`[data-trip-slot="${i}"]`);
+    if (el && el.classList.contains('hidden')) { idx = i; break; }
   }
-  if (STATE.visibleStops >= 3) {
-    document.getElementById('add-step-btn').classList.add('hidden');
-  }
+  if (!idx) return;
+  document.querySelector(`[data-trip-slot="${idx}"]`).classList.remove('hidden');
+  if (idx > STATE.visibleStops) STATE.visibleStops = idx;
+  // Le bouton disparait quand plus aucun slot n'est masque, et non a partir d'un
+  // compteur qui pouvait mentir.
+  const reste = [1, 2, 3].some((i) => {
+    const el = document.querySelector(`[data-trip-slot="${i}"]`);
+    return el && el.classList.contains('hidden');
+  });
+  if (!reste) document.getElementById('add-step-btn').classList.add('hidden');
+  return idx;
 }
 
 function removeStepSlot(idx) {
@@ -4968,7 +5071,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.10.11';
+const AG_PDF_VERSION = 'v2.11';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -6021,13 +6124,16 @@ function resetAll() {
   STATE.wintemPdf = null;
   STATE.notes = "";
   STATE.weatherCache = {};
-  STATE.visibleStops = 1;
+  STATE.visibleStops = 0;
   
   // Vider les inputs trajet
   for (let i = 0; i < 5; i++) {
     const input = document.getElementById(`ad-input-${i}`);
     if (input) input.value = '';
   }
+  // v2.11 — l'etape 1 fait desormais partie des slots masques : elle n'apparait
+  // qu'a la demande, comme les deux autres.
+  document.querySelector('[data-trip-slot="1"]').classList.add('hidden');
   document.querySelector('[data-trip-slot="2"]').classList.add('hidden');
   document.querySelector('[data-trip-slot="3"]').classList.add('hidden');
   document.getElementById('add-step-btn').classList.remove('hidden');
@@ -6640,7 +6746,11 @@ function applyTripLayerPreset(hasTrip) {
   };
   set(markerLayer, !hasTrip);                                                              // AD : hors trajet
   set(window.basulmLayer, !hasTrip);                                                       // ULM : hors trajet
-  set((typeof openaipLayers !== 'undefined' && openaipLayers) ? openaipLayers.openaip : null, hasTrip); // zones aéro : avec trajet
+  // v2.11 — zones aero TOUJOURS affichees, avec ou sans trajet. Elles etaient
+  // conditionnees au trajet, si bien qu'un pilote qui ouvre l'app pour regarder
+  // sa region ne voyait aucun espace aerien. C'est une donnee de securite : elle
+  // ne doit pas dependre d'un etat de saisie.
+  set((typeof openaipLayers !== 'undefined' && openaipLayers) ? openaipLayers.openaip : null, true);
   set(rtbaLayer, hasTrip);                                                                 // RTBA : avec trajet
 }
 onTripChange = function() {
@@ -7606,10 +7716,11 @@ function init() {
   document.getElementById('clear-trip').addEventListener('click', () => {
     STATE.trip = [null, null, null, null, null];
     STATE.loop = false;
-    STATE.visibleStops = 1;
+    STATE.visibleStops = 0;
     for (let i = 0; i < 5; i++) {
       document.getElementById(`ad-input-${i}`).value = '';
     }
+    document.querySelector('[data-trip-slot="1"]').classList.add('hidden');
     document.querySelector('[data-trip-slot="2"]').classList.add('hidden');
     document.querySelector('[data-trip-slot="3"]').classList.add('hidden');
     document.getElementById('add-step-btn').classList.remove('hidden');
@@ -7860,6 +7971,147 @@ function init() {
   lucide.createIcons();
 }
 
+
+// ===== v2.11 — DEPLI/REPLI FLUIDE DES <details> =====
+// <details> bascule d'un coup : le contenu apparait, la page saute, et sur une
+// carte de terrain longue le regard perd sa place. On anime la hauteur.
+//
+// ⚠️ Delegation en phase de CAPTURE et conteneur pose au vol : extensions.js
+// reecrit les cartes ~2,5 s apres le rendu. Tout ecouteur attache a un summary
+// precis disparaitrait a la premiere reecriture.
+(function _agSmoothDetails() {
+  var reduce = false;
+  try { reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) {}
+  if (reduce) return;
+
+  // Enveloppe tout ce qui suit le <summary> dans un conteneur mesurable.
+  function body(det) {
+    var b = det.querySelector(':scope > .ag-det-body');
+    if (b) return b;
+    var sum = det.querySelector(':scope > summary');
+    if (!sum) return null;
+    b = document.createElement('div');
+    b.className = 'ag-det-body';
+    var n = sum.nextSibling;
+    while (n) { var next = n.nextSibling; b.appendChild(n); n = next; }
+    det.appendChild(b);
+    return b;
+  }
+
+  function animate(det, opening) {
+    var b = body(det);
+    if (!b) return false;
+    det.classList.add('ag-det-anim');
+    if (opening) {
+      det.open = true;
+      b.style.height = '0px'; b.style.opacity = '0';
+      // Lecture forcee : sans elle le navigateur regroupe les deux ecritures et
+      // passe directement a la hauteur finale, sans transition.
+      void b.offsetHeight;
+      b.style.height = b.scrollHeight + 'px'; b.style.opacity = '1';
+      clear(det, b, function () { b.style.height = ''; });
+    } else {
+      b.style.height = b.scrollHeight + 'px'; b.style.opacity = '1';
+      void b.offsetHeight;
+      b.style.height = '0px'; b.style.opacity = '0';
+      clear(det, b, function () { det.open = false; b.style.height = ''; b.style.opacity = ''; });
+    }
+    return true;
+  }
+
+  // Un seul point de sortie : la transition, ou un delai de secours si elle ne
+  // se declenche pas (element masque, onglet en arriere-plan). Sans ce filet, un
+  // <details> pourrait rester bloque a hauteur nulle.
+  function clear(det, b, done) {
+    var fired = false;
+    function end(e) {
+      if (e && e.target !== b) return;
+      if (fired) return; fired = true;
+      b.removeEventListener('transitionend', end);
+      det.classList.remove('ag-det-anim');
+      done();
+    }
+    b.addEventListener('transitionend', end);
+    setTimeout(end, 400);
+  }
+
+  document.addEventListener('click', function (e) {
+    var sum = e.target && e.target.closest ? e.target.closest('summary') : null;
+    if (!sum) return;
+    var det = sum.parentElement;
+    if (!det || det.tagName !== 'DETAILS') return;
+    if (det.classList.contains('ag-det-anim')) { e.preventDefault(); return; } // clic pendant l'animation
+    if (animate(det, !det.open)) e.preventDefault();
+  }, true);
+})();
+
+// ===== v2.11 — BOUTONS MAGNETIQUES (appels a l'action seulement) =====
+// Porte volontairement etroite : voir le commentaire CSS. Ressort integre a la
+// main, valeurs de la reference (stiffness 150, damping 15, mass 0.1).
+// ⚠️ Le pas d'integration est FIXE a 8 ms : l'integrateur explicite diverge
+// des que le pas depasse 2m/c = 13,3 ms. Une image a 50 ms (onglet en arriere-
+// plan) avec un simple dt/2 envoie le bouton a l'infini.
+(function _agMagnetic() {
+  var fine = false, reduce = false;
+  try { fine = matchMedia('(pointer:fine)').matches; } catch (_) {}
+  try { reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) {}
+  if (!fine || reduce) return;
+
+  var SEL = '#ag-step-upsell-btn, #ag-pro-cta, #confirm-pdf-btn, #signup-submit, #auth-submit';
+  var K = 150, C = 15, M = 0.1, H = 0.008, R = 90, S = 0.3;
+  var items = [], raf = null, last = 0;
+
+  function collect() {
+    items = [];
+    document.querySelectorAll(SEL).forEach(function (el) {
+      el.classList.add('ag-mag');
+      items.push({ el: el, x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0 });
+    });
+  }
+
+  function step(now) {
+    var dt = last ? (now - last) / 1000 : 0.016; last = now;
+    if (dt > 0.05) dt = 0.05;
+    var moving = false;
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var nsub = Math.ceil(dt / H); if (nsub > 8) nsub = 8;
+      var h = dt / nsub;
+      for (var k = 0; k < nsub; k++) {
+        it.vx += ((-K * (it.x - it.tx) - C * it.vx) / M) * h;
+        it.vy += ((-K * (it.y - it.ty) - C * it.vy) / M) * h;
+        it.x += it.vx * h; it.y += it.vy * h;
+      }
+      if (Math.abs(it.x - it.tx) > 0.05 || Math.abs(it.y - it.ty) > 0.05 ||
+          Math.abs(it.vx) > 0.05 || Math.abs(it.vy) > 0.05) moving = true;
+      else { it.x = it.tx; it.y = it.ty; it.vx = it.vy = 0; }
+      it.el.style.transform = (it.x || it.y)
+        ? 'translate3d(' + it.x.toFixed(2) + 'px,' + it.y.toFixed(2) + 'px,0)' : '';
+    }
+    raf = moving ? requestAnimationFrame(step) : (last = 0, null);
+  }
+  function wake() { if (!raf) { last = 0; raf = requestAnimationFrame(step); } }
+  function release() { for (var i = 0; i < items.length; i++) { items[i].tx = 0; items[i].ty = 0; } wake(); }
+
+  window.addEventListener('pointermove', function (e) {
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i], r = it.el.getBoundingClientRect();
+      if (!r.width) { it.tx = 0; it.ty = 0; continue; }
+      // Centre au repos = centre mesure moins le deplacement deja applique.
+      var dx = e.clientX - (r.left + r.width / 2 - it.x);
+      var dy = e.clientY - (r.top + r.height / 2 - it.y);
+      if (Math.hypot(dx, dy) < R) { it.tx = dx * S; it.ty = dy * S; }
+      else { it.tx = 0; it.ty = 0; }
+    }
+    wake();
+  }, { passive: true });
+  window.addEventListener('scroll', release, { passive: true });
+  window.addEventListener('pointerleave', release);
+
+  collect();
+  // Les boutons des pop-ups n'existent pas au chargement.
+  try { new MutationObserver(collect).observe(document.body, { childList: true, subtree: false }); } catch (_) {}
+})();
 
 // ===== v2.10.7 — ONDE AU CLIC SUR LES BOUTONS =====
 // Delegation unique : aucun bouton n'a besoin d'etre connu a l'avance, et ceux
