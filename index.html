@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.1 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.2 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -119,6 +119,44 @@
   .leg-segment { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 8px 12px; background: var(--muted); border-radius: 6px; font-size: 13px; }
   .tab-btn { padding: 8px 16px; font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent; }
   .tab-btn.active { border-bottom-color: var(--foreground); font-weight: 500; }
+
+  /* ===== v2.09.2 — PASTILLE GLISSANTE SUR LES ONGLETS =====
+     Equivalent vanilla du composant Highlight (mode parent + hover). Une seule
+     surface animee glisse derriere l'onglet actif, et suit le survol.
+
+     Le soulignement d'origine reste la reference : il n'est neutralise QUE si la
+     classe ag-hl-on a ete posee par le script. JS en echec ou desactive =>
+     l'interface retombe exactement sur le comportement d'avant. */
+  .ag-hl-host { position: relative; }
+  .ag-hl-host .tab-btn { position: relative; z-index: 1; transition: color .18s var(--ease, ease); }
+  .ag-hl-host.ag-hl-on .tab-btn.active { border-bottom-color: transparent; }
+
+  .ag-tab-hl {
+    position: absolute; top: 0; left: 0; z-index: 0;
+    border-radius: 8px; pointer-events: none; opacity: 0;
+    /* accent-soft : fond a 12-15% d'opacite. Un accent plein rendrait le libelle
+       illisible sans inverser sa couleur, ce qui ferait clignoter le texte a
+       chaque deplacement de la pastille. */
+    background: var(--accent-soft, rgba(7,146,166,.12));
+    border: 1px solid var(--accent-bd, rgba(7,146,166,.3));
+    /* 220ms : au-dela le curseur arrive avant la pastille et l'effet se voit
+       comme un retard ; en deca il n'y a plus de glissement percu. */
+    transition: transform .22s var(--ease, cubic-bezier(.4,0,.2,1)),
+                width .22s var(--ease, cubic-bezier(.4,0,.2,1)),
+                height .22s var(--ease, cubic-bezier(.4,0,.2,1)),
+                opacity .18s ease;
+    will-change: transform, width;
+  }
+
+  /* Menu mobile deplie : la pilule passe en colonne, les mesures horizontales
+     n'ont plus de sens. La pastille se retire et le soulignement reprend. */
+  .header-pill.menu-open .ag-tab-hl { display: none; }
+  .header-pill.menu-open .ag-hl-host.ag-hl-on .tab-btn.active { border-bottom-color: var(--foreground); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ag-tab-hl { transition: none; }
+    .ag-hl-host .tab-btn { transition: none; }
+  }
   .ad-input { background: var(--input-bg); color: var(--foreground); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 14px; width: 100%; }
   .ad-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: var(--card); border: 1px solid var(--border); border-radius: 6px; margin-top: 4px; max-height: 240px; overflow-y: auto; z-index: 30; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
   .ad-suggestion { padding: 8px 12px; cursor: pointer; font-size: 13px; color: var(--foreground); }
@@ -4531,7 +4569,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.1';
+const AG_PDF_VERSION = 'v2.09.2';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -7881,6 +7919,91 @@ init();
       el.textContent = txt;
     } catch (_) {}
   }
+
+  // ============================================================
+  // 7. PASTILLE GLISSANTE SUR LES ONGLETS (v2.09.2)
+  // ============================================================
+  // Le conteneur des onglets n'a aucun identifiant dans le HTML : on le retrouve
+  // par le parent de l'onglet « plan », qui existe toujours. Aucune balise n'est
+  // ajoutee au document source — le compte de div reste inchange.
+  //
+  // ⚠️ Les onglets arrivent de facon ASYNCHRONE : « historique » et « ressources »
+  // par extensions.js, l'engrenage et « guide » plus tard encore. Une mesure prise
+  // une seule fois au chargement serait fausse dix secondes plus tard. D'ou le
+  // MutationObserver sur le conteneur.
+  (function _agTabHighlight() {
+    var host = null, bar = null, raf = 0;
+
+    function targetRect(el) {
+      // Mesures relatives au conteneur : insensibles au scroll et aux
+      // transformations de la pilule.
+      var h = host.getBoundingClientRect(), r = el.getBoundingClientRect();
+      return { x: r.left - h.left, y: r.top - h.top, w: r.width, h: r.height };
+    }
+
+    function moveTo(el) {
+      if (!bar || !el) return;
+      var m = targetRect(el);
+      if (!(m.w > 0 && m.h > 0)) { bar.style.opacity = '0'; return; }
+      bar.style.width = m.w + 'px';
+      bar.style.height = m.h + 'px';
+      bar.style.transform = 'translate(' + m.x + 'px,' + m.y + 'px)';
+      bar.style.opacity = '1';
+    }
+
+    function sync() {
+      if (!host) return;
+      if (raf) cancelAnimationFrame(raf);
+      // Un rAF suffit a laisser le layout se stabiliser apres une insertion
+      // d'onglet ou un changement de largeur de la pilule.
+      raf = requestAnimationFrame(function () {
+        var act = host.querySelector('.tab-btn.active');
+        if (act) moveTo(act); else if (bar) bar.style.opacity = '0';
+      });
+    }
+
+    function init() {
+      var plan = document.querySelector('.tab-btn[data-tab="plan"]');
+      if (!plan || !plan.parentNode) return false;
+      host = plan.parentNode;
+      if (host.querySelector(':scope > .ag-tab-hl')) return true; // deja pose
+
+      host.classList.add('ag-hl-host');
+      bar = document.createElement('span');
+      bar.className = 'ag-tab-hl';
+      bar.setAttribute('aria-hidden', 'true');
+      host.insertBefore(bar, host.firstChild);
+      host.classList.add('ag-hl-on');
+
+      // Survol : la pastille suit le pointeur, puis revient sur l'onglet actif.
+      // Delegation sur le conteneur — les onglets ajoutes plus tard en heritent
+      // sans qu'on ait a leur attacher quoi que ce soit.
+      host.addEventListener('mouseover', function (e) {
+        var t = e.target && e.target.closest ? e.target.closest('.tab-btn') : null;
+        if (t && host.contains(t)) moveTo(t);
+      });
+      host.addEventListener('mouseleave', sync);
+      host.addEventListener('click', function () { setTimeout(sync, 0); });
+
+      // Les onglets tardifs (historique, ressources, engrenage, guide) et tout
+      // changement de largeur declenchent une remesure.
+      try { new MutationObserver(sync).observe(host, { childList: true }); } catch (_) {}
+      try { new ResizeObserver(sync).observe(host); } catch (_) {}
+      window.addEventListener('resize', sync);
+      // La bascule de theme change les tokens, pas la geometrie : inutile de
+      // remesurer. En revanche le chargement des polices, si.
+      try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(sync); } catch (_) {}
+
+      sync();
+      return true;
+    }
+
+    // La pilule peut ne pas exister au moment ou ce script s'execute.
+    var tries = 0;
+    var iv = setInterval(function () {
+      if (init() || ++tries > 40) clearInterval(iv);
+    }, 250);
+  })();
 
   // Le badge doit aussi apparaître pour un utilisateur déjà connecté au chargement, sans
   // attendre un cycle de synchro.
