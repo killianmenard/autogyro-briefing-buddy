@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.8 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.9 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -101,6 +101,28 @@
   .dot-red { background: var(--red); }
   .dot-blue { background: var(--blue); }
   .pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; }
+
+  /* ===== v2.09.9 — ICONES DE DECOR =====
+     Les emojis sont rendus par la police systeme : leur style, leur poids et leur
+     ligne de base echappent totalement a la charte, et ils changent d'aspect entre
+     macOS, Windows et Android. Les remplacer par des traits lucide donne un seul
+     langage visuel et un alignement previsible.
+     ⚠️ PERIMETRE : decor uniquement. Les pictogrammes meteo (codes WMO, FEW/SCT/
+     BKN/OVC) et les symboles de type de terrain restent des emojis : ils portent
+     de l'information, pas du style. */
+  .ag-ico {
+    display: inline-block; vertical-align: -0.14em;
+    flex: 0 0 auto; stroke-width: 2;
+  }
+  /* Sans cette marge, l'icone colle au libelle : un emoji embarque son propre
+     blanc lateral, pas un SVG. */
+  .ag-ico + span, .ag-ico + strong { margin-left: 2px; }
+
+  /* ===== v2.09.9 — ENCADRES FANTOMES =====
+     La legende sous-carte et le bloc distance/temps/conso portaient une bordure a
+     peine visible qui ne delimitait rien : elle ajoutait un trait sans separer deux
+     contenus differents. On garde le fond, on retire le trait. */
+  .ag-noframe { border: none !important; box-shadow: none !important; }
 
   /* ===== v2.09.4 — BOUTONS DE RAFRAICHISSEMENT =====
      L'icone tourne SUR PLACE : le libelle ne change pas, donc la largeur du
@@ -1032,7 +1054,7 @@
       <div id="wf-row-azba-notam" class="hidden">
         <div class="card vfr-block-azba" style="padding:14px 16px;border-left:4px solid #DC2626;">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-            <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0;display:flex;align-items:center;gap:6px;"><span style="color:#DC2626;">⚔️</span><span>AZBA / NOTAM</span></h2>
+            <h2 style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0;display:flex;align-items:center;gap:6px;"><i data-lucide="shield-alert" class="ag-ico" style="width:15px;height:15px;color:#DC2626;"></i><span>AZBA / NOTAM</span></h2>
             <span style="font-size:10px;background:#DC2626;color:white;padding:2px 8px;border-radius:9999px;font-weight:600;">À VÉRIFIER</span>
           </div>
           <p class="text-xs text-muted" style="margin:0 0 10px;">Le SIA bloque l'iframe → chaque lien ouvre une fenêtre dédiée. À consulter avant chaque vol.</p>
@@ -1116,7 +1138,7 @@
   <div id="poi-band" class="hidden" style="margin-top:18px;">
     <div class="card p-4 space-y-2">
       <div class="flex items-center justify-between flex-wrap gap-2">
-        <h2 class="text-sm font-medium uppercase tracking-wide text-muted">🗺️ POI à survoler</h2>
+        <h2 class="text-sm font-medium uppercase tracking-wide text-muted"><i data-lucide="map-pin" class="ag-ico " style="width:14px;height:14px;"></i> POI à survoler</h2>
         <span id="poi-count" class="pill" style="background:#E9E3F7;color:#5b3fa0;">—</span>
       </div>
       <div id="poi-list" class="space-y-1 mt-2"></div>
@@ -1272,7 +1294,7 @@
       <p class="text-xs text-muted">Un compte gratuit est nécessaire pour utiliser Mon Plan de Vol. Vos données sont synchronisées entre vos appareils (ordinateur, iPhone).</p>
 
       <div class="muted-bg p-3 rounded" id="auth-card">
-        <h3 class="text-sm font-semibold mb-2">🔐 Compte</h3>
+        <h3 class="text-sm font-semibold mb-2"><i data-lucide="lock-keyhole" class="ag-ico " style="width:14px;height:14px;"></i> Compte</h3>
         <div id="auth-logged-in" style="display:none;">
           <p class="text-xs mb-1">Connecté : <strong id="auth-user-email"></strong></p>
           <p class="text-xs mb-2" id="auth-verif"></p>
@@ -1303,11 +1325,11 @@
       </div>
 
       <div class="muted-bg p-3 rounded">
-        <h3 class="text-sm font-semibold mb-2">👤 Profil</h3>
+        <h3 class="text-sm font-semibold mb-2"><i data-lucide="user" class="ag-ico " style="width:14px;height:14px;"></i> Profil</h3>
         <div class="flex items-center gap-3 mb-3">
           <div id="acc-avatar-preview" class="acc-avatar"></div>
           <div class="flex gap-2 flex-wrap">
-            <button id="acc-photo-pick" class="px-3 py-2 rounded border" style="border-color:var(--border);font-size:13px;">📷 Changer la photo</button>
+            <button id="acc-photo-pick" class="px-3 py-2 rounded border" style="border-color:var(--border);font-size:13px;"><i data-lucide="camera" class="ag-ico " style="width:13px;height:13px;"></i> Changer la photo</button>
             <button id="acc-photo-remove" class="px-3 py-2 rounded border" style="border-color:var(--border);font-size:13px;display:none;">Retirer</button>
             <input type="file" id="acc-photo-file" accept="image/*" style="display:none;" />
           </div>
@@ -1321,7 +1343,7 @@
       </div>
 
       <div class="muted-bg p-3 rounded">
-        <h3 class="text-sm font-semibold mb-2">🛡️ Clé API OpenAIP</h3>
+        <h3 class="text-sm font-semibold mb-2"><i data-lucide="key-round" class="ag-ico " style="width:14px;height:14px;"></i> Clé API OpenAIP</h3>
         <p class="text-xs text-muted mb-2">Permet d'afficher les espaces aériens sur la carte. <a href="https://app.openaip.net/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">Profile → API Clients</a>.</p>
         <div class="flex gap-2 flex-wrap">
           <input type="text" id="p-openaip-input" class="ad-input flex-1" style="min-width:200px;" placeholder="Colle ta clé OpenAIP..." />
@@ -1336,11 +1358,11 @@
       </div>
 
       <div class="muted-bg p-3 rounded">
-        <h3 class="text-sm font-semibold mb-2">💾 Mes données</h3>
+        <h3 class="text-sm font-semibold mb-2"><i data-lucide="database" class="ag-ico " style="width:14px;height:14px;"></i> Mes données</h3>
         <p class="text-xs text-muted mb-2">Sauvegarde locale de tes réglages, profils ACFT, préférences et historique. Utile pour ne rien perdre ou transférer vers un autre navigateur.</p>
         <div class="flex gap-2 flex-wrap">
-          <button id="acc-export" class="px-3 py-2 rounded bg-black text-white" style="font-size:13px;">⬇️ Exporter mes données (JSON)</button>
-          <button id="acc-import" class="px-3 py-2 rounded border" style="border-color:var(--border);font-size:13px;">⬆️ Importer un fichier</button>
+          <button id="acc-export" class="px-3 py-2 rounded bg-black text-white" style="font-size:13px;"><i data-lucide="download" class="ag-ico " style="width:13px;height:13px;"></i> Exporter mes données (JSON)</button>
+          <button id="acc-import" class="px-3 py-2 rounded border" style="border-color:var(--border);font-size:13px;"><i data-lucide="upload" class="ag-ico " style="width:13px;height:13px;"></i> Importer un fichier</button>
           <input type="file" id="acc-import-file" accept="application/json,.json" style="display:none;" />
         </div>
         <div id="acc-data-status" class="text-xs mt-2 text-muted"></div>
@@ -3578,7 +3600,7 @@ function renderFuelSection(ad) {
           ${fuelStatusBadge(fuel.fuel_jet_a1)}
         </div>
       </div>
-      <p class="text-xs text-muted mt-2">⚠️ Données indicatives, vérifier sur SIA officiel avant chaque vol. MAJ : ${fuel.last_update}</p>
+      <p class="text-xs text-muted mt-2"><i data-lucide="alert-triangle" class="ag-ico " style="width:13px;height:13px;"></i> Données indicatives, vérifier sur SIA officiel avant chaque vol. MAJ : ${fuel.last_update}</p>
     </div>
   `;
 }
@@ -4638,7 +4660,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.8';
+const AG_PDF_VERSION = 'v2.09.9';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {

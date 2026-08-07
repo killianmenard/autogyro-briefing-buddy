@@ -2417,7 +2417,10 @@ body > header, body header { max-width: 100% !important; }
 .poi-tri { display: block; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 11px solid #666; filter: drop-shadow(0 0 1px rgba(0,0,0,0.55)); }
 /* v1.0.41 — légende sous-carte (#map-controls) : 2 boîtes (Terrains | POI) au lieu d'une liste empilée, items en grille 2 colonnes */
 .mapctl-legend-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 12px; align-items: start; }
-.mapctl-legend-box { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+/* v2.09.9 — bordure retiree : elle encadrait deux listes deja separees par la
+   grille et par leur en-tete, sans rien delimiter de plus. Le padding est
+   conserve, c est lui qui fait le bloc. */
+.mapctl-legend-box { border: none; border-radius: 10px; padding: 10px 12px; }
 .mapctl-legend-head { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--muted-foreground); margin-bottom: 6px; }
 .mapctl-legend-items { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; }
 @media (max-width: 640px) {
