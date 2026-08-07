@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.5 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.6 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -4638,7 +4638,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.5';
+const AG_PDF_VERSION = 'v2.09.6';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8002,20 +8002,35 @@ init();
       // 1) icone lucide deja rendue en <svg>, ou balise <i data-lucide> pas encore rendue
       var ico = btn.querySelector('svg, i[data-lucide]');
       if (ico) { ico.classList.add('ag-rot'); return ico; }
-      // 2) emoji en noeud texte : on l'isole dans un span pour pouvoir le faire tourner
+      // 2) emoji en noeud texte : on l'isole dans un span pour pouvoir le faire tourner.
+      //
+      // 🔴 LE FLAG /u EST OBLIGATOIRE. U+1F504 (🔄) est hors du plan multilingue de
+      // base : il occupe DEUX unites de code UTF-16 (paire de substitution). Sans
+      // /u, la classe de caracteres matche la moitie haute seule ("\ud83d",
+      // length 1) — on decoupait alors l'emoji en deux moities invalides, rendues
+      // par le navigateur en deux caracteres de remplacement. Incident constate en
+      // v2.09.4 sur #p-refresh et #p-openaip-reload.
+      //
+      // On reconstruit le noeud plutot que d'utiliser splitText() : les index de
+      // splitText sont en unites UTF-16 et ramenent exactement le meme piege.
+      var RE_ICON = /[\u{1F504}\u{1F503}\u21BB\u21BA\u27F3]/u;
       for (var i = 0; i < btn.childNodes.length; i++) {
         var n = btn.childNodes[i];
-        if (n.nodeType === 3 && /[🔄⟳↻]/.test(n.nodeValue)) {
-          var m = n.nodeValue.match(/[🔄⟳↻]/);
-          var idx = n.nodeValue.indexOf(m[0]);
-          var span = document.createElement('span');
-          span.className = 'ag-rot';
-          span.textContent = m[0];
-          var after = n.splitText(idx);
-          after.nodeValue = after.nodeValue.slice(m[0].length);
-          btn.insertBefore(span, after);
-          return span;
-        }
+        if (n.nodeType !== 3) continue;
+        var mm = RE_ICON.exec(n.nodeValue);
+        if (!mm) continue;
+        var glyph = mm[0];
+        var head = n.nodeValue.slice(0, mm.index);
+        var tail = n.nodeValue.slice(mm.index + glyph.length);
+        var span = document.createElement('span');
+        span.className = 'ag-rot';
+        span.textContent = glyph;
+        var frag = document.createDocumentFragment();
+        if (head) frag.appendChild(document.createTextNode(head));
+        frag.appendChild(span);
+        if (tail) frag.appendChild(document.createTextNode(tail));
+        btn.replaceChild(frag, n);
+        return span;
       }
       return null;
     }
