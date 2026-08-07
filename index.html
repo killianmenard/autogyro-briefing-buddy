@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.10.4 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.10.5 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -129,10 +129,13 @@
      fonctionner sans qu'une seule ligne de leur code soit touchee. Et comme on
      deplace #tab-account et #tab-params EUX-MEMES, les regles CSS existantes en
      « #tab-params .card » continuent de s'appliquer. */
+  /* v2.10.5 — centrage vertical. Avec flex-start et 42px de padding, la feuille
+     collait en haut : l'ecart etait de 42px au-dessus et de tout le reste en
+     dessous. align-items:center repartit la marge a parts egales. */
   #ag-acct-ov {
     position: fixed; inset: 0; z-index: 2500; display: none;
-    align-items: flex-start; justify-content: center;
-    padding: 42px 16px; overflow-y: auto;
+    align-items: center; justify-content: center;
+    padding: 5vh 16px; overflow-y: auto;
     background: rgba(15,23,42,.5);
   }
   #ag-acct-ov.open { display: flex; }
@@ -158,16 +161,22 @@
   /* v2.10.2 — hauteur FIXE. Elle variait selon la rubrique affichee, ce qui
      faisait sauter la feuille a chaque changement d'onglet. Le detail defile,
      la coquille ne bouge plus. */
-  #ag-acct-main { display: flex; align-items: stretch; height: 62vh; min-height: 420px; max-height: 660px; }
+  /* Hauteur portee a 74vh : la feuille paraissait ecrasee, sept rubriques plus
+     l'identite et la deconnexion ne tenaient pas dans 62vh sans deborder. */
+  #ag-acct-main { display: flex; align-items: stretch; height: 74vh; min-height: 460px; max-height: 780px; }
   #ag-acct-nav {
     flex: 0 0 268px; border-right: 1px solid var(--border, #e5e7eb);
     padding: 12px 10px; display: flex; flex-direction: column; gap: 2px;
+    /* La colonne defile si les rubriques depassent : sans cela, « se deconnecter »
+       sortait du conteneur et se superposait au numero de version du pied. */
+    overflow-y: auto; min-height: 0;
   }
   /* La deconnexion se detache du reste : elle ferme la session, elle n'est pas une
      rubrique parmi d'autres. margin-top:auto la pousse au bas de la colonne. */
   #ag-acct-logout {
-    margin-top: auto; padding-top: 12px;
+    margin-top: auto; padding-top: 14px; margin-bottom: 4px;
     border-top: 1px solid var(--border, #e5e7eb);
+    flex: 0 0 auto;   /* ne se comprime pas quand la colonne manque de place */
   }
   #ag-acct-logout .ag-acct-tab { color: var(--muted-foreground, #6b7280); }
   .ag-acct-tab {
@@ -216,7 +225,7 @@
   }
   #ag-acct-foot {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 12px 18px; border-top: 1px solid var(--border, #e5e7eb);
+    padding: 14px 20px; border-top: 1px solid var(--border, #e5e7eb);
     font-size: 11.5px; color: var(--muted-foreground, #6b7280);
     font-variant-numeric: tabular-nums;
   }
@@ -4871,7 +4880,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.10.4';
+const AG_PDF_VERSION = 'v2.10.5';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
