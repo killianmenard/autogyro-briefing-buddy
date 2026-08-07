@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.10.7 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.10.8 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -4906,7 +4906,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.10.7';
+const AG_PDF_VERSION = 'v2.10.8';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -6409,7 +6409,12 @@ async function updateAirspacesOnRoute() {
   const airspaces = await fetchFranceAirspaces();
   
   if (airspaces.length === 0) {
-    loadingEl.textContent = 'Données zones aériennes indisponibles (clé OpenAIP requise).';
+    // v2.10.8 — message honnete : sans cle on le dit ; avec une cle, la cause est
+    // ailleurs (reseau, quota, cle invalide) et l'ancien libelle envoyait chercher
+    // un reglage deja correct.
+    loadingEl.textContent = getOpenaipKey()
+      ? "Zones aériennes momentanément indisponibles — réessayez, ou rechargez l'overlay depuis Mon compte › avancé."
+      : "Données zones aériennes indisponibles : renseignez votre clé OpenAIP dans Mon compte › avancé.";
     document.getElementById('airspaces-count').textContent = '—';
     return;
   }
@@ -9453,11 +9458,27 @@ init();
       SYNC_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v !== null) bkp[k] = v; });
       localStorage.setItem('autogyrodash_backup_prewipe', JSON.stringify({ at: new Date().toISOString(), keys: bkp }));
     } catch (_) {}
+    // 🔴 v2.10.8 — La cle OpenAIP ne doit JAMAIS etre effacee par une synchro dont
+    // le cloud ne la porte pas. Sans cette protection : on se connecte sur un
+    // appareil dont le blob distant est anterieur a la saisie de la cle, le wipe
+    // ci-dessous la supprime, le cloud ne la restitue pas — et les ZONES AERIENNES
+    // disparaissent silencieusement. C'est une donnee de securite : la perdre sans
+    // un mot est le pire scenario possible.
+    // Le cloud reste prioritaire s'il PROPOSE une valeur ; il ne peut plus que
+    // remplacer la cle, jamais la supprimer.
+    var _keptKey = null;
+    try { _keptKey = localStorage.getItem('autogyrodash_openaip_key'); } catch (_) {}
+
     // Applique le cloud sur les clés durables. Les caches et autres clés restent intacts.
     SYNC_KEYS.forEach(k => localStorage.removeItem(k));
     Object.keys(cloud || {}).forEach(k => {
       if (SYNC_KEYS.indexOf(k) !== -1) { try { localStorage.setItem(k, cloud[k]); } catch (_) {} }
     });
+
+    try {
+      var _cloudKey = cloud && cloud['autogyrodash_openaip_key'];
+      if (_keptKey && !_cloudKey) localStorage.setItem('autogyrodash_openaip_key', _keptKey);
+    } catch (_) {}
   }
   // Rafraîchit l'UI après application du cloud — SANS reload (évite la boucle de re-comparaison)
   function refreshUiAfterSync() {
