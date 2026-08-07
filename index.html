@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.10.2 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.10.3 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -138,8 +138,8 @@
   #ag-acct-ov.open { display: flex; }
   #ag-acct {
     background: var(--card, #fff); color: var(--foreground, #111);
-    border: 1px solid var(--border, #e5e7eb); border-radius: 16px;
-    width: 100%; max-width: 620px; box-shadow: 0 22px 60px rgba(0,0,0,.30);
+    border: 1px solid var(--border, #e5e7eb); border-radius: 18px;
+    width: 100%; max-width: 980px; box-shadow: 0 22px 60px rgba(0,0,0,.30);
     overflow: hidden;
   }
   #ag-acct-head {
@@ -152,7 +152,7 @@
      la coquille ne bouge plus. */
   #ag-acct-main { display: flex; align-items: stretch; height: 62vh; min-height: 420px; max-height: 660px; }
   #ag-acct-nav {
-    flex: 0 0 188px; border-right: 1px solid var(--border, #e5e7eb);
+    flex: 0 0 268px; border-right: 1px solid var(--border, #e5e7eb);
     padding: 12px 10px; display: flex; flex-direction: column; gap: 2px;
   }
   .ag-acct-tab {
@@ -163,6 +163,17 @@
   }
   .ag-acct-tab:hover { background: var(--accent-soft, rgba(7,146,166,.08)); }
   .ag-acct-tab.on { background: var(--accent-soft, rgba(7,146,166,.14)); font-weight: 600; }
+  .ag-acct-grp {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted-foreground, #6b7280);
+    margin: 14px 0 4px; padding: 0 11px;
+  }
+  .ag-acct-grp:first-child { margin-top: 4px; }
+  #ag-acct-id { display: flex; align-items: center; gap: 10px; padding: 4px 11px 12px; }
+  #ag-acct-id img, #ag-acct-id .ag-avatar {
+    width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex: 0 0 auto;
+    background: linear-gradient(135deg, var(--accent,#0792a6), var(--accent-2,#0d7d92));
+  }
   .ag-acct-tab .ag-acct-val {
     margin-left: auto; font-size: 11.5px; font-weight: 400;
     color: var(--muted-foreground, #6b7280);
@@ -4821,7 +4832,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.10.2';
+const AG_PDF_VERSION = 'v2.10.3';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8262,10 +8273,16 @@ init();
       }
 
       var PANES = [
-        { id: 'compte',     icon: 'user',        txt: 'compte',     match: /compte|profil/ },
-        { id: 'abonnement', icon: 'credit-card', txt: 'abonnement', match: /abonnement|offre|pro\b/ },
-        { id: 'app',        icon: 'sliders-horizontal', txt: 'application', match: /unité|thème|theme|rayon|affichage/ },
-        { id: 'avance',     icon: 'settings-2',  txt: 'avancé',     match: /clé api|openaip|données|donnees|action/ }
+        // v2.10.3 — sept rubriques groupees, comme la maquette : une entree par bloc
+        // reel plutot que quatre fourre-tout. Chaque bloc porte deja son <h3>, la
+        // correspondance est donc directe.
+        { g: 'compte',      id: 'compte',     icon: 'user',        txt: 'compte',              match: /compte|profil/ },
+        { g: 'compte',      id: 'abonnement', icon: 'credit-card', txt: 'abonnement',          match: /abonnement|offre/ },
+        { g: 'application', id: 'unites',     icon: 'ruler',       txt: 'affichage & unites',  match: /unit\u00e9|affichage/ },
+        { g: 'application', id: 'theme',      icon: 'sun-moon',    txt: 'th\u00e8me',              match: /th\u00e8me|theme/ },
+        { g: 'application', id: 'rayons',     icon: 'circle-dot',  txt: 'rayons de d\u00e9tection', match: /rayon/ },
+        { g: 'avance',      id: 'openaip',    icon: 'key-round',   txt: 'cl\u00e9 API OpenAIP',    match: /cl\u00e9 api|openaip/ },
+        { g: 'avance',      id: 'donnees',    icon: 'database',    txt: 'mes donn\u00e9es',        match: /donn\u00e9es|action/ }
       ];
 
       var made = {};
@@ -8286,6 +8303,35 @@ init();
         made.abonnement.insertAdjacentHTML('beforeend', AG_PLANS_HTML);
       }
 
+      // v2.10.3 — changement d'email et de mot de passe. Ces deux operations
+      // n'existaient nulle part dans l'application.
+      //
+      // ⚠️ Firebase exige une session RECENTE pour les deux. On demande donc
+      // systematiquement le mot de passe actuel et on reauthentifie avant d'agir :
+      // c'est la seule facon d'eviter l'erreur « requires-recent-login » qui, sinon,
+      // survient de facon apparemment aleatoire selon l'age de la session.
+      //
+      // Et on utilise verifyBeforeUpdateEmail, pas updateEmail : la nouvelle adresse
+      // doit etre confirmee AVANT de devenir l'identifiant. Avec updateEmail, une
+      // faute de frappe verrouille le compte definitivement.
+      made.compte.insertAdjacentHTML('beforeend',
+        '<div class="card" style="padding:12px;margin-top:12px;">'
+        + '<h3 class="text-sm font-semibold mb-2"><i data-lucide="at-sign" class="ag-ico" style="width:14px;height:14px;"></i> Identifiants</h3>'
+        + '<label style="display:block;font-size:12px;margin-bottom:4px;">Mot de passe actuel</label>'
+        + '<input id="ag-id-cur" type="password" autocomplete="current-password" class="ad-input" style="width:100%;margin-bottom:10px;" placeholder="requis pour toute modification" />'
+        + '<label style="display:block;font-size:12px;margin-bottom:4px;">Nouvelle adresse email</label>'
+        + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
+        +   '<input id="ag-id-mail" type="email" autocomplete="email" class="ad-input" style="flex:1;" placeholder="nouvelle@adresse.fr" />'
+        +   '<button type="button" id="ag-id-mail-btn" class="px-3 py-2 rounded border" style="border-color:var(--border);font-size:12.5px;">Changer</button>'
+        + '</div>'
+        + '<label style="display:block;font-size:12px;margin-bottom:4px;">Nouveau mot de passe</label>'
+        + '<div style="display:flex;gap:8px;">'
+        +   '<input id="ag-id-pwd" type="password" autocomplete="new-password" class="ad-input" style="flex:1;" placeholder="8 caracteres minimum" />'
+        +   '<button type="button" id="ag-id-pwd-btn" class="px-3 py-2 rounded border" style="border-color:var(--border);font-size:12.5px;">Changer</button>'
+        + '</div>'
+        + '<p id="ag-id-msg" class="text-xs mt-2"></p>'
+        + '</div>');
+
       var all = blocks(acct).concat(blocks(prm));
       all.forEach(function (el) {
         var t = label(el), placed = false;
@@ -8303,7 +8349,29 @@ init();
       document.body.appendChild(acct);
       document.body.appendChild(prm);
 
+      // Identite en tete de colonne (avatar, nom, email) comme la maquette : elle
+      // remplace le bandeau superieur, qui prenait toute la largeur pour trois mots.
+      var idb = document.createElement('div');
+      idb.id = 'ag-acct-id';
+      var pname = '', pphoto = '';
+      try { pname = localStorage.getItem('autogyrodash_profile_name') || ''; } catch (_) {}
+      try { pphoto = localStorage.getItem('autogyrodash_profile_photo') || ''; } catch (_) {}
+      idb.innerHTML = (pphoto ? '<img src="' + pphoto + '" alt="">' : '<div class="ag-avatar"></div>')
+        + '<div style="min-width:0;">'
+        +   '<div style="font-size:13.5px;font-weight:600;">' + (pname || 'Mon compte') + '</div>'
+        +   '<div id="ag-acct-mail2" style="font-size:11.5px;color:var(--muted-foreground,#6b7280);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>'
+        + '</div>';
+      nav.appendChild(idb);
+
+      var lastG = null;
       PANES.forEach(function (p, idx) {
+        if (p.g !== lastG) {
+          var g = document.createElement('div');
+          g.className = 'ag-acct-grp';
+          g.textContent = p.g;
+          nav.appendChild(g);
+          lastG = p.g;
+        }
         var b = document.createElement('button');
         b.type = 'button';
         b.className = 'ag-acct-tab' + (idx === 0 ? ' on' : '');
@@ -8314,6 +8382,59 @@ init();
         nav.appendChild(b);
       });
       made.compte.classList.add('on');
+
+      // --- gestionnaires des identifiants -------------------------------------
+      function idMsg(txt, err) {
+        var m = document.getElementById('ag-id-msg');
+        if (!m) return;
+        m.textContent = txt || '';
+        m.style.color = err ? '#B91C1C' : 'var(--good, #0a9a82)';
+      }
+      // Reauthentification : obligatoire avant tout changement d'identifiant, et
+      // elle consomme le mot de passe actuel saisi juste au-dessus.
+      async function reauth() {
+        var cur = document.getElementById('ag-id-cur');
+        var pwd = cur ? cur.value : '';
+        if (!pwd) { idMsg('Saisis ton mot de passe actuel.', true); return false; }
+        if (!auth.currentUser || !auth.currentUser.email) { idMsg('Session expiree — reconnecte-toi.', true); return false; }
+        try {
+          await reauthenticateWithCredential(auth.currentUser,
+            EmailAuthProvider.credential(auth.currentUser.email, pwd));
+          return true;
+        } catch (e) {
+          idMsg(e && e.code === 'auth/wrong-password' ? 'Mot de passe incorrect.' : 'Verification refusee.', true);
+          return false;
+        }
+      }
+      var mb = document.getElementById('ag-id-mail-btn');
+      if (mb) mb.addEventListener('click', async function () {
+        var f = document.getElementById('ag-id-mail');
+        var v = (f && f.value || '').trim();
+        if (!v) { idMsg('Renseigne la nouvelle adresse.', true); return; }
+        idMsg('Verification...');
+        if (!(await reauth())) return;
+        try {
+          await verifyBeforeUpdateEmail(auth.currentUser, v);
+          idMsg('Email de confirmation envoye a ' + v + '. L\'adresse changera apres le clic.');
+          if (f) f.value = '';
+        } catch (e) {
+          idMsg(e && e.code === 'auth/email-already-in-use' ? 'Cette adresse est deja utilisee.' : 'Changement refuse.', true);
+        }
+      });
+      var pb = document.getElementById('ag-id-pwd-btn');
+      if (pb) pb.addEventListener('click', async function () {
+        var f = document.getElementById('ag-id-pwd');
+        var v = (f && f.value || '');
+        if (v.length < 8) { idMsg('8 caracteres minimum.', true); return; }
+        idMsg('Verification...');
+        if (!(await reauth())) return;
+        try {
+          await updatePassword(auth.currentUser, v);
+          idMsg('Mot de passe mis a jour.');
+          if (f) f.value = '';
+          var cur = document.getElementById('ag-id-cur'); if (cur) cur.value = '';
+        } catch (e) { idMsg('Changement refuse.', true); }
+      });
 
       ov.querySelector('#ag-acct-back').addEventListener('click', function () {
         ov.querySelector('#ag-acct').classList.remove('detail');
@@ -8362,6 +8483,8 @@ init();
         var mail = document.getElementById('auth-user-email');
         var t = document.getElementById('ag-acct-mail');
         if (mail && t) t.textContent = mail.textContent || '';
+        var t2 = document.getElementById('ag-acct-mail2');
+        if (mail && t2) t2.textContent = mail.textContent || '';
       } catch (_) {}
       o.classList.add('open');
       document.body.style.overflow = 'hidden';
@@ -8768,7 +8891,11 @@ init();
     getAuth, onAuthStateChanged, getIdTokenResult,
     createUserWithEmailAndPassword, signInWithEmailAndPassword,
     signOut, sendPasswordResetEmail, sendEmailVerification,
-    deleteUser, EmailAuthProvider, reauthenticateWithCredential
+    deleteUser, EmailAuthProvider, reauthenticateWithCredential,
+    // v2.10.3 — verifyBeforeUpdateEmail plutot que updateEmail : la nouvelle
+    // adresse doit etre confirmee AVANT de devenir l'identifiant, sinon une faute
+    // de frappe verrouille le compte definitivement.
+    verifyBeforeUpdateEmail, updatePassword
   } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js';
   import {
     getFirestore, doc, getDoc, setDoc, deleteDoc
