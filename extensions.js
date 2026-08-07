@@ -1386,6 +1386,65 @@
     try { localStorage.setItem(COLLAPSE_PREF_KEY, JSON.stringify(cur)); } catch(e) {}
   }
 
+  // ===== v2.11.1 — DEPLI/REPLI ANIME =====
+  // Les deux moteurs de pliage (blocs .collapsible-block et cartes natives)
+  // basculaient display:none. On anime la hauteur a la place.
+  //
+  // ⚠️ JETON D'ANIMATION. Un second clic pendant l'animation relancerait une
+  // mesure sur un element a mi-hauteur : le contenu se figerait a une hauteur
+  // fausse. Chaque animation pose son numero sur l'element ; seule la derniere
+  // a le droit de faire le menage a la fin.
+  var _agAnimTok = 0;
+  // openDisplay : trois blocs (carte des aerodromes, zones aeriennes, resume du
+  // trajet) s'ouvrent en flex et non en block. Restaurer '' les casserait.
+  function agSetCollapsed(el, collapsed, instant, openDisplay) {
+    var OPEN = openDisplay || '';
+    if (!el) return;
+    var reduce = false;
+    try { reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) {}
+    if (instant || reduce) {
+      el.style.transition = ''; el.style.height = ''; el.style.opacity = '';
+      el.style.overflow = ''; el.style.display = collapsed ? 'none' : OPEN;
+      return;
+    }
+    var tok = ++_agAnimTok;
+    el.dataset.agTok = String(tok);
+    el.style.overflow = 'hidden';
+    el.style.transition = 'height .26s cubic-bezier(.4,0,.2,1), opacity .2s ease';
+
+    function done() {
+      if (el.dataset.agTok !== String(tok)) return;   // une autre animation a pris la main
+      el.style.transition = ''; el.style.height = ''; el.style.opacity = '';
+      el.style.overflow = '';
+      if (collapsed) el.style.display = 'none';
+    }
+    function watch() {
+      var fired = false;
+      function end(e) {
+        if (e && e.target !== el) return;
+        if (fired) return; fired = true;
+        el.removeEventListener('transitionend', end);
+        done();
+      }
+      el.addEventListener('transitionend', end);
+      // Filet : onglet en arriere-plan ou element masque, transitionend ne part
+      // jamais. Sans cela le bloc resterait bloque a hauteur nulle.
+      setTimeout(end, 420);
+    }
+
+    if (collapsed) {
+      el.style.height = el.scrollHeight + 'px'; el.style.opacity = '1';
+      void el.offsetHeight;   // lecture forcee : sinon les deux ecritures sont regroupees
+      el.style.height = '0px'; el.style.opacity = '0';
+    } else {
+      el.style.display = OPEN;
+      el.style.height = '0px'; el.style.opacity = '0';
+      void el.offsetHeight;
+      el.style.height = el.scrollHeight + 'px'; el.style.opacity = '1';
+    }
+    watch();
+  }
+
   function wireCollapsibles() {
     const blocks = document.querySelectorAll('.collapsible-block:not([data-collapse-wired])');
     blocks.forEach(block => {
@@ -1399,16 +1458,13 @@
       // État initial : déplié par défaut (sauf si l'utilisateur a explicitement plié avant)
       let collapsed = prefs[key] === true;
 
-      function apply() {
-        if (collapsed) {
-          content.style.display = 'none';
-          chevron.classList.add('collapsed');
-        } else {
-          content.style.display = '';
-          chevron.classList.remove('collapsed');
-        }
+      // v2.11.1 — instant au premier passage : une cascade d'animations au
+      // chargement se lirait comme une page qui met du temps a s'afficher.
+      function apply(instant) {
+        agSetCollapsed(content, collapsed, instant === true);
+        chevron.classList.toggle('collapsed', collapsed);
       }
-      apply();
+      apply(true);
 
       chevron.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1617,20 +1673,18 @@
     const prefs = loadCollapsePrefs();
     let collapsed = prefs['aerodromes-merged'] === true;
 
-    function apply() {
-      if (collapsed) {
-        content.style.display = 'none';
-        chevron.classList.add('collapsed');
-      } else {
-        content.style.display = 'flex';
-        chevron.classList.remove('collapsed');
-        // Réinvalider la map au dépliage
+    function apply(instant) {
+      agSetCollapsed(content, collapsed, instant === true, 'flex');
+      chevron.classList.toggle('collapsed', collapsed);
+      if (!collapsed) {
+        // ⚠️ 320ms et non 50 : Leaflet doit mesurer un conteneur a sa hauteur
+        // FINALE. Mesure pendant l'animation = carte grise a moitie rendue.
         setTimeout(() => {
           try { if (typeof map !== 'undefined' && map?.invalidateSize) map.invalidateSize(); } catch(e) {}
-        }, 50);
+        }, instant === true ? 50 : 320);
       }
     }
-    apply();
+    apply(true);
 
     chevron.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1777,16 +1831,11 @@
     const prefs = loadCollapsePrefs();
     let collapsed = prefs[key] === true;
 
-    function apply() {
-      if (collapsed) {
-        contentWrapper.style.display = 'none';
-        chevron.classList.add('collapsed');
-      } else {
-        contentWrapper.style.display = '';
-        chevron.classList.remove('collapsed');
-      }
+    function apply(instant) {
+      agSetCollapsed(contentWrapper, collapsed, instant === true);
+      chevron.classList.toggle('collapsed', collapsed);
     }
-    apply();
+    apply(true);
 
     chevron.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2888,6 +2937,11 @@ html.dark button[class*="rounded"][class*="border"] {
 .vfr-block-notam .collapse-chevron,
 .vfr-block-notam .v0623-abs,
 .vfr-block-notam .v0614-chev,
+/* v2.11.1 — le chevron accompagne le depli. Sans transition il basculait d'un
+   coup pendant que le contenu, lui, glissait : deux vitesses pour un seul geste. */
+.unified-chevron { transition: transform .26s cubic-bezier(.4,0,.2,1); }
+/* La rotation elle-meme existe deja plus bas (l.3071) : on n'ajoute que la
+   transition, sinon deux regles identiques cohabiteraient pour rien. */
 .ad-card .unified-chevron,
 .ad-card .collapse-chevron,
 .ad-card .v0623-abs,
@@ -3652,16 +3706,11 @@ body[data-fullscreen-active] .wf-mode-line {
     // Wire toggle (persisté)
     const prefs = loadCollapsePrefs();
     let collapsed = prefs['zones-aer'] === true;
-    function apply() {
-      if (collapsed) {
-        content.style.display = 'none';
-        chevron.classList.add('collapsed');
-      } else {
-        content.style.display = 'flex';
-        chevron.classList.remove('collapsed');
-      }
+    function apply(instant) {
+      agSetCollapsed(content, collapsed, instant === true, 'flex');
+      chevron.classList.toggle('collapsed', collapsed);
     }
-    apply();
+    apply(true);
     chevron.addEventListener('click', (e) => {
       e.stopPropagation();
       collapsed = !collapsed;
@@ -3716,16 +3765,11 @@ body[data-fullscreen-active] .wf-mode-line {
     // Wire toggle
     const prefs = loadCollapsePrefs();
     let collapsed = prefs['resume-trajet'] === true;
-    function apply() {
-      if (collapsed) {
-        content.style.display = 'none';
-        chevron.classList.add('collapsed');
-      } else {
-        content.style.display = 'flex';
-        chevron.classList.remove('collapsed');
-      }
+    function apply(instant) {
+      agSetCollapsed(content, collapsed, instant === true, 'flex');
+      chevron.classList.toggle('collapsed', collapsed);
     }
-    apply();
+    apply(true);
     chevron.addEventListener('click', (e) => {
       e.stopPropagation();
       collapsed = !collapsed;

@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.11 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.11.1 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -353,16 +353,23 @@
      Pas de degrade d'effacement, contrairement au site : la page vitrine se lit
      du haut vers le bas, l'app se lit par blocs. Une texture uniforme et tres
      faible, qu'on ne remarque pas, est ce qu'il faut ici. */
-  :root { --ag-dot: rgba(26,26,26,.075); }
-  [data-theme="dark"] { --ag-dot: rgba(255,255,255,.055); }
-  body {
+  :root { --ag-dot: rgba(26,26,26,.085); }
+  [data-theme="dark"] { --ag-dot: rgba(255,255,255,.06); }
+  /* ⚠️ v2.11.1 — LE MOTIF NE PEUT PAS VIVRE SUR <body>, ET CE N'EST PAS UN DETAIL.
+     extensions.js impose « background-image: none !important » sur body.dark et
+     « background: transparent !important » sur body clair : le raccourci remet
+     background-image a zero. La regle de v2.11 etait effacee dans les deux
+     themes. Et meme sans cela, html::before est un calque FIXE ET OPAQUE en
+     z-index -1 qui recouvrait le fond de <html>.
+     On empile donc un SECOND pseudo-element : a z-index egal, ::after est peint
+     apres ::before, donc au-dessus du degrade atmospherique et sous tout le
+     contenu. Meme placement que ::before, dont on sait depuis v0.6.29 qu'il ne
+     casse ni le sticky de l'en-tete ni le fixed du pied. */
+  html::after {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
     background-image: radial-gradient(circle at 1px 1px, var(--ag-dot) 1px, transparent 0);
     background-size: 22px 22px;
-    background-attachment: fixed;
   }
-  /* La carte Leaflet et les surfaces pleines ne doivent pas laisser voir le
-     motif : il n'a de sens que sur le fond de page. */
-  .leaflet-container { background-image: none; }
 
   /* ------------------------------------------------------------------
      b) CARTES : OMBRE EN COUCHES, SURVOL, BALAYAGE LUMINEUX
@@ -425,7 +432,9 @@
     .card, .card:hover { transition: none; transform: none; }
     .card::after, .card:hover::after { animation: none; }
     .ag-det-anim > .ag-det-body { transition: none; }
-    body { background-image: none; }
+    /* Le motif ne bouge pas : il n'y a aucune raison de le retirer ici. Seule
+       l'animation de depli est neutralisee. */
+    .native-collapsible-content, .collapsible-content { transition: none !important; }
   }
 
   /* ===== v2.10.7 — ONDE AU CLIC (ripple) =====
@@ -5071,7 +5080,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.11';
+const AG_PDF_VERSION = 'v2.11.1';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
