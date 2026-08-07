@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.12 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.10 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -117,6 +117,61 @@
   /* Sans cette marge, l'icone colle au libelle : un emoji embarque son propre
      blanc lateral, pas un SVG. */
   .ag-ico + span, .ag-ico + strong { margin-left: 2px; }
+
+  /* ===== v2.10 — « MON COMPTE » EN POP-UP =====
+     Compte et Parametres etaient deux onglets distincts alors qu'ils repondent a
+     la meme question : « regler mon application ». Ils deviennent deux rubriques
+     d'une meme feuille, ouverte par l'avatar.
+
+     🔑 CHOIX D'IMPLEMENTATION : on DEPLACE les <section> existantes dans la feuille
+     au lieu d'en recopier le contenu. Un appendChild transporte le noeud avec tous
+     ses ecouteurs — Stripe, export/import, cle API, curseurs de rayon continuent de
+     fonctionner sans qu'une seule ligne de leur code soit touchee. Et comme on
+     deplace #tab-account et #tab-params EUX-MEMES, les regles CSS existantes en
+     « #tab-params .card » continuent de s'appliquer. */
+  #ag-acct-ov {
+    position: fixed; inset: 0; z-index: 2500; display: none;
+    align-items: flex-start; justify-content: center;
+    padding: 42px 16px; overflow-y: auto;
+    background: rgba(15,23,42,.5);
+  }
+  #ag-acct-ov.open { display: flex; }
+  #ag-acct {
+    background: var(--card, #fff); color: var(--foreground, #111);
+    border: 1px solid var(--border, #e5e7eb); border-radius: 16px;
+    width: 100%; max-width: 620px; box-shadow: 0 22px 60px rgba(0,0,0,.30);
+    overflow: hidden;
+  }
+  #ag-acct-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 18px; border-bottom: 1px solid var(--border, #e5e7eb);
+  }
+  #ag-acct-body { padding: 6px 18px 4px; }
+  #ag-acct-foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 18px; border-top: 1px solid var(--border, #e5e7eb);
+    font-size: 11.5px; color: var(--muted-foreground, #6b7280);
+    font-variant-numeric: tabular-nums;
+  }
+  .ag-acct-kicker {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--muted-foreground, #6b7280);
+    margin: 18px 0 8px;
+  }
+  #ag-acct .card { border-radius: 12px; }
+  /* Les deux sections deplacees ne doivent plus se comporter en onglet : elles sont
+     visibles en permanence dans la feuille. */
+  #ag-acct #tab-account, #ag-acct #tab-params { display: block !important; }
+  /* L'onglet engrenage disparait de la pilule. ⚠️ On le MASQUE au lieu de le
+     supprimer : basulm.js insere « profil » (menu mobile) juste apres lui et garde
+     une reference au noeud. Le retirer casserait la navigation mobile. */
+  .tab-btn[data-tab="params"] { display: none !important; }
+
+  @media (max-width: 768px) {
+    /* Mobile : feuille plein ecran, comme la maquette. */
+    #ag-acct-ov { padding: 0; }
+    #ag-acct { max-width: none; border-radius: 0; min-height: 100vh; }
+  }
 
   /* ===== v2.09.12 — FINITIONS (2) =====
 
@@ -4725,7 +4780,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.12';
+const AG_PDF_VERSION = 'v2.10';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8071,6 +8126,114 @@ init();
       el.textContent = txt;
     } catch (_) {}
   }
+
+  // ============================================================
+  // 11. « MON COMPTE » EN POP-UP (v2.10)
+  // ============================================================
+  (function _agAccountSheet() {
+    var built = false, ov = null;
+
+    function kicker(txt) {
+      var d = document.createElement('div');
+      d.className = 'ag-acct-kicker';
+      d.textContent = txt;
+      return d;
+    }
+
+    function build() {
+      if (built) return ov;
+      var acct = document.getElementById('tab-account');
+      var prm  = document.getElementById('tab-params');
+      // #tab-params est cree par basulm.js de facon asynchrone : sans lui, on
+      // n'assemble rien et on retentera au prochain clic.
+      if (!acct || !prm) return null;
+
+      ov = document.createElement('div');
+      ov.id = 'ag-acct-ov';
+      ov.innerHTML =
+        '<div id="ag-acct" role="dialog" aria-modal="true" aria-label="Mon compte">'
+        + '<div id="ag-acct-head">'
+        +   '<div style="flex:1;min-width:0;">'
+        +     '<div style="font-size:15px;font-weight:600;">Mon compte</div>'
+        +     '<div id="ag-acct-mail" style="font-size:12.5px;color:var(--muted-foreground,#6b7280);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>'
+        +   '</div>'
+        +   '<button type="button" id="ag-acct-x" aria-label="Fermer" style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground,#6b7280);padding:4px;">'
+        +     '<i data-lucide="x" class="ag-ico" style="width:20px;height:20px;"></i>'
+        +   '</button>'
+        + '</div>'
+        + '<div id="ag-acct-body"></div>'
+        + '<div id="ag-acct-foot"><span id="ag-acct-ver"></span><span id="ag-acct-clock"></span></div>'
+        + '</div>';
+      document.body.appendChild(ov);
+
+      var body = ov.querySelector('#ag-acct-body');
+      // Ordre de la maquette : compte / abonnement d'abord, reglages ensuite.
+      body.appendChild(kicker('compte'));
+      acct.classList.remove('hidden');
+      body.appendChild(acct);
+      body.appendChild(kicker('application'));
+      prm.classList.remove('hidden');
+      body.appendChild(prm);
+
+      ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+      ov.querySelector('#ag-acct-x').addEventListener('click', close);
+
+      var v = document.getElementById('ag-acct-ver');
+      if (v) v.textContent = 'v1.0.34';
+      built = true;
+      try { if (window.lucide) window.lucide.createIcons(); } catch (_) {}
+      return ov;
+    }
+
+    // Le pied reprend l'heure Zoulou, comme la maquette — mais la pilule la garde
+    // aussi (arbitrage : sur un outil de preparation de vol, l'heure doit rester
+    // lisible sans ouvrir quoi que ce soit).
+    function tickClock() {
+      var el = document.getElementById('ag-acct-clock');
+      if (!el || !ov || !ov.classList.contains('open')) return;
+      var n = new Date();
+      el.textContent = String(n.getUTCHours()).padStart(2, '0') + ':'
+                     + String(n.getUTCMinutes()).padStart(2, '0') + ':'
+                     + String(n.getUTCSeconds()).padStart(2, '0') + 'Z';
+    }
+
+    function open() {
+      var o = build();
+      if (!o) return;
+      try {
+        var mail = document.getElementById('auth-user-email');
+        var t = document.getElementById('ag-acct-mail');
+        if (mail && t) t.textContent = mail.textContent || '';
+      } catch (_) {}
+      o.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      tickClock();
+      try { if (typeof refreshParamsState === 'function') refreshParamsState(); } catch (_) {}
+    }
+    function close() {
+      if (!ov) return;
+      ov.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    window._agOpenAccount = open;
+
+    setInterval(tickClock, 1000);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && ov && ov.classList.contains('open')) close();
+    });
+
+    // L'avatar et l'entree « profil » du menu mobile ouvrent la feuille. Capture :
+    // on passe avant les gestionnaires existants pour empecher la bascule d'onglet.
+    document.addEventListener('click', function (e) {
+      var t = e.target && e.target.closest
+        ? e.target.closest('#account-circle, .ag-menu-profile, .tab-btn[data-tab="params"]')
+        : null;
+      if (!t) return;
+      e.preventDefault();
+      e.stopPropagation();
+      open();
+    }, true);
+  })();
 
   // ============================================================
   // 10. RENDU DIFFERE DES ICONES LUCIDE (v2.09.12)

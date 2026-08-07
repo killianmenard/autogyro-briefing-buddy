@@ -705,7 +705,7 @@
         <p class="text-xs text-muted">Toutes les options de personnalisation et actions sont regroupées ici.</p>
 
         <div class="muted-bg p-3 rounded">
-          <h3 class="text-sm font-semibold mb-2">📏 Unités d'affichage</h3>
+          <h3 class="text-sm font-semibold mb-2"><i data-lucide="ruler" class="ag-ico" style="width:14px;height:14px;"></i> Unités d'affichage</h3>
           <div class="space-y-2">
             <div>
               <div class="text-xs text-muted mb-1">Vitesse</div>
@@ -725,7 +725,7 @@
         </div>
 
         <div class="muted-bg p-3 rounded">
-          <h3 class="text-sm font-semibold mb-2">🎨 Thème</h3>
+          <h3 class="text-sm font-semibold mb-2"><i data-lucide="palette" class="ag-ico" style="width:14px;height:14px;"></i> Thème</h3>
           <div class="flex gap-2 mb-2">
             <button class="p-theme-btn flex-1 px-3 py-2 rounded border" data-val="auto" style="border-color:var(--border);font-size:13px;">📱 Auto (système)</button>
             <button class="p-theme-btn flex-1 px-3 py-2 rounded border" data-val="light" style="border-color:var(--border);font-size:13px;">☀️ Clair</button>
@@ -735,7 +735,7 @@
         </div>
 
         <div class="muted-bg p-3 rounded">
-          <h3 class="text-sm font-semibold mb-2">⛽ Rayon de détection avitaillement</h3>
+          <h3 class="text-sm font-semibold mb-2"><i data-lucide="fuel" class="ag-ico" style="width:14px;height:14px;"></i> Rayon de détection avitaillement</h3>
           <p class="text-xs text-muted mb-2">Terrains avec carburant essence affichés dans ce rayon autour du trajet (écran + PDF).</p>
           <input type="range" id="p-fuel-radius" min="15" max="40" step="5" value="25" style="width:100%;" />
           <div class="text-xs mt-1">Rayon : <strong><span class="fuel-radius-val">25</span> km</strong></div>
@@ -743,7 +743,7 @@
         </div>
 
         <div class="muted-bg p-3 rounded">
-          <h3 class="text-sm font-semibold mb-2">🏰 Rayon de détection POI</h3>
+          <h3 class="text-sm font-semibold mb-2"><i data-lucide="landmark" class="ag-ico" style="width:14px;height:14px;"></i> Rayon de détection POI</h3>
           <p class="text-xs text-muted mb-2">Sites notables (châteaux, lacs, viaducs, sommets) affichés dans ce rayon autour du trajet (écran + PDF) — indépendant du rayon avitaillement.</p>
           <input type="range" id="p-poi-radius" min="15" max="40" step="5" value="25" style="width:100%;" />
           <div class="text-xs mt-1">Rayon : <strong><span class="poi-radius-val">25</span> km</strong></div>
