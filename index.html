@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.4 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.5 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -135,9 +135,15 @@
      currentColor => il herite de la couleur du badge, aucune palette a maintenir. */
   .ag-dot::before {
     content: ''; flex: 0 0 auto;
-    width: 6px; height: 6px; margin-right: 6px;
+    width: 6px; height: 6px; margin-right: 5px;
     border-radius: 50%; background: currentColor;
   }
+  /* v2.09.5 — les pastilles ne doivent jamais se casser sur deux lignes ni pousser
+     leur ligne flex parente : un compteur qui gagne 12px de large fait deborder la
+     .card, puis #tab-plan, puis main. C'est ce qu'a mesure l'audit Impeccable
+     (23 debordements en cascade). Le point reste sur les badges d'ETAT courts, il
+     est retire des compteurs — voir _agBadges. */
+  .pill { white-space: nowrap; }
 
   /* Halo : relief sans mouvement. color-mix garde la teinte exacte du badge,
      donc aucune couleur en dur a synchroniser avec les styles inline existants. */
@@ -4632,7 +4638,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.4';
+const AG_PDF_VERSION = 'v2.09.5';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8082,7 +8088,11 @@ init();
       var el = document.getElementById(id);
       if (!el || el.dataset.agBadge === '1') return;
       el.dataset.agBadge = '1';
-      el.classList.add('ag-dot', 'ag-glow');
+      // v2.09.5 — PAS de point sur les compteurs. Un point est un indicateur
+      // d'etat ; « 14 / 22 zones » est une mesure, pas un etat. Et surtout il
+      // ajoutait 12px de large a des pastilles deja au plus juste, ce qui faisait
+      // deborder toute la chaine de conteneurs parents.
+      el.classList.add('ag-glow');
       seen[id] = (el.textContent || '').trim();
       try {
         new MutationObserver(function () {
