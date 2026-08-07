@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.7 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.8 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -4638,7 +4638,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.7';
+const AG_PDF_VERSION = 'v2.09.8';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8085,6 +8085,33 @@ init();
       if (btn.id === 'wf-load-btn') return; // arret pilote par #wf-status, cf. ci-dessous
       setTimeout(function () { window.agBusy(btn, false); }, FALLBACK_MS);
     }, true);
+
+    // ⚠️ v2.09.8 — NORMALISATION AU CHARGEMENT, pas au premier clic.
+    // rotTarget() remplace l'emoji par l'icone lucide, mais il n'etait appele que
+    // par agBusy() — donc au clic. Resultat : l'emoji restait visible tant que
+    // l'utilisateur n'avait pas actionne le bouton. Poser l'icone et declencher
+    // l'animation sont deux choses distinctes ; la premiere doit avoir lieu des que
+    // le bouton existe dans le document.
+    //
+    // Le balayage est periodique parce que deux de ces boutons n'existent pas au
+    // chargement : #p-openaip-reload et #p-refresh vivent dans l'onglet Parametres,
+    // construit par basulm.js. On s'arrete des que les quatre sont traites.
+    (function normalizeIcons() {
+      var passes = 0;
+      var iv = setInterval(function () {
+        var done = 0, present = 0;
+        for (var i = 0; i < IDS.length; i++) {
+          var b = document.getElementById(IDS[i]);
+          if (!b) continue;
+          present++;
+          if (b.querySelector('.ag-rot')) { done++; continue; }
+          if (rotTarget(b)) done++;
+        }
+        // Les quatre boutons existent et portent tous leur icone : plus rien a faire.
+        if (present === IDS.length && done === IDS.length) clearInterval(iv);
+        if (++passes > 150) clearInterval(iv); // filet : 5 min maximum
+      }, 2000);
+    })();
 
     // La carte meteo France, elle, expose un vrai signal : #wf-status affiche
     // « chargement... » pendant la requete. On s'y accroche plutot que de deviner.
