@@ -772,6 +772,9 @@
     `;
   }
 
+  // v2.10.2 — exposee sur window : la feuille « mon compte » doit pouvoir
+  // repeindre l'etat actif des boutons d'unites et de theme a chaque ouverture.
+  // Sans cet appel, les boutons restaient incolores jusqu'au premier clic.
   function refreshParamsState() {
     // v0.6.31 — l'état actif prend directement la couleur du thème (bleu ciel le
     // jour, blanc cassé la nuit) au lieu de var(--foreground) (= noir le jour).
@@ -832,7 +835,8 @@
       inp.style.display = _agRadiusGated ? 'none' : '';
     });
     document.querySelectorAll('.ag-radius-lock').forEach(function (el) { el.style.display = _agRadiusGated ? '' : 'none'; });
-  }
+  }  window.refreshParamsState = refreshParamsState;
+
 
   function setupParamsHandlers() {
     // v0.8.45 — slider rayon avitaillement (SL3)

@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.10.1 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.10.2 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -147,7 +147,10 @@
     padding: 16px 18px; border-bottom: 1px solid var(--border, #e5e7eb);
   }
   /* v2.10.1 — deux colonnes : rubriques a gauche, detail a droite. */
-  #ag-acct-main { display: flex; align-items: stretch; min-height: 380px; }
+  /* v2.10.2 — hauteur FIXE. Elle variait selon la rubrique affichee, ce qui
+     faisait sauter la feuille a chaque changement d'onglet. Le detail defile,
+     la coquille ne bouge plus. */
+  #ag-acct-main { display: flex; align-items: stretch; height: 62vh; min-height: 420px; max-height: 660px; }
   #ag-acct-nav {
     flex: 0 0 188px; border-right: 1px solid var(--border, #e5e7eb);
     padding: 12px 10px; display: flex; flex-direction: column; gap: 2px;
@@ -164,7 +167,7 @@
     margin-left: auto; font-size: 11.5px; font-weight: 400;
     color: var(--muted-foreground, #6b7280);
   }
-  #ag-acct-panes { flex: 1 1 auto; min-width: 0; padding: 14px 16px; overflow-x: hidden; }
+  #ag-acct-panes { flex: 1 1 auto; min-width: 0; padding: 14px 16px; overflow-y: auto; overflow-x: hidden; }
   .ag-acct-pane { display: none; }
   .ag-acct-pane.on { display: block; }
   /* Les cartes deplacees viennent d'onglets pleine largeur : on neutralise leurs
@@ -4818,7 +4821,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.10.1';
+const AG_PDF_VERSION = 'v2.10.2';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8171,6 +8174,39 @@ init();
   (function _agAccountSheet() {
     var built = false, ov = null;
 
+    // Comparatif Free / Pro repris du site vitrine, condense pour la colonne de
+    // detail. Les prix ne sont PAS repetes en dur ailleurs : ils viennent des CGU
+    // art. 4.2, seule reference opposable.
+    var AG_PLANS_HTML =
+      '<div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+      + '<div style="border:1px solid var(--border,#e5e7eb);border-radius:12px;padding:12px;">'
+      +   '<div style="font-weight:600;font-size:13.5px;">Free</div>'
+      +   '<div style="font-size:20px;font-weight:600;margin:2px 0 8px;">0 €</div>'
+      +   '<ul style="list-style:none;margin:0;padding:0;font-size:11.5px;line-height:1.55;color:var(--muted-foreground,#6b7280);">'
+      +     '<li>Vol local et trajet simple illimités</li>'
+      +     '<li>Météo, zones, fréquences, RTBA complets</li>'
+      +     '<li>1 vol enregistré · 1 appareil</li>'
+      +     '<li>POI limités · rayons 5 km</li>'
+      +     '<li>PDF avec filigrane</li>'
+      +   '</ul>'
+      + '</div>'
+      + '<div style="border:1.5px solid var(--accent,#0792a6);border-radius:12px;padding:12px;">'
+      +   '<div style="font-weight:600;font-size:13.5px;">Pro</div>'
+      +   '<div style="font-size:20px;font-weight:600;margin:2px 0 0;">4,99 € <span style="font-size:11.5px;font-weight:400;color:var(--muted-foreground,#6b7280);">/ mois</span></div>'
+      +   '<div style="font-size:11.5px;color:var(--muted-foreground,#6b7280);margin-bottom:8px;">ou 49,90 € / an — 2 mois offerts</div>'
+      +   '<ul style="list-style:none;margin:0;padding:0;font-size:11.5px;line-height:1.55;color:var(--muted-foreground,#6b7280);">'
+      +     '<li>Étapes intermédiaires illimitées</li>'
+      +     '<li>Vols et appareils illimités</li>'
+      +     '<li>Profil aéronef sauvegardé</li>'
+      +     '<li>POI illimités · rayons 15-40 km</li>'
+      +     '<li>PDF complet, sans filigrane</li>'
+      +   '</ul>'
+      + '</div>'
+      + '</div>'
+      + '<p style="font-size:11px;color:var(--muted-foreground,#6b7280);margin-top:8px;">'
+      +   'Prix TTC — TVA non applicable, art. 293 B du CGI. Résiliable à tout moment, effet fin de période.'
+      + '</p>';
+
     function build() {
       if (built) return ov;
       var acct = document.getElementById('tab-account');
@@ -8240,6 +8276,15 @@ init();
         panes.appendChild(d);
         made[p.id] = d;
       });
+
+      // #ag-pro-box porte toute la logique Stripe (palier, mensuel, annuel,
+      // portail client) mais n'a pas de <h3> : la detection par titre l'ignorait,
+      // d'ou la rubrique « abonnement » vide. On le place explicitement.
+      var pro = document.getElementById('ag-pro-box');
+      if (pro) {
+        made.abonnement.appendChild(pro);
+        made.abonnement.insertAdjacentHTML('beforeend', AG_PLANS_HTML);
+      }
 
       var all = blocks(acct).concat(blocks(prm));
       all.forEach(function (el) {
@@ -8321,7 +8366,9 @@ init();
       o.classList.add('open');
       document.body.style.overflow = 'hidden';
       tickClock();
-      try { if (typeof refreshParamsState === 'function') refreshParamsState(); } catch (_) {}
+      // v2.10.2 — via window : la fonction vit dans l'IIFE de basulm.js, l'appel
+      // direct echouait silencieusement et les boutons restaient incolores.
+      try { if (typeof window.refreshParamsState === 'function') window.refreshParamsState(); } catch (_) {}
     }
     function close() {
       if (!ov) return;
