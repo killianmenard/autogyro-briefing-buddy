@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.10.5 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.10.6 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -1555,7 +1555,7 @@
           </div>
         </div>
         <div class="text-xs text-muted mb-1">Nom du profil (libellé local)</div>
-        <input type="text" id="acc-profile-name" class="ad-input w-full" placeholder="Ex. Compte de Papa" />
+        <input type="text" id="acc-profile-name" class="ad-input w-full" placeholder="Ex. Cellule 1, Aéroclub, Instruction" />
         <div class="flex items-center gap-3 mt-3">
           <button id="acc-profile-save" class="px-3 py-2 rounded bg-black text-white" style="font-size:13px;">Enregistrer</button>
           <span id="acc-profile-status" class="text-xs text-muted"></span>
@@ -4880,7 +4880,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.10.5';
+const AG_PDF_VERSION = 'v2.10.6';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8564,6 +8564,10 @@ init();
       document.body.style.overflow = '';
     }
     window._agOpenAccount = open;
+    // Expose la fermeture : la deconnexion, declenchee depuis le bouton d'origine
+    // reste dans le DOM, doit pouvoir replier la feuille avant que l'ecran de
+    // connexion reprenne la main.
+    window._agCloseAccount = close;
 
     setInterval(tickClock, 1000);
     document.addEventListener('keydown', function (e) {
@@ -9288,7 +9292,15 @@ init();
     try { await sendPasswordResetEmail(auth, email); msg('Email de réinitialisation envoyé (vérifie tes spams).', 'ok'); }
     catch (e) { msg(frError(e.code), 'err'); }
   });
-  $('auth-logout')?.addEventListener('click', async () => { try { await signOut(auth); } catch (_) {} });
+  // v2.10.6 — la deconnexion demande confirmation, puis ferme tout. Sans elle, un
+  // clic accidentel dans la colonne du pop-up faisait perdre la session sans un
+  // mot ; et le pop-up restait ouvert par-dessus l'ecran de connexion, ce qui
+  // donnait l'impression que rien ne s'etait passe.
+  $('auth-logout')?.addEventListener('click', async () => {
+    if (!confirm('Voulez-vous vous déconnecter ?\n\nVos données restent synchronisées et vous les retrouverez à la prochaine connexion.')) return;
+    try { if (typeof window._agCloseAccount === 'function') window._agCloseAccount(); } catch (_) {}
+    try { await signOut(auth); } catch (_) {}
+  });
   $('auth-resend')?.addEventListener('click', async () => {
     try { if (auth.currentUser) { await sendEmailVerification(auth.currentUser); msg('Email de vérification renvoyé.', 'ok'); } }
     catch (e) { msg(frError(e.code), 'err'); }
