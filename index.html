@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.10 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.10.1 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -146,7 +146,45 @@
     display: flex; align-items: center; gap: 12px;
     padding: 16px 18px; border-bottom: 1px solid var(--border, #e5e7eb);
   }
-  #ag-acct-body { padding: 6px 18px 4px; }
+  /* v2.10.1 — deux colonnes : rubriques a gauche, detail a droite. */
+  #ag-acct-main { display: flex; align-items: stretch; min-height: 380px; }
+  #ag-acct-nav {
+    flex: 0 0 188px; border-right: 1px solid var(--border, #e5e7eb);
+    padding: 12px 10px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .ag-acct-tab {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 11px; border-radius: 10px; border: none; background: transparent;
+    font-size: 13.5px; color: var(--foreground, #111); text-align: left;
+    cursor: pointer; width: 100%; transition: background .16s ease;
+  }
+  .ag-acct-tab:hover { background: var(--accent-soft, rgba(7,146,166,.08)); }
+  .ag-acct-tab.on { background: var(--accent-soft, rgba(7,146,166,.14)); font-weight: 600; }
+  .ag-acct-tab .ag-acct-val {
+    margin-left: auto; font-size: 11.5px; font-weight: 400;
+    color: var(--muted-foreground, #6b7280);
+  }
+  #ag-acct-panes { flex: 1 1 auto; min-width: 0; padding: 14px 16px; overflow-x: hidden; }
+  .ag-acct-pane { display: none; }
+  .ag-acct-pane.on { display: block; }
+  /* Les cartes deplacees viennent d'onglets pleine largeur : on neutralise leurs
+     marges d'origine pour qu'elles ne debordent pas de la colonne de detail. */
+  .ag-acct-pane > * { max-width: 100%; }
+  .ag-acct-pane .card { margin: 0 0 12px; box-shadow: none; }
+  #ag-acct-back { display: none; }
+
+  @media (max-width: 768px) {
+    /* Liste -> detail : la colonne devient la premiere vue, le detail la remplace. */
+    #ag-acct-main { display: block; min-height: 0; }
+    #ag-acct-nav { flex: none; border-right: none; border-bottom: 1px solid var(--border,#e5e7eb); }
+    #ag-acct.detail #ag-acct-nav { display: none; }
+    #ag-acct:not(.detail) #ag-acct-panes { display: none; }
+    #ag-acct.detail #ag-acct-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: transparent; border: none; cursor: pointer;
+      font-size: 13px; color: var(--accent, #0792a6); padding: 4px 0 10px;
+    }
+  }
   #ag-acct-foot {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     padding: 12px 18px; border-top: 1px solid var(--border, #e5e7eb);
@@ -4780,7 +4818,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.10';
+const AG_PDF_VERSION = 'v2.10.1';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8133,13 +8171,6 @@ init();
   (function _agAccountSheet() {
     var built = false, ov = null;
 
-    function kicker(txt) {
-      var d = document.createElement('div');
-      d.className = 'ag-acct-kicker';
-      d.textContent = txt;
-      return d;
-    }
-
     function build() {
       if (built) return ov;
       var acct = document.getElementById('tab-account');
@@ -8161,19 +8192,87 @@ init();
         +     '<i data-lucide="x" class="ag-ico" style="width:20px;height:20px;"></i>'
         +   '</button>'
         + '</div>'
-        + '<div id="ag-acct-body"></div>'
+        + '<div id="ag-acct-main">'
+        +   '<div id="ag-acct-nav"></div>'
+        +   '<div id="ag-acct-panes">'
+        +     '<button type="button" id="ag-acct-back"><i data-lucide="arrow-left" class="ag-ico" style="width:14px;height:14px;"></i>rubriques</button>'
+        +   '</div>'
+        + '</div>'
         + '<div id="ag-acct-foot"><span id="ag-acct-ver"></span><span id="ag-acct-clock"></span></div>'
         + '</div>';
       document.body.appendChild(ov);
 
-      var body = ov.querySelector('#ag-acct-body');
-      // Ordre de la maquette : compte / abonnement d'abord, reglages ensuite.
-      body.appendChild(kicker('compte'));
+      var panes = ov.querySelector('#ag-acct-panes');
+      var nav   = ov.querySelector('#ag-acct-nav');
       acct.classList.remove('hidden');
-      body.appendChild(acct);
-      body.appendChild(kicker('application'));
       prm.classList.remove('hidden');
-      body.appendChild(prm);
+
+      // Repartition par le TITRE du bloc, resolue au runtime. Les deux sections
+      // n'ont pas la meme structure DOM (l'une vient du HTML source, l'autre est
+      // generee par basulm.js) : plutot que de coder en dur un chemin de parents,
+      // on remonte depuis chaque <h3> vers son conteneur reel avec closest().
+      function blocks(section) {
+        var out = [];
+        section.querySelectorAll('h3').forEach(function (h) {
+          var box = h.closest('.card, .muted-bg, .rounded, section > div');
+          if (!box || box === section) box = h.parentElement;
+          if (box && out.indexOf(box) === -1) out.push(box);
+        });
+        return out;
+      }
+      function label(el) {
+        var h = el.querySelector('h3');
+        return (h ? h.textContent : '').toLowerCase();
+      }
+
+      var PANES = [
+        { id: 'compte',     icon: 'user',        txt: 'compte',     match: /compte|profil/ },
+        { id: 'abonnement', icon: 'credit-card', txt: 'abonnement', match: /abonnement|offre|pro\b/ },
+        { id: 'app',        icon: 'sliders-horizontal', txt: 'application', match: /unité|thème|theme|rayon|affichage/ },
+        { id: 'avance',     icon: 'settings-2',  txt: 'avancé',     match: /clé api|openaip|données|donnees|action/ }
+      ];
+
+      var made = {};
+      PANES.forEach(function (p) {
+        var d = document.createElement('div');
+        d.className = 'ag-acct-pane';
+        d.id = 'ag-pane-' + p.id;
+        panes.appendChild(d);
+        made[p.id] = d;
+      });
+
+      var all = blocks(acct).concat(blocks(prm));
+      all.forEach(function (el) {
+        var t = label(el), placed = false;
+        for (var i = 0; i < PANES.length; i++) {
+          if (PANES[i].match.test(t)) { made[PANES[i].id].appendChild(el); placed = true; break; }
+        }
+        // Filet : un bloc dont le titre ne correspond a rien ne doit pas disparaitre.
+        if (!placed) made.avance.appendChild(el);
+      });
+
+      // Les coquilles vides des deux sections d'origine restent dans le document
+      // (du code externe peut encore les interroger par id) mais ne s'affichent plus.
+      acct.style.display = 'none';
+      prm.style.display = 'none';
+      document.body.appendChild(acct);
+      document.body.appendChild(prm);
+
+      PANES.forEach(function (p, idx) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ag-acct-tab' + (idx === 0 ? ' on' : '');
+        b.dataset.pane = p.id;
+        b.innerHTML = '<i data-lucide="' + p.icon + '" class="ag-ico" style="width:15px;height:15px;"></i>'
+                    + '<span>' + p.txt + '</span>';
+        b.addEventListener('click', function () { show(p.id); });
+        nav.appendChild(b);
+      });
+      made.compte.classList.add('on');
+
+      ov.querySelector('#ag-acct-back').addEventListener('click', function () {
+        ov.querySelector('#ag-acct').classList.remove('detail');
+      });
 
       ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
       ov.querySelector('#ag-acct-x').addEventListener('click', close);
@@ -8195,6 +8294,20 @@ init();
       el.textContent = String(n.getUTCHours()).padStart(2, '0') + ':'
                      + String(n.getUTCMinutes()).padStart(2, '0') + ':'
                      + String(n.getUTCSeconds()).padStart(2, '0') + 'Z';
+    }
+
+    // Bascule de rubrique. Sur mobile la classe « detail » fait passer de la liste
+    // au contenu ; sur desktop elle n'a aucun effet, les deux colonnes coexistent.
+    function show(id) {
+      if (!ov) return;
+      ov.querySelectorAll('.ag-acct-pane').forEach(function (p) {
+        p.classList.toggle('on', p.id === 'ag-pane-' + id);
+      });
+      ov.querySelectorAll('.ag-acct-tab').forEach(function (t) {
+        t.classList.toggle('on', t.dataset.pane === id);
+      });
+      var sheet = ov.querySelector('#ag-acct');
+      if (sheet) sheet.classList.add('detail');
     }
 
     function open() {
