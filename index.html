@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.3 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.4 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -101,6 +101,27 @@
   .dot-red { background: var(--red); }
   .dot-blue { background: var(--blue); }
   .pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; }
+
+  /* ===== v2.09.4 — BOUTONS DE RAFRAICHISSEMENT =====
+     L'icone tourne SUR PLACE : le libelle ne change pas, donc la largeur du
+     bouton ne bouge pas. C'est le point important — l'ancien code remplacait
+     l'innerHTML par « rafraichissement… » puis « mis a jour » puis le libelle
+     d'origine, ce qui faisait changer la largeur du bouton quatre fois par cycle
+     et decalait toute la pilule d'en-tete a chaque rafraichissement. */
+  .ag-rot { display: inline-flex; transform-origin: 50% 50%; }
+  @keyframes agSpin { to { transform: rotate(360deg); } }
+  .ag-busy .ag-rot { animation: agSpin .9s linear infinite; }
+  .ag-busy { cursor: progress; }
+  /* Opacite legerement reduite : dit « en cours » sans masquer le libelle. */
+  .ag-busy > * { opacity: .75; }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Un indicateur de chargement reste une information necessaire : on ne le
+       supprime pas, on remplace la rotation par un fondu, qui ne declenche pas
+       les troubles vestibulaires. */
+    .ag-busy .ag-rot { animation: agBusyFade 1.1s ease-in-out infinite; }
+    @keyframes agBusyFade { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  }
 
   /* ===== v2.09.3 — BADGES : POINT, HALO, PULSATION =====
      ⚠️ La pulsation n'est PAS generalisee. Dans une application de preparation de
@@ -4611,7 +4632,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.3';
+const AG_PDF_VERSION = 'v2.09.4';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -5610,11 +5631,14 @@ async function refreshWeather() {
     return;
   }
   
-  // Désactiver le bouton et indiquer le rafraîchissement
-  const originalHTML = btn.innerHTML;
+  // v2.09.4 — l'icone tourne sur place. On ne touche plus a innerHTML : l'ancienne
+  // methode reconstruisait le contenu trois fois par cycle (spinner, « mis a jour »,
+  // libelle d'origine) avec un lucide.createIcons() a chaque fois, et la largeur du
+  // bouton changeait a chaque etape. Le retour visuel de fin passe par le toast,
+  // qui existe deja plus bas et ne deplace rien.
   btn.disabled = true;
-  btn.innerHTML = '<svg class="inline animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="40 20" opacity="0.6"/></svg> rafraîchissement…';
-  
+  if (typeof window.agBusy === 'function') window.agBusy(btn, true);
+
   try {
     // Vider le cache météo
     STATE.weatherCache = {};
@@ -5625,20 +5649,13 @@ async function refreshWeather() {
     // Attendre que les fetches se terminent réellement
     await new Promise(r => setTimeout(r, 1500));
     
-    btn.innerHTML = '<i data-lucide="check" class="h-3 w-3"></i> mis à jour';
-    lucide.createIcons();
     if (typeof showToast === 'function') showToast('Météo mise à jour ✓', 'ok', 2500);
-    setTimeout(() => {
-      btn.innerHTML = originalHTML;
-      lucide.createIcons();
-    }, 1500);
   } catch (e) {
     console.error('Erreur refreshWeather:', e);
-    btn.innerHTML = originalHTML;
-    lucide.createIcons();
     alert('Erreur lors du rafraîchissement : ' + e.message);
   } finally {
     btn.disabled = false;
+    if (typeof window.agBusy === 'function') window.agBusy(btn, false);
   }
 }
 
@@ -7961,6 +7978,86 @@ init();
       el.textContent = txt;
     } catch (_) {}
   }
+
+  // ============================================================
+  // 9. BOUTONS DE RAFRAICHISSEMENT (v2.09.4)
+  // ============================================================
+  // Quatre boutons dans l'application : #refresh-weather (pilule), #wf-load-btn
+  // (carte meteo France), #p-openaip-reload (parametres) et #p-refresh (cree par
+  // basulm.js). Les deux derniers portent un emoji 🔄 et non une icone lucide :
+  // on l'enveloppe au vol dans un span, sans toucher au HTML source.
+  (function _agRefreshButtons() {
+    var IDS = ['refresh-weather', 'wf-load-btn', 'p-openaip-reload', 'p-refresh'];
+
+    // Garantit une cible rotative dans le bouton et la renvoie.
+    function rotTarget(btn) {
+      var t = btn.querySelector('.ag-rot');
+      if (t) return t;
+      // 1) icone lucide deja rendue en <svg>, ou balise <i data-lucide> pas encore rendue
+      var ico = btn.querySelector('svg, i[data-lucide]');
+      if (ico) { ico.classList.add('ag-rot'); return ico; }
+      // 2) emoji en noeud texte : on l'isole dans un span pour pouvoir le faire tourner
+      for (var i = 0; i < btn.childNodes.length; i++) {
+        var n = btn.childNodes[i];
+        if (n.nodeType === 3 && /[🔄⟳↻]/.test(n.nodeValue)) {
+          var m = n.nodeValue.match(/[🔄⟳↻]/);
+          var idx = n.nodeValue.indexOf(m[0]);
+          var span = document.createElement('span');
+          span.className = 'ag-rot';
+          span.textContent = m[0];
+          var after = n.splitText(idx);
+          after.nodeValue = after.nodeValue.slice(m[0].length);
+          btn.insertBefore(span, after);
+          return span;
+        }
+      }
+      return null;
+    }
+
+    // Expose le pilotage : le handler de refreshWeather s'en sert pour encadrer
+    // exactement la duree reelle de son travail asynchrone.
+    window.agBusy = function (btn, on) {
+      try {
+        if (typeof btn === 'string') btn = document.getElementById(btn);
+        if (!btn) return;
+        rotTarget(btn);
+        btn.classList.toggle('ag-busy', on !== false);
+      } catch (_) {}
+    };
+
+    // Pour les boutons qui n'exposent aucun etat de chargement, on encadre le
+    // clic. ⚠️ Ce n'est PAS la duree reelle du travail : c'est un accuse de
+    // reception. Mentir sur la fin d'un chargement serait pire que ne rien
+    // afficher, d'ou la duree courte et fixe.
+    var FALLBACK_MS = 1100;
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('button') : null;
+      if (!btn || !btn.id || IDS.indexOf(btn.id) === -1) return;
+      // refresh-weather pilote lui-meme son etat via agBusy : ne pas le doubler.
+      if (btn.id === 'refresh-weather') return;
+      window.agBusy(btn, true);
+      if (btn.id === 'wf-load-btn') return; // arret pilote par #wf-status, cf. ci-dessous
+      setTimeout(function () { window.agBusy(btn, false); }, FALLBACK_MS);
+    }, true);
+
+    // La carte meteo France, elle, expose un vrai signal : #wf-status affiche
+    // « chargement... » pendant la requete. On s'y accroche plutot que de deviner.
+    (function () {
+      var tries = 0;
+      var iv = setInterval(function () {
+        var st = document.getElementById('wf-status');
+        var btn = document.getElementById('wf-load-btn');
+        if (!st || !btn) { if (++tries > 40) clearInterval(iv); return; }
+        clearInterval(iv);
+        var apply = function () {
+          window.agBusy(btn, /chargement/i.test(st.textContent || ''));
+        };
+        apply();
+        try { new MutationObserver(apply).observe(st, { childList: true, characterData: true, subtree: true }); } catch (_) {}
+      }, 250);
+    })();
+  })();
 
   // ============================================================
   // 8. BADGES — POINT, HALO, FLASH AU CHANGEMENT (v2.09.3)
