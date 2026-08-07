@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.10.3 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.10.4 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -142,10 +142,18 @@
     width: 100%; max-width: 980px; box-shadow: 0 22px 60px rgba(0,0,0,.30);
     overflow: hidden;
   }
-  #ag-acct-head {
-    display: flex; align-items: center; gap: 12px;
-    padding: 16px 18px; border-bottom: 1px solid var(--border, #e5e7eb);
+  /* v2.10.4 — le bandeau superieur repetait exactement ce que la colonne affiche
+     deja (nom, email). On ne garde que la croix, posee en absolu sur la feuille. */
+  #ag-acct-head { display: none; }
+  #ag-acct { position: relative; }
+  #ag-acct-x {
+    position: absolute; top: 14px; right: 16px; z-index: 3;
+    width: 30px; height: 30px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--muted, rgba(0,0,0,.05)); border: none; cursor: pointer;
+    color: var(--muted-foreground, #6b7280);
   }
+  #ag-acct-x:hover { background: rgba(0,0,0,.10); }
   /* v2.10.1 — deux colonnes : rubriques a gauche, detail a droite. */
   /* v2.10.2 — hauteur FIXE. Elle variait selon la rubrique affichee, ce qui
      faisait sauter la feuille a chaque changement d'onglet. Le detail defile,
@@ -155,6 +163,13 @@
     flex: 0 0 268px; border-right: 1px solid var(--border, #e5e7eb);
     padding: 12px 10px; display: flex; flex-direction: column; gap: 2px;
   }
+  /* La deconnexion se detache du reste : elle ferme la session, elle n'est pas une
+     rubrique parmi d'autres. margin-top:auto la pousse au bas de la colonne. */
+  #ag-acct-logout {
+    margin-top: auto; padding-top: 12px;
+    border-top: 1px solid var(--border, #e5e7eb);
+  }
+  #ag-acct-logout .ag-acct-tab { color: var(--muted-foreground, #6b7280); }
   .ag-acct-tab {
     display: flex; align-items: center; gap: 9px;
     padding: 9px 11px; border-radius: 10px; border: none; background: transparent;
@@ -210,7 +225,31 @@
     letter-spacing: .05em; color: var(--muted-foreground, #6b7280);
     margin: 18px 0 8px;
   }
-  #ag-acct .card { border-radius: 12px; }
+  /* v2.10.4 — surfaces uniformes. Les blocs venaient d'onglets ou un fond gris les
+     detachait du fond de page ; dans la feuille, ce gris empile trois nuances pour
+     rien. Blanc en theme clair, bleu nuit en theme sombre. */
+  #ag-acct .card,
+  #ag-acct .muted-bg,
+  #ag-acct [class*="bg-gray"],
+  #ag-acct [class*="bg-white"] {
+    background: #ffffff !important;
+    border-radius: 12px;
+    box-shadow: none !important;
+  }
+  #ag-acct .card { border: 1px solid var(--border, #e5e7eb); }
+  html.dark #ag-acct .card,
+  html.dark #ag-acct .muted-bg,
+  html.dark #ag-acct [class*="bg-gray"],
+  html.dark #ag-acct [class*="bg-white"],
+  [data-theme="dark"] #ag-acct .card,
+  [data-theme="dark"] #ag-acct .muted-bg,
+  [data-theme="dark"] #ag-acct [class*="bg-gray"],
+  [data-theme="dark"] #ag-acct [class*="bg-white"] {
+    background: #131c2f !important;
+    color: var(--text, #dae2fd);
+  }
+  html.dark #ag-acct, [data-theme="dark"] #ag-acct { background: #0e1626; }
+  html.dark #ag-acct-x, [data-theme="dark"] #ag-acct-x { background: rgba(255,255,255,.08); }
   /* Les deux sections deplacees ne doivent plus se comporter en onglet : elles sont
      visibles en permanence dans la feuille. */
   #ag-acct #tab-account, #ag-acct #tab-params { display: block !important; }
@@ -4832,7 +4871,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.10.3';
+const AG_PDF_VERSION = 'v2.10.4';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8230,14 +8269,12 @@ init();
       ov.id = 'ag-acct-ov';
       ov.innerHTML =
         '<div id="ag-acct" role="dialog" aria-modal="true" aria-label="Mon compte">'
+        + '<button type="button" id="ag-acct-x" aria-label="Fermer"><i data-lucide="x" class="ag-ico" style="width:17px;height:17px;"></i></button>'
         + '<div id="ag-acct-head">'
         +   '<div style="flex:1;min-width:0;">'
         +     '<div style="font-size:15px;font-weight:600;">Mon compte</div>'
         +     '<div id="ag-acct-mail" style="font-size:12.5px;color:var(--muted-foreground,#6b7280);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>'
         +   '</div>'
-        +   '<button type="button" id="ag-acct-x" aria-label="Fermer" style="background:transparent;border:none;cursor:pointer;color:var(--muted-foreground,#6b7280);padding:4px;">'
-        +     '<i data-lucide="x" class="ag-ico" style="width:20px;height:20px;"></i>'
-        +   '</button>'
         + '</div>'
         + '<div id="ag-acct-main">'
         +   '<div id="ag-acct-nav"></div>'
@@ -8435,6 +8472,25 @@ init();
           var cur = document.getElementById('ag-id-cur'); if (cur) cur.value = '';
         } catch (e) { idMsg('Changement refuse.', true); }
       });
+
+      // « Se deconnecter » descend au pied de la colonne. On DEPLACE le bouton
+      // existant : il porte deja son gestionnaire signOut, le recreer signifierait
+      // dupliquer une logique de session.
+      var lo = document.createElement('div');
+      lo.id = 'ag-acct-logout';
+      var src = document.getElementById('auth-logout')
+             || Array.prototype.find.call(document.querySelectorAll('#ag-acct button'),
+                  function (b) { return /se d\u00e9connecter/i.test(b.textContent || ''); });
+      if (src) {
+        var wrap = document.createElement('button');
+        wrap.type = 'button';
+        wrap.className = 'ag-acct-tab';
+        wrap.innerHTML = '<i data-lucide="log-out" class="ag-ico" style="width:15px;height:15px;"></i><span>se d\u00e9connecter</span>';
+        wrap.addEventListener('click', function () { src.click(); });
+        lo.appendChild(wrap);
+        src.style.display = 'none';   // l'original reste dans le DOM, porteur du handler
+      }
+      nav.appendChild(lo);
 
       ov.querySelector('#ag-acct-back').addEventListener('click', function () {
         ov.querySelector('#ag-acct').classList.remove('detail');
