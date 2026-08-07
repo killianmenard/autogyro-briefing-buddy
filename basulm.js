@@ -130,7 +130,7 @@
     </div>`;
     h += `<div style="font-weight:600;font-size:13px;margin-bottom:2px;">${escapeHtml(p.icao)} · ${escapeHtml(p.name)}</div>`;
     h += `<div style="color:#666;font-size:11px;margin-bottom:8px;">${escapeHtml(b.tf || st.label)}</div>`;
-    if (b.auth) h += `<div style="background:#FEF2F2;color:#B91C1C;padding:4px 6px;border-radius:4px;font-size:11px;font-weight:600;margin-bottom:6px;">⚠ Autorisation gestionnaire OBLIGATOIRE</div>`;
+    if (b.auth) h += `<div style="background:#FEF2F2;color:#B91C1C;padding:4px 6px;border-radius:4px;font-size:11px;font-weight:600;margin-bottom:6px;"><i data-lucide="triangle-alert" class="ag-ico" style="width:15px;height:15px;"></i> Autorisation gestionnaire OBLIGATOIRE</div>`;
     if (b.alt) h += `<div><strong>Altitude :</strong> ${escapeHtml(b.alt)}</div>`;
     if (b.rad) h += `<div><strong>Radio :</strong> ${escapeHtml(b.rad)} MHz</div>`;
     if (b.gest) h += `<div><strong>Gestionnaire :</strong> ${escapeHtml(b.gest)}</div>`;
@@ -147,7 +147,7 @@
     }
     h += `<div style="background:#FEF3C7;color:#92400E;padding:4px 6px;border-radius:4px;font-size:10px;margin-top:6px;">ℹ️ Pas de carte VAC officielle (plateforme BASULM, non publiée par la DGAC)</div>`;
     h += `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;">
-      <a href="${mapsUrl}" target="_blank" rel="noreferrer" style="flex:1;text-align:center;padding:6px;background:#F3F4F6;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;color:#1F2937;text-decoration:none;">📍 Google Maps</a>
+      <a href="${mapsUrl}" target="_blank" rel="noreferrer" style="flex:1;text-align:center;padding:6px;background:#F3F4F6;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;color:#1F2937;text-decoration:none;"><i data-lucide="map-pin" class="ag-ico" style="width:15px;height:15px;"></i> Google Maps</a>
       <a href="https://basulm.ffplum.fr" target="_blank" rel="noreferrer" style="flex:1;text-align:center;padding:6px;background:#F3F4F6;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;color:#1F2937;text-decoration:none;">🛩 Fiche BASULM</a>
     </div>`;
     h += `<button class="basulm-popup-add" data-code="${escapeHtml(p.icao)}" style="margin-top:6px;width:100%;padding:8px;background:#000;color:white;border:none;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;">+ Ajouter au trajet</button>`;
@@ -161,7 +161,7 @@
       radius: 3.5, color: st.color, weight: 1.2,
       fillColor: st.fill, fillOpacity: 0.72
     });
-    const authBadge = p.basulm.auth ? '<br><span style="color:#B91C1C;font-weight:600;">⚠ autorisation requise</span>' : '';
+    const authBadge = p.basulm.auth ? '<br><span style="color:#B91C1C;font-weight:600;"><i data-lucide="triangle-alert" class="ag-ico" style="width:15px;height:15px;"></i> autorisation requise</span>' : '';
     m.bindTooltip(
       `<strong>${st.icon} ${escapeHtml(p.icao)}</strong><br>${escapeHtml(p.name)}<br><em>${escapeHtml(st.label)}</em>${authBadge}`,
       { direction: 'top' }
@@ -323,7 +323,7 @@
           div.innerHTML = `
             <span style="display:inline-block;padding:1px 5px;border-radius:9999px;background:${st.fill};color:white;font-size:9px;font-weight:600;margin-right:4px;">${st.icon} ULM</span>
             <span class="pre-mono">${escapeHtml(p.icao)}</span> · ${escapeHtml(p.name)}
-            ${p.basulm.auth ? '<span style="color:var(--danger);font-size:10px;margin-left:4px;">⚠ auth.</span>' : ''}
+            ${p.basulm.auth ? '<span style="color:var(--danger);font-size:10px;margin-left:4px;"><i data-lucide="triangle-alert" class="ag-ico" style="width:15px;height:15px;"></i> auth.</span>' : ''}
           `;
           div.addEventListener('click', () => {
             input.value = p.icao + ' · ' + p.name;
@@ -404,7 +404,7 @@
           infoHtml += `</ul>`;
         }
         infoHtml += `</div>`;
-        if (b.auth) infoHtml += `<div class="warn-box mt-3 text-xs"><strong>⚠️ AUTORISATION OBLIGATOIRE</strong><br>Contacter le gestionnaire avant toute utilisation.</div>`;
+        if (b.auth) infoHtml += `<div class="warn-box mt-3 text-xs"><strong><i data-lucide="triangle-alert" class="ag-ico" style="width:15px;height:15px;"></i> AUTORISATION OBLIGATOIRE</strong><br>Contacter le gestionnaire avant toute utilisation.</div>`;
         if (b.info) infoHtml += `<details class="mt-2"><summary class="text-xs cursor-pointer text-muted">+ infos complémentaires</summary><div class="text-xs mt-1 muted-bg p-2 rounded">${escapeHtml(b.info).replace(/\n/g, '<br>')}</div></details>`;
         const ficheUrl = b.c ? `https://basulm.ffplum.fr/PDF/${encodeURIComponent(b.c)}.pdf` : 'https://basulm.ffplum.fr';
         infoHtml += `<div class="flex gap-2 flex-wrap mt-3">
@@ -602,10 +602,10 @@
             <a href="https://basulm.ffplum.fr" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">basulm.ffplum.fr</a>
           </div>
           <div class="muted-bg p-3 rounded">
-            <h3 class="font-semibold text-sm mb-1">📋 Cartes VAC / AIP</h3>
+            <h3 class="font-semibold text-sm mb-1"><i data-lucide="clipboard-list" class="ag-ico" style="width:15px;height:15px;"></i> Cartes VAC / AIP</h3>
             <p class="text-xs">Source : <strong>SIA</strong>. Liens construits selon cycle AIRAC.</p>
             <a href="https://www.sia.aviation-civile.gouv.fr/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">sia.aviation-civile.gouv.fr</a>
-            <p class="text-xs text-muted mt-1">⚠️ Pas de carte VAC pour les plateformes BASULM (non publiées par DGAC).</p>
+            <p class="text-xs text-muted mt-1"><i data-lucide="triangle-alert" class="ag-ico" style="width:15px;height:15px;"></i> Pas de carte VAC pour les plateformes BASULM (non publiées par DGAC).</p>
           </div>
           <div class="muted-bg p-3 rounded">
             <h3 class="font-semibold text-sm mb-1">🌤️ Météo aviation</h3>
@@ -614,27 +614,27 @@
             <a href="https://open-meteo.com/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">open-meteo.com</a>
           </div>
           <div class="muted-bg p-3 rounded">
-            <h3 class="font-semibold text-sm mb-1">📡 TEMSI</h3>
+            <h3 class="font-semibold text-sm mb-1"><i data-lucide="satellite-dish" class="ag-ico" style="width:15px;height:15px;"></i> TEMSI</h3>
             <p class="text-xs">Source : <strong>Aeroweb</strong> de Météo France (compte gratuit).</p>
             <a href="https://aviation.meteo.fr/login.php" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">aviation.meteo.fr</a>
           </div>
           <div class="muted-bg p-3 rounded">
-            <h3 class="font-semibold text-sm mb-1">🛡️ Espaces aériens</h3>
+            <h3 class="font-semibold text-sm mb-1"><i data-lucide="shield" class="ag-ico" style="width:15px;height:15px;"></i> Espaces aériens</h3>
             <p class="text-xs">Source : <strong>OpenAIP</strong> (clé API gratuite).</p>
             <a href="https://www.openaip.net/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">openaip.net</a>
           </div>
           <div class="muted-bg p-3 rounded">
-            <h3 class="font-semibold text-sm mb-1">🗺️ Fonds de carte</h3>
+            <h3 class="font-semibold text-sm mb-1"><i data-lucide="map" class="ag-ico" style="width:15px;height:15px;"></i> Fonds de carte</h3>
             <p class="text-xs">OpenStreetMap · CartoDB Positron.</p>
           </div>
           <div class="muted-bg p-3 rounded">
-            <h3 class="font-semibold text-sm mb-1">🗺️ Carte VFR CartaBossy</h3>
+            <h3 class="font-semibold text-sm mb-1"><i data-lucide="map" class="ag-ico" style="width:15px;height:15px;"></i> Carte VFR CartaBossy</h3>
             <p class="text-xs">Carte aéronautique VFR France pour la préparation de navigation.</p>
             <a href="https://www.cartabossy.com/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline text-xs">cartabossy.com</a>
           </div>
         </div>
         <div class="border-t border-thin pt-3 mt-4">
-          <h3 class="font-semibold text-sm mb-2">⚠️ Avertissement</h3>
+          <h3 class="font-semibold text-sm mb-2"><i data-lucide="triangle-alert" class="ag-ico" style="width:15px;height:15px;"></i> Avertissement</h3>
           <p class="text-xs text-muted">AutogyroDash est un outil d'aide à la planification VFR. <strong>Le pilote reste seul responsable de la vérification de toutes les informations officielles avant chaque vol</strong> (cartes VAC à jour, NOTAM, AZBA, METAR/TAF...).</p>
           <p class="text-xs text-muted mt-2">Aucune donnée pilote n'est envoyée à un serveur. Tout est stocké localement dans le navigateur.</p>
         </div>
@@ -739,7 +739,7 @@
           <p class="text-xs text-muted mb-2">Terrains avec carburant essence affichés dans ce rayon autour du trajet (écran + PDF).</p>
           <input type="range" id="p-fuel-radius" min="15" max="40" step="5" value="25" style="width:100%;" />
           <div class="text-xs mt-1">Rayon : <strong><span class="fuel-radius-val">25</span> km</strong></div>
-          <div class="ag-radius-lock text-xs" style="display:none;margin-top:6px;border:1px dashed var(--border);border-radius:8px;padding:6px 8px;">🔒 <strong>Offre Free :</strong> rayon fixé à 5 km — réglage réservé à l'offre Pro.</div>
+          <div class="ag-radius-lock text-xs" style="display:none;margin-top:6px;border:1px dashed var(--border);border-radius:8px;padding:6px 8px;"><i data-lucide="lock" class="ag-ico" style="width:15px;height:15px;"></i> <strong>Offre Free :</strong> rayon fixé à 5 km — réglage réservé à l'offre Pro.</div>
         </div>
 
         <div class="muted-bg p-3 rounded">
@@ -747,11 +747,11 @@
           <p class="text-xs text-muted mb-2">Sites notables (châteaux, lacs, viaducs, sommets) affichés dans ce rayon autour du trajet (écran + PDF) — indépendant du rayon avitaillement.</p>
           <input type="range" id="p-poi-radius" min="15" max="40" step="5" value="25" style="width:100%;" />
           <div class="text-xs mt-1">Rayon : <strong><span class="poi-radius-val">25</span> km</strong></div>
-          <div class="ag-radius-lock text-xs" style="display:none;margin-top:6px;border:1px dashed var(--border);border-radius:8px;padding:6px 8px;">🔒 <strong>Offre Free :</strong> rayon fixé à 5 km — réglage réservé à l'offre Pro.</div>
+          <div class="ag-radius-lock text-xs" style="display:none;margin-top:6px;border:1px dashed var(--border);border-radius:8px;padding:6px 8px;"><i data-lucide="lock" class="ag-ico" style="width:15px;height:15px;"></i> <strong>Offre Free :</strong> rayon fixé à 5 km — réglage réservé à l'offre Pro.</div>
         </div>
 
         <div class="muted-bg p-3 rounded">
-          <h3 class="text-sm font-semibold mb-2">⚡ Actions rapides</h3>
+          <h3 class="text-sm font-semibold mb-2"><i data-lucide="zap" class="ag-ico" style="width:15px;height:15px;"></i> Actions rapides</h3>
           <div class="space-y-2">
             <button id="p-refresh" class="w-full px-3 py-2 rounded border bg-white hover:bg-gray-50 flex items-center justify-center gap-2" style="border-color:var(--border);font-size:13px;color:var(--foreground);">
               🔄 Rafraîchir la météo
@@ -809,7 +809,7 @@
       if (key) {
         status.innerHTML = '<span style="color:var(--good);">✓ Clé enregistrée — espaces aériens affichés.</span>';
       } else {
-        status.innerHTML = '<span style="color:#92400E;">⚠ Aucune clé — les espaces aériens ne s\'affichent pas.</span>';
+        status.innerHTML = '<span style="color:#92400E;"><i data-lucide="triangle-alert" class="ag-ico" style="width:15px;height:15px;"></i> Aucune clé — les espaces aériens ne s\'affichent pas.</span>';
       }
     }
     // v0.8.45 — sync slider rayon avitaillement (SL3)

@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.11 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.12 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -117,6 +117,33 @@
   /* Sans cette marge, l'icone colle au libelle : un emoji embarque son propre
      blanc lateral, pas un SVG. */
   .ag-ico + span, .ag-ico + strong { margin-left: 2px; }
+
+  /* ===== v2.09.12 — FINITIONS (2) =====
+
+     a) Espace sous le filtre d'altitude. Le selecteur de v2.09.11 visait des
+        classes qui n'existent pas ; le vrai conteneur est #altitude-filter-controls.
+        Sans marge, la premiere carte de zone demarrait au contact des champs. */
+  #altitude-filter-controls { margin-bottom: 14px; }
+
+  /* b) Chevron de depli des cartes de terrain : il se superposait a la fleche « → »
+        du lien NOTAM quand la carte est ouverte, faute de place reservee a sa
+        droite. On lui reserve sa gouttiere plutot que de le deplacer. */
+  #ad-cards details > summary,
+  .ad-card details > summary { padding-right: 26px; position: relative; }
+  #ad-cards details > summary [data-lucide="chevron-down"],
+  #ad-cards details > summary .toggle-chevron,
+  .ad-card details > summary [data-lucide="chevron-down"],
+  .ad-card details > summary .toggle-chevron {
+    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  }
+
+  /* c) Rayons : l'application melangeait 4, 5, 6, 8, 10 et 12px. Les petits
+        controles passent a 10px pour s'accorder aux cartes, sans aller jusqu'a la
+        pilule qui donnerait un aspect « bouton de jeu ». */
+  .ad-input, .header-action-btn, .header-unit-btn,
+  button.text-xs, .btn-vac, .ad-card button, .card button:not(.tab-btn) {
+    border-radius: 10px !important;
+  }
 
   /* ===== v2.09.11 — CORRECTIFS DE FINITION =====
 
@@ -1120,7 +1147,7 @@
           <div class="space-y-2">
             <label class="flex items-center gap-2 text-xs cursor-pointer">
               <input type="checkbox" id="altitude-filter-enabled" checked />
-              <span class="font-medium">Filtrer par fourchette d'altitude (ft MSL)</span>
+              <span class="font-medium">Filtrer par fourchette d'altitude (ft MSL)</span><span class="text-xs text-muted" style="font-weight:400;">— afficher/masquer</span>
             </label>
             <div id="altitude-filter-controls" class="flex items-center gap-2 flex-wrap">
               <span class="text-xs text-muted">de</span>
@@ -4698,7 +4725,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.11';
+const AG_PDF_VERSION = 'v2.09.12';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8044,6 +8071,29 @@ init();
       el.textContent = txt;
     } catch (_) {}
   }
+
+  // ============================================================
+  // 10. RENDU DIFFERE DES ICONES LUCIDE (v2.09.12)
+  // ============================================================
+  // extensions.js et basulm.js construisent des pans entiers d'interface par
+  // innerHTML, a des moments qu'on ne controle pas (onglets secondaires, panneaux
+  // ouverts a la demande, couche v062x). lucide.createIcons() y est appele a
+  // certains endroits mais pas apres chaque injection : une balise <i data-lucide>
+  // inseree hors de ces points resterait un element vide, invisible.
+  //
+  // Lucide REMPLACE <i data-lucide> par un <svg>. La presence d'un <i data-lucide>
+  // dans le document est donc, par construction, la preuve qu'il reste du travail.
+  // On balaye a intervalle lache : le test est un querySelector, et l'appel n'a
+  // lieu que s'il trouve quelque chose.
+  (function _agRenderPendingIcons() {
+    setInterval(function () {
+      try {
+        if (!window.lucide || !window.lucide.createIcons) return;
+        if (!document.querySelector('i[data-lucide]')) return;
+        window.lucide.createIcons();
+      } catch (_) {}
+    }, 1200);
+  })();
 
   // ============================================================
   // 9. BOUTONS DE RAFRAICHISSEMENT (v2.09.4)
