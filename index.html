@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.10.6 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.10.7 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -271,6 +271,32 @@
     /* Mobile : feuille plein ecran, comme la maquette. */
     #ag-acct-ov { padding: 0; }
     #ag-acct { max-width: none; border-radius: 0; min-height: 100vh; }
+  }
+
+  /* ===== v2.10.7 — ONDE AU CLIC (ripple) =====
+     Retour tactile au point exact du clic : l'onde nait sous le doigt, pas au
+     centre du bouton. C'est ce qui la fait lire comme une reponse et non comme
+     une animation decorative.
+
+     🔑 currentColor plutot qu'une couleur fixe. Un bleu clair en dur serait
+     invisible sur « Passer Pro » (aplat teal) et trop present sur un bouton blanc.
+     En heritant de la couleur du texte, l'onde est claire sur fond fonce et foncee
+     sur fond clair, sans une seule regle par variante.
+
+     ⚠️ overflow:hidden est indispensable pour que l'onde soit rognee par le bouton,
+     mais il couperait tout enfant debordant volontairement : les controles Leaflet
+     et les onglets de la pilule (qui portent la pastille glissante) sont exclus. */
+  .ag-rip-host { position: relative; overflow: hidden; }
+  .ag-rip {
+    position: absolute; border-radius: 50%; pointer-events: none;
+    background: currentColor; opacity: .28; transform: scale(0);
+    animation: agRipple .55s cubic-bezier(.22,.61,.36,1) forwards;
+  }
+  @keyframes agRipple {
+    to { transform: scale(1); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ag-rip { display: none; }
   }
 
   /* ===== v2.09.12 — FINITIONS (2) =====
@@ -4880,7 +4906,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.10.6';
+const AG_PDF_VERSION = 'v2.10.7';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -7766,6 +7792,52 @@ function init() {
 
   lucide.createIcons();
 }
+
+
+// ===== v2.10.7 — ONDE AU CLIC SUR LES BOUTONS =====
+// Delegation unique : aucun bouton n'a besoin d'etre connu a l'avance, et ceux
+// crees plus tard (feuille compte, panneau parametres, cartes de terrain) en
+// heritent sans une ligne de plus.
+(function _agRipple() {
+  // Exclusions. Chacune a une raison precise :
+  //  .leaflet-*      : overflow:hidden casse le rendu des controles de carte
+  //  .tab-btn        : porte deja la pastille glissante, l'onde ferait doublon
+  //  #ag-trial-badge : pastille d'etat, pas un bouton d'action
+  //  [disabled]      : un bouton inactif ne doit pas repondre au clic
+  var SKIP = '.leaflet-control, .leaflet-control *, .tab-btn, #ag-trial-badge, [disabled], [aria-disabled="true"]';
+
+  document.addEventListener('pointerdown', function (e) {
+    try {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      var t = e.target && e.target.closest ? e.target.closest('button, .btn, .btn-primary, .btn-ghost, a.btn, [role="button"]') : null;
+      if (!t || t.closest(SKIP) || t.matches(SKIP)) return;
+
+      var r = t.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      // Diametre = double de la plus grande distance au bord, pour que l'onde
+      // couvre le bouton entier quel que soit le point de depart.
+      var d = Math.max(
+        Math.hypot(e.clientX - r.left, e.clientY - r.top),
+        Math.hypot(r.right - e.clientX, e.clientY - r.top),
+        Math.hypot(e.clientX - r.left, r.bottom - e.clientY),
+        Math.hypot(r.right - e.clientX, r.bottom - e.clientY)
+      ) * 2;
+
+      t.classList.add('ag-rip-host');
+      var s = document.createElement('span');
+      s.className = 'ag-rip';
+      s.style.width = s.style.height = d + 'px';
+      s.style.left = (e.clientX - r.left - d / 2) + 'px';
+      s.style.top  = (e.clientY - r.top  - d / 2) + 'px';
+      t.appendChild(s);
+      // Nettoyage a la fin de l'animation, avec un filet si l'evenement se perd
+      // (onglet en arriere-plan : les animations sont suspendues).
+      var kill = function () { try { s.remove(); } catch (_) {} };
+      s.addEventListener('animationend', kill);
+      setTimeout(kill, 900);
+    } catch (_) {}
+  }, true);
+})();
 
 init();
 

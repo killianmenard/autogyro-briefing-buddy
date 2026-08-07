@@ -9,7 +9,7 @@
  * - Pass-through (no-cache) : appels API live (METAR, vent, météo). Toujours réseau.
  *   Le cache de fraîcheur des données est géré dans l'app via localStorage (TTL court).
  */
-const VERSION = 'v2.10.6';
+const VERSION = 'v2.10.7';
 const CACHE_STATIC = `monplandevol-static-${VERSION}`;
 const CACHE_TILES = `monplandevol-tiles-${VERSION}`;
 
