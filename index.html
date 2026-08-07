@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.11.1 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.11.2 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -1485,7 +1485,7 @@
         <div class="card p-4 space-y-2">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <h2 class="text-sm font-medium uppercase tracking-wide text-muted" style="display:flex;align-items:center;gap:6px;height:18px;line-height:18px;">
-              <span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;overflow:hidden;line-height:1;flex-shrink:0;">⚠️</span><span>zones aériennes traversées</span>
+              <i data-lucide="shield-alert" class="ag-ico" style="width:14px;height:14px;flex-shrink:0;"></i><span>zones aériennes traversées</span>
             </h2>
             <span id="airspaces-count" class="pill" style="background:#F0F0EE;color:#6B6B6B;">—</span>
           </div>
@@ -5080,7 +5080,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.11.1';
+const AG_PDF_VERSION = 'v2.11.2';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -6285,7 +6285,35 @@ function formatHoursOfOperation(hoo) {
   return `${dayLabels.join('/')} ${firstHours}`.trim();
 }
 
+// v2.11.2 — CACHE MEMOIRE + REQUETE PARTAGEE.
+//
+// 🔴 CAUSE DES DISPARITIONS INTERMITTENTES. Le seul cache etait localStorage, et
+// le jeu de zones France avec geometries pese plusieurs Mo — au-dela du quota de
+// ~5 Mo du navigateur. setItem echouait donc silencieusement (le catch se
+// contentait d'un console.warn), l'expiry n'etait jamais ecrit, et CHAQUE
+// recalcul de trajet relancait jusqu'a 10 pages de 1000 zones. A ce rythme
+// OpenAIP finit par limiter ou expirer : d'ou des zones qui « lachent souvent »
+// sans raison apparente.
+//
+// Deux garde-fous :
+//   1. cache memoire de session — vrai depuis le premier appel reussi, quota ou pas ;
+//   2. promesse partagee — deux recalculs rapproches ne lancent plus deux fetchs
+//      concurrents de plusieurs Mo.
+let _agAsMem = null;        // zones en memoire pour la session
+let _agAsInflight = null;   // requete en cours, partagee
+
 async function fetchFranceAirspaces() {
+  const key = getOpenaipKey();
+  if (!key) return [];
+  if (_agAsMem && _agAsMem.length) return _agAsMem;
+  if (_agAsInflight) return _agAsInflight;
+  _agAsInflight = _fetchFranceAirspacesRaw()
+    .then((r) => { if (r && r.length) _agAsMem = r; return r; })
+    .finally(() => { _agAsInflight = null; });
+  return _agAsInflight;
+}
+
+async function _fetchFranceAirspacesRaw() {
   const key = getOpenaipKey();
   if (!key) return [];
   
@@ -6349,7 +6377,10 @@ async function fetchFranceAirspaces() {
       localStorage.setItem(cacheKey, JSON.stringify(all));
       localStorage.setItem(cacheExpiry, (now + 24 * 60 * 60 * 1000).toString());
     } catch (e) {
-      console.warn('[airspaces] Cache localStorage plein, pas de cache');
+      // Cas le plus frequent, pas une anomalie : le jeu France depasse le quota.
+      // Le cache memoire ci-dessus prend le relais pour la session ; seule la
+      // persistance entre deux ouvertures est perdue.
+      console.warn('[airspaces] Quota localStorage depasse — cache memoire seul (session).');
     }
     
     return all;

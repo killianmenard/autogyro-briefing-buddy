@@ -162,7 +162,7 @@
         </div>
         <div class="flex gap-1 border-b border-thin -mx-4 px-4 pb-0 flex-wrap">
           <button class="res-subtab px-3 py-2 text-sm border-b-2 border-transparent" data-sub="lexicon"><i data-lucide="book-open" class="ag-ico" style="width:15px;height:15px;"></i> Sigles aéro</button>
-          <button class="res-subtab px-3 py-2 text-sm border-b-2 border-transparent" data-sub="temsi">🌧 Symboles TEMSI</button>
+          <button class="res-subtab px-3 py-2 text-sm border-b-2 border-transparent" data-sub="temsi"><i data-lucide="cloud-rain" class="ag-ico" style="width:15px;height:15px;"></i> Symboles TEMSI</button>
           <button class="res-subtab px-3 py-2 text-sm border-b-2 border-transparent" data-sub="airspace"><i data-lucide="shield" class="ag-ico" style="width:15px;height:15px;"></i> Espaces aériens</button>
           <button class="res-subtab px-3 py-2 text-sm border-b-2 border-transparent" data-sub="azba"><i data-lucide="shield-alert" class="ag-ico" style="width:15px;height:15px;"></i> AZBA / RTBA</button>
           <button class="res-subtab px-3 py-2 text-sm border-b-2 border-transparent" data-sub="sources"><i data-lucide="link" class="ag-ico" style="width:15px;height:15px;"></i> Sources</button>
@@ -179,7 +179,7 @@
     return `
       <p class="text-xs text-muted">Glossaire officiel des sigles aéronautiques (source : SOFIA, DGAC — ${SIGLES.length} sigles).</p>
       <div style="margin-top:12px;position:sticky;top:0;background:var(--card);padding:8px 0;z-index:5;">
-        <input type="search" id="sigles-search" placeholder="<i data-lucide="search" class="ag-ico" style="width:15px;height:15px;"></i> Rechercher (ex: NOTAM, QNH, AZBA...)" class="ad-input w-full" style="width:100%;font-size:14px;" autocomplete="off" autocapitalize="characters" />
+        <input type="search" id="sigles-search" placeholder="Rechercher (ex: NOTAM, QNH, AZBA...)" class="ad-input w-full" style="width:100%;font-size:14px;" autocomplete="off" autocapitalize="characters" />
         <div id="sigles-count" class="text-xs text-muted mt-1">${SIGLES.length} sigles disponibles</div>
       </div>
       <div style="overflow-x:auto;max-height:60vh;overflow-y:auto;border:1px solid var(--border);border-radius:6px;margin-top:8px;">
