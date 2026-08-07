@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.2 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.3 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -101,6 +101,48 @@
   .dot-red { background: var(--red); }
   .dot-blue { background: var(--blue); }
   .pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; }
+
+  /* ===== v2.09.3 — BADGES : POINT, HALO, PULSATION =====
+     ⚠️ La pulsation n'est PAS generalisee. Dans une application de preparation de
+     vol, un badge qui clignote en permanence cesse d'alerter : si tout bouge,
+     plus rien ne signale. Elle est donc reservee a deux cas ou l'information est
+     transitoire ou dangereuse — METAR perime, chargement en cours. Les compteurs
+     de section (zones, RTBA, avitaillement, POI) sont des etats stables : ils
+     recoivent le point et le halo, jamais la pulsation. */
+
+  /* Point de statut : lisible avant meme que l'oeil ait lu le libelle.
+     currentColor => il herite de la couleur du badge, aucune palette a maintenir. */
+  .ag-dot::before {
+    content: ''; flex: 0 0 auto;
+    width: 6px; height: 6px; margin-right: 6px;
+    border-radius: 50%; background: currentColor;
+  }
+
+  /* Halo : relief sans mouvement. color-mix garde la teinte exacte du badge,
+     donc aucune couleur en dur a synchroniser avec les styles inline existants. */
+  .ag-glow { box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 14%, transparent); }
+
+  /* Pulsation — uniquement sur .pill-obsolete et le chargement meteo.
+     On anime le halo (box-shadow), pas la taille : aucun reflow, et le badge ne
+     bouge pas les elements voisins a chaque battement. */
+  @keyframes agPulse {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 45%, transparent); }
+    50%      { box-shadow: 0 0 0 5px color-mix(in srgb, currentColor 0%, transparent); }
+  }
+  .ag-pulse { animation: agPulse 1.8s ease-out infinite; }
+
+  /* Flash : la reponse juste pour un compteur. Ce qui merite l'attention n'est
+     pas la valeur affichee en continu, c'est le MOMENT ou elle arrive. Un seul
+     battement quand la donnee change, puis plus rien. */
+  @keyframes agFlash {
+    0%   { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent); }
+    100% { box-shadow: 0 0 0 7px color-mix(in srgb, currentColor 0%, transparent); }
+  }
+  .ag-flash { animation: agFlash .55s ease-out 1; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ag-pulse, .ag-flash { animation: none; }
+  }
   .pill-vfr { background: #DCFCE7; color: #14532D; }
   .pill-mvfr { background: #FFEDD5; color: #7C2D12; }
   .pill-ifr { background: #FEE2E2; color: #7F1D1D; }
@@ -4569,7 +4611,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.2';
+const AG_PDF_VERSION = 'v2.09.3';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -7919,6 +7961,83 @@ init();
       el.textContent = txt;
     } catch (_) {}
   }
+
+  // ============================================================
+  // 8. BADGES — POINT, HALO, FLASH AU CHANGEMENT (v2.09.3)
+  // ============================================================
+  // Les classes sont posees en JS et non dans le HTML : les compteurs sont
+  // reecrits par le code metier a chaque rafraichissement, et une classe inscrite
+  // dans le document source serait emportee au premier rendu.
+  (function _agBadges() {
+    // Compteurs de section : point + halo, et un flash quand la valeur CHANGE.
+    var COUNTERS = ['airspaces-count', 'rtba-count', 'fuel-count', 'poi-count'];
+    var seen = {};
+
+    function flash(el) {
+      try {
+        el.classList.remove('ag-flash');
+        void el.offsetWidth; // force le redemarrage de l'animation
+        el.classList.add('ag-flash');
+      } catch (_) {}
+    }
+
+    function watch(id) {
+      var el = document.getElementById(id);
+      if (!el || el.dataset.agBadge === '1') return;
+      el.dataset.agBadge = '1';
+      el.classList.add('ag-dot', 'ag-glow');
+      seen[id] = (el.textContent || '').trim();
+      try {
+        new MutationObserver(function () {
+          var v = (el.textContent || '').trim();
+          if (v === seen[id]) return;
+          seen[id] = v;
+          // Pas de flash sur le retour a l'etat vide : seule l'arrivee d'une
+          // donnee merite l'attention, pas son effacement.
+          if (v && v !== '—' && v !== '-') flash(el);
+        }).observe(el, { childList: true, characterData: true, subtree: true });
+      } catch (_) {}
+    }
+
+    // État météo : point + halo en permanence, pulsation UNIQUEMENT pendant le
+    // chargement — c'est un etat transitoire, la pulsation dit « ca travaille ».
+    function watchWeather() {
+      var el = document.getElementById('wf-status');
+      if (!el || el.dataset.agBadge === '1') return;
+      el.dataset.agBadge = '1';
+      el.classList.add('ag-dot', 'ag-glow');
+      var apply = function () {
+        var busy = /chargement/i.test(el.textContent || '');
+        el.classList.toggle('ag-pulse', busy);
+      };
+      apply();
+      try { new MutationObserver(apply).observe(el, { childList: true, characterData: true, subtree: true }); } catch (_) {}
+    }
+
+    // METAR de plus de 90 minutes : le seul badge de l'application qui signale un
+    // risque reel de decision prise sur une donnee perimee. Il pulse, et il est le
+    // seul a le faire en permanence — c'est ce qui lui donne son poids.
+    function watchObsolete() {
+      try {
+        document.querySelectorAll('.pill-obsolete:not([data-ag-badge])').forEach(function (el) {
+          el.dataset.agBadge = '1';
+          el.classList.add('ag-dot', 'ag-pulse');
+        });
+      } catch (_) {}
+    }
+
+    function scan() {
+      COUNTERS.forEach(watch);
+      watchWeather();
+      watchObsolete();
+    }
+
+    scan();
+    // Les cartes et blocs METAR sont reconstruits en continu par le code metier
+    // et par la couche v062x : on repasse regulierement plutot que de poser des
+    // hooks dans du code qui se reecrit.
+    setInterval(scan, 2000);
+  })();
 
   // ============================================================
   // 7. PASTILLE GLISSANTE SUR LES ONGLETS (v2.09.2)
