@@ -3618,7 +3618,10 @@ body[data-fullscreen-active] .wf-mode-line {
     header.className = 'flex items-center justify-between flex-wrap gap-2';
     const titleEl = document.createElement('h2');
     titleEl.className = 'text-sm font-medium uppercase tracking-wide text-muted';
-    titleEl.textContent = '⚠️ zones aériennes traversées';
+    // v2.09.11 — innerHTML et non textContent : l'emoji ⚠️ laisse place a une
+    // icone lucide, qui exige un noeud element.
+    titleEl.innerHTML = '<i data-lucide="triangle-alert" class="ag-ico" style="width:15px;height:15px;"></i><span>zones aériennes traversées</span>';
+    try { if (window.lucide) window.lucide.createIcons(); } catch (_) {}
     header.appendChild(titleEl);
 
     if (airspacesCount) header.appendChild(airspacesCount);

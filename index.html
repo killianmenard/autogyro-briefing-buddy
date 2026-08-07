@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.10 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.11 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -117,6 +117,44 @@
   /* Sans cette marge, l'icone colle au libelle : un emoji embarque son propre
      blanc lateral, pas un SVG. */
   .ag-ico + span, .ag-ico + strong { margin-left: 2px; }
+
+  /* ===== v2.09.11 — CORRECTIFS DE FINITION =====
+
+     a) Totaux du trajet : le bloc heritait d'un cadre complet alors qu'il n'est
+        qu'un pied de carte. Seul le filet superieur separe utilement les segments
+        du total ; le reste (fond, bordures laterales, ombre) n'ajoutait rien. */
+  #trip-totals {
+    background: transparent !important;
+    border-left: none !important; border-right: none !important; border-bottom: none !important;
+    box-shadow: none !important; border-radius: 0 !important;
+  }
+
+  /* b) Survol de la carte du trajet. Elle porte .no-glass — necessaire, le
+        backdrop-filter degraderait le rendu des tuiles Leaflet — mais cette classe
+        l'excluait AUSSI du :hover des autres blocs. On lui rend la reponse au
+        survol sans lui rendre le verre. */
+  #tab-plan .card.no-glass {
+    transition: border-color .25s var(--ease, ease), box-shadow .25s var(--ease, ease);
+  }
+  #tab-plan .card.no-glass:hover {
+    border-color: var(--card-bd, var(--border));
+    box-shadow: inset 0 1px 0 var(--hi), 0 10px 28px var(--shadow, rgba(40,55,95,.16));
+  }
+
+  /* c) Onglet actif : le soulignement doublait la pastille glissante de v2.09.2.
+        Ma regle de v2.09.2 etait battue par extensions.js L2576, qui pose
+        border-bottom-color avec !important — d'ou le trait qui subsistait sous le
+        libelle malgre le fond colore. */
+  .ag-hl-host.ag-hl-on .tab-btn.active { border-bottom-color: transparent !important; }
+
+  /* d) Rayon des petits boutons encadres : 4-6px donnaient un angle sec a cote des
+        cartes en 12-16px. 9px reconcilie les deux echelles. */
+  .header-action-btn, .header-unit-btn { border-radius: 9px !important; }
+  .btn-vac, .ad-card button, .card button.text-xs { border-radius: 9px; }
+
+  /* e) Filtre d'altitude : la liste des zones demarrait immediatement sous les
+        champs, sans respiration. */
+  #airspaces-alt-filter, .airspace-filter-row { margin-bottom: 12px; }
 
   /* ===== v2.09.9 — ENCADRES FANTOMES =====
      La legende sous-carte et le bloc distance/temps/conso portaient une bordure a
@@ -980,9 +1018,9 @@
       <div class="plan-col band-weather-col">
         <div id="trip-summary" class="hidden">
         <div class="card p-4 space-y-3">
-          <h2 class="text-sm font-medium uppercase tracking-wide text-muted">résumé du trajet</h2>
+          <h2 class="text-sm font-medium uppercase tracking-wide text-muted" style="display:flex;align-items:center;gap:6px;"><i data-lucide="route" class="ag-ico" style="width:14px;height:14px;"></i><span>résumé du trajet</span></h2>
           <div id="trip-segments" class="space-y-2"></div>
-          <div class="border-t border-thin pt-3 grid grid-cols-3 gap-3 text-sm">
+          <div id="trip-totals" class="border-t border-thin pt-3 grid grid-cols-3 gap-3 text-sm">
             <div><p class="text-xs text-muted">distance totale</p><p class="font-medium text-lg" id="total-distance">—</p></div>
             <div><p class="text-xs text-muted">temps de vol estimé</p><p class="font-medium text-lg" id="total-time">—</p></div>
             <div><p class="text-xs text-muted">conso estimée</p><p class="font-medium text-lg" id="total-fuel">—</p></div>
@@ -1106,7 +1144,7 @@
           <div id="rtba-block">
             <div class="flex items-center justify-between flex-wrap gap-2">
               <h2 class="text-sm font-medium uppercase tracking-wide text-muted" style="display:flex;align-items:center;gap:6px;height:18px;line-height:18px;">
-                <span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;overflow:hidden;line-height:1;flex-shrink:0;">🪖</span><span>réseau RTBA traversé</span>
+                <i data-lucide="radar" class="ag-ico" style="width:15px;height:15px;"></i><span>réseau RTBA traversé</span>
               </h2>
               <span id="rtba-count" class="pill" style="background:#F5E6D0;color:#8a5a16;">—</span>
             </div>
@@ -1121,7 +1159,7 @@
           <div id="fuel-block">
             <div class="flex items-center justify-between flex-wrap gap-2">
               <h2 class="text-sm font-medium uppercase tracking-wide text-muted" style="display:flex;align-items:center;gap:6px;height:18px;line-height:18px;">
-                <span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;overflow:hidden;line-height:1;flex-shrink:0;">⛽</span><span>avitaillement à proximité</span>
+                <i data-lucide="fuel" class="ag-ico" style="width:15px;height:15px;"></i><span>avitaillement à proximité</span>
               </h2>
               <span id="fuel-count" class="pill" style="background:#DCEBD8;color:#2c6b32;">—</span>
             </div>
@@ -4660,7 +4698,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.10';
+const AG_PDF_VERSION = 'v2.09.11';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
