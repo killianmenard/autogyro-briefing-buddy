@@ -4152,7 +4152,11 @@ body[data-fullscreen-active] .wf-mode-line {
     const newTitle = document.createElement('h2');
     newTitle.className = 'v0626-notes-title section-title';
     newTitle.style.cssText = 'font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0 0 12px 0;display:flex;align-items:center;gap:6px;';
-    newTitle.innerHTML = '<span style="font-size:15px;">📝</span><span>Notes pilote</span>';
+    // v2.09.9 — l'emoji 📝 est remplace par une icone lucide : meme langage visuel
+    // que le reste de l'interface, et l'ecart avec le libelle redevient celui du
+    // gap CSS (un emoji embarque son propre blanc lateral et l'avale).
+    newTitle.innerHTML = '<i data-lucide="sticky-note" class="ag-ico" style="width:15px;height:15px;"></i><span>Notes pilote</span>';
+    try { if (window.lucide) window.lucide.createIcons(); } catch (_) {}
 
     if (titleEl) {
       titleEl.parentNode.replaceChild(newTitle, titleEl);

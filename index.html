@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.09.9 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.09.10 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -968,7 +968,7 @@
             <i data-lucide="x" class="h-4 w-4"></i> Quitter plein écran
           </button>
           <details class="map-about text-xs text-muted mt-2 px-2">
-            <summary style="cursor:pointer;font-weight:600;">ℹ️ 1211 points sur la carte (447 AD DGAC + 764 ULM BASULM)</summary>
+            <summary style="cursor:pointer;font-weight:600;"><i data-lucide="info" class="ag-ico" style="width:12px;height:12px;"></i> 1211 points sur la carte (447 AD DGAC + 764 ULM BASULM)</summary>
             <div style="margin-top:6px;">Cliquez sur un marqueur pour l'ajouter au trajet. Coin haut droit : activer/désactiver l'overlay OpenAIP (espaces aériens + AD + navaids + points VFR combinés), visible à partir du zoom 7.</div>
           </details>
         </div>
@@ -1011,11 +1011,11 @@
         <!-- v0.8.23 — sélecteur de mode carte météo (temp/vent/nuages), données Open-Meteo déjà chargées -->
         <!-- v0.8.25 — layout : satellite pleine largeur, puis 3 modes en colonnes égales (occupe le bloc, marges respectées) -->
         <div id="wf-mode-switch" class="space-y-1.5">
-          <button type="button" class="wf-sat-btn w-full text-xs px-2.5 py-1.5 rounded border border-thin" data-wf-sat>🛰️ satellite</button>
+          <button type="button" class="wf-sat-btn w-full text-xs px-2.5 py-1.5 rounded border border-thin" data-wf-sat><i data-lucide="satellite" class="ag-ico" style="width:13px;height:13px;"></i> satellite</button>
           <div class="flex gap-1.5">
-            <button type="button" class="wf-mode-btn flex-1 text-xs px-2 py-1.5 rounded border border-thin" data-wf-mode="temp">🌡️ température</button>
-            <button type="button" class="wf-mode-btn flex-1 text-xs px-2 py-1.5 rounded border border-thin" data-wf-mode="wind">🌬️ vent</button>
-            <button type="button" class="wf-mode-btn flex-1 text-xs px-2 py-1.5 rounded border border-thin" data-wf-mode="clouds">☁️ nuages</button>
+            <button type="button" class="wf-mode-btn flex-1 text-xs px-2 py-1.5 rounded border border-thin" data-wf-mode="temp"><i data-lucide="thermometer" class="ag-ico" style="width:13px;height:13px;"></i> température</button>
+            <button type="button" class="wf-mode-btn flex-1 text-xs px-2 py-1.5 rounded border border-thin" data-wf-mode="wind"><i data-lucide="wind" class="ag-ico" style="width:13px;height:13px;"></i> vent</button>
+            <button type="button" class="wf-mode-btn flex-1 text-xs px-2 py-1.5 rounded border border-thin" data-wf-mode="clouds"><i data-lucide="cloud" class="ag-ico" style="width:13px;height:13px;"></i> nuages</button>
           </div>
         </div>
         <!-- v0.8.25 — info date de prise satellite (visible uniquement quand satellite ON) -->
@@ -1023,7 +1023,7 @@
         <div class="pt-3 space-y-2">
           <div class="flex flex-wrap gap-2">
             <button id="metartaf-open-btn" type="button" style="flex:1;min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#0891B2;color:#fff;border:none;padding:9px 14px;border-radius:6px;font-weight:600;font-size:13px;cursor:pointer;">
-              <span>🗺️</span><span>ouvrir metar-taf.com</span>
+              <i data-lucide="external-link" class="ag-ico" style="width:14px;height:14px;"></i><span>ouvrir metar-taf.com</span>
             </button>
             <a href="https://aviation.meteo.fr/login.php" target="_blank" rel="noreferrer" style="flex:1;min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#000;color:#fff;padding:9px 14px;border-radius:6px;font-weight:600;font-size:13px;text-decoration:none;">
               <i data-lucide="external-link" class="h-3.5 w-3.5"></i><span>ouvrir aviation.meteo.fr</span>
@@ -4110,7 +4110,7 @@ function renderMetarSimple(decoded) {
       const gustKmh = Math.round(decoded.wind.gust * 1.852);
       windText += ` ⚠️ rafales ${decoded.wind.gust} kt (${gustKmh} km/h)`;
     }
-    lines.push(`<span>🌬️</span> ${windText}`);
+    lines.push(`<span><i data-lucide="wind" class="ag-ico" style="width:12px;height:12px;"></i></span> ${windText}`);
   }
   
   // Visibilité
@@ -4660,7 +4660,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.09.9';
+const AG_PDF_VERSION = 'v2.09.10';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -7184,7 +7184,7 @@ function setWeatherFranceSat(on) {
     weatherFranceSatLayer.addTo(weatherFranceMap);
     weatherFranceMarkers.forEach(m => weatherFranceMap.removeLayer(m)); // masquer les marqueurs
     if (satInfo) {
-      satInfo.innerHTML = `<span>🛰️ Imagerie du <strong>${frDate}</strong>, passage MODIS Terra <strong>~10h–11h locale</strong> (orbite ~10h30 UTC)</span><span style="opacity:.8;">· mise à jour quotidienne, pas de temps réel</span>`;
+      satInfo.innerHTML = `<span><i data-lucide="satellite" class="ag-ico" style="width:12px;height:12px;"></i> Imagerie du <strong>${frDate}</strong>, passage MODIS Terra <strong>~10h–11h locale</strong> (orbite ~10h30 UTC)</span><span style="opacity:.8;">· mise à jour quotidienne, pas de temps réel</span>`;
       satInfo.classList.remove('hidden');
     }
   } else {
