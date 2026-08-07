@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.10.8 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.10.11 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -271,6 +271,68 @@
     /* Mobile : feuille plein ecran, comme la maquette. */
     #ag-acct-ov { padding: 0; }
     #ag-acct { max-width: none; border-radius: 0; min-height: 100vh; }
+  }
+
+  /* ===== CURSEUR AVION ORIENTE =====
+     L'avion s'aligne sur la direction du deplacement, comme s'il volait sur la
+     page. Le curseur systeme est masque et remplace par un element suivi.
+
+     ⚠️ CE QUE CELA COUTE, ET COMMENT ON LE LIMITE :
+     un curseur JS efface les formes natives, qui sont porteuses d'information
+     (« grab » sur la carte, barre de saisie dans un champ). On ne masque donc PAS
+     partout : sur la carte, les champs et les elements desactives, l'avion
+     s'efface et le curseur systeme reprend la main. C'est le seul reglage qui
+     permet de garder l'effet sans perdre ce que l'interface disait du geste.
+
+     L'orientation est lissee et ne bouge qu'au-dela d'un seuil de deplacement :
+     sans cela l'avion pivote sur chaque micro-tremblement de la main et devient
+     illisible. */
+  .ag-plane-on, .ag-plane-on * { cursor: none !important; }
+  /* Zones ou la forme du curseur est un message : on la rend. */
+  .ag-plane-on input, .ag-plane-on textarea, .ag-plane-on select,
+  .ag-plane-on [contenteditable="true"] { cursor: text !important; }
+  .ag-plane-on .leaflet-container, .ag-plane-on .leaflet-container *,
+  .ag-plane-on #map, .ag-plane-on #map * { cursor: grab !important; }
+  .ag-plane-on .leaflet-dragging, .ag-plane-on .leaflet-dragging * { cursor: grabbing !important; }
+  .ag-plane-on [disabled], .ag-plane-on [aria-disabled="true"] { cursor: not-allowed !important; }
+  .ag-plane-on input[type="range"] { cursor: ew-resize !important; }
+
+  /* v2.10.11 — LE POINT EST LE CURSEUR, L'AVION LE SUIT.
+     Un avion place exactement sous la souris est joli mais imprecis : sa pointe
+     designe, son corps masque, et on ne sait plus ou l'on clique. On separe donc
+     les deux roles :
+       — le point suit la souris AU PIXEL PRES, sans aucune interpolation. C'est lui
+         qui vise, et il ne doit jamais accuser de retard ;
+       — l'avion le rejoint avec de l'inertie et s'oriente vers lui. Il ne sert plus
+         a designer, seulement a habiller le geste.
+     C'est aussi ce que fait le composant d'origine avec Cursor et CursorFollow. */
+  #ag-dot {
+    position: fixed; top: 0; left: 0; z-index: 2147483001;
+    width: 7px; height: 7px; border-radius: 50%; pointer-events: none;
+    background: var(--accent, #0B7A8C);
+    box-shadow: 0 0 0 2px rgba(255,255,255,.9);
+    opacity: 0; transition: opacity .18s ease; will-change: transform;
+  }
+  [data-theme="dark"] #ag-dot, html.dark #ag-dot {
+    background: #7fe9f2; box-shadow: 0 0 0 2px rgba(11,19,38,.85);
+  }
+  #ag-dot.vis { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { #ag-dot { display: none !important; } }
+
+  #ag-plane {
+    position: fixed; top: 0; left: 0; z-index: 2147483000;
+    width: 22px; height: 22px; pointer-events: none;
+    opacity: 0; transition: opacity .18s ease;
+    will-change: transform;
+  }
+  #ag-plane.vis { opacity: 1; }
+  #ag-plane svg { display: block; width: 22px; height: 22px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Un curseur qui pivote en continu est exactement ce que ce reglage demande
+       d'eviter : on revient au curseur systeme. */
+    #ag-plane { display: none !important; }
+    .ag-plane-on, .ag-plane-on * { cursor: auto !important; }
   }
 
   /* ===== v2.10.7 — ONDE AU CLIC (ripple) =====
@@ -4906,7 +4968,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.10.8';
+const AG_PDF_VERSION = 'v2.10.11';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -7842,6 +7904,81 @@ function init() {
       setTimeout(kill, 900);
     } catch (_) {}
   }, true);
+})();
+
+
+// ===== CURSEUR : POINT DE VISEE + AVION SUIVEUR =====
+(function _agPlaneCursor() {
+  try {
+    if (!window.matchMedia) return;
+    if (!matchMedia('(pointer: fine)').matches) return;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  } catch (_) { return; }
+
+  var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  var STROKE = dark ? '#7fe9f2' : '#0B7A8C';
+  var HALO   = dark ? '#0b1326' : '#ffffff';
+  var P = "M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z";
+
+  var dot = document.createElement('div');
+  dot.id = 'ag-dot';
+  dot.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(dot);
+
+  var el = document.createElement('div');
+  el.id = 'ag-plane';
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = '<svg viewBox="-2 -2 28 28">'
+    + '<path d="' + P + '" fill="none" stroke="' + HALO + '" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>'
+    + '<path d="' + P + '" fill="none" stroke="' + STROKE + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    + '</svg>';
+  document.body.appendChild(el);
+  document.documentElement.classList.add('ag-plane-on');
+
+  // x,y  = position exacte de la souris (le point)
+  // ax,ay= position de l'avion, qui rejoint x,y avec de l'inertie
+  var x = -100, y = -100, ax = -100, ay = -100;
+  var BASE = 45;                 // l'avion lucide pointe vers le haut-droite
+  var ang = -BASE, raf = 0, moved = false;
+  var LERP = 0.16;               // plus bas = avion plus traînant
+  var SNAP = 0.35;               // distance sous laquelle on cesse d'animer
+
+  function onMove(e) {
+    x = e.clientX; y = e.clientY;
+    if (!moved) {
+      moved = true; ax = x; ay = y;
+      dot.classList.add('vis'); el.classList.add('vis');
+    }
+    // Le point est pose IMMEDIATEMENT, hors de la boucle d'animation : c'est ce
+    // qui garantit qu'il ne decroche jamais de la souris.
+    dot.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0) translate(-50%,-50%)';
+    if (!raf) raf = requestAnimationFrame(tick);
+  }
+
+  function tick() {
+    raf = 0;
+    var dx = x - ax, dy = y - ay;
+    var d = Math.hypot(dx, dy);
+    // L'avion s'oriente vers le point qu'il poursuit, et non vers sa propre
+    // trajectoire passee : c'est ce qui donne l'impression qu'il vole VERS lui.
+    // En deca de 3px la direction n'a plus de sens et l'avion vibrerait.
+    if (d > 3) {
+      var target = Math.atan2(dy, dx) * 180 / Math.PI;
+      var diff = ((target - ang + 540) % 360) - 180;   // plus court chemin
+      ang += diff * 0.25;
+    }
+    ax += dx * LERP;
+    ay += dy * LERP;
+    el.style.transform = 'translate3d(' + ax + 'px,' + ay + 'px,0) rotate(' + (ang + BASE) + 'deg) translate(-50%,-50%)';
+    // On ne relance la boucle que tant que l'avion a du chemin a faire : au repos,
+    // aucune frame n'est consommee.
+    if (d > SNAP) raf = requestAnimationFrame(tick);
+  }
+
+  document.addEventListener('pointermove', onMove, { passive: true });
+  document.addEventListener('pointerdown', onMove, { passive: true });
+  document.addEventListener('mouseleave', function () { dot.classList.remove('vis'); el.classList.remove('vis'); });
+  document.addEventListener('mouseenter', function () { if (moved) { dot.classList.add('vis'); el.classList.add('vis'); } });
 })();
 
 init();
