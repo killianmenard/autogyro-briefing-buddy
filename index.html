@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.15 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.16 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -1240,8 +1240,8 @@
     </div>
     <div id="auth-gate-banner" class="muted-bg p-3 rounded" style="font-size:13px;line-height:1.5;margin-bottom:16px;"></div>
     <div class="card p-4">
-      <input type="email" id="auth-email" class="ad-input w-full mb-2" placeholder="Adresse email" autocomplete="email" />
-      <input type="password" id="auth-password" class="ad-input w-full mb-2" placeholder="Mot de passe (min. 6 caractères)" autocomplete="current-password" />
+      <label for="auth-email" style="display:block;font-size:12px;margin-bottom:4px;color:var(--text-2);">Adresse email</label> <input type="email" id="auth-email" class="ad-input w-full mb-2" placeholder="Adresse email" autocomplete="email" />
+      <label for="auth-password" style="display:block;font-size:12px;margin-bottom:4px;color:var(--text-2);">Mot de passe</label> <input type="password" id="auth-password" class="ad-input w-full mb-2" placeholder="Mot de passe (min. 6 caractères)" autocomplete="current-password" />
       <div class="flex gap-2 flex-wrap">
         <button id="auth-login" class="px-3 py-2 rounded bg-black text-white" style="font-size:13px;">Se connecter</button>
         <button id="auth-signup" class="px-3 py-2 rounded border" style="border-color:var(--border);font-size:13px;">Créer un compte</button>
@@ -1341,7 +1341,7 @@
         <h2 class="section-title text-sm">trajet</h2>
         <div id="trip-inputs" class="trajet-inputs-grid">
           <div class="relative" data-trip-slot="0">
-            <label class="text-xs text-muted">départ</label>
+            <label class="text-xs text-muted" for="ad-input-0">départ</label>
             <input type="text" id="ad-input-0" class="ad-input mt-1" placeholder="ex: LFLQ ou Montélimar" autocomplete="off" />
             <div id="ad-suggestions-0" class="ad-suggestions hidden"></div>
           </div>
@@ -1370,7 +1370,7 @@
             <div id="ad-suggestions-3" class="ad-suggestions hidden"></div>
           </div>
           <div class="relative" data-trip-slot="4">
-            <label class="text-xs text-muted">arrivée</label>
+            <label class="text-xs text-muted" for="ad-input-4">arrivée</label>
             <input type="text" id="ad-input-4" class="ad-input mt-1" placeholder="ex: LFLU" autocomplete="off" />
             <div id="ad-suggestions-4" class="ad-suggestions hidden"></div>
           </div>
@@ -1632,15 +1632,15 @@
 
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
-          <label class="text-xs text-muted">immatriculation</label>
+          <label class="text-xs text-muted" for="acft-immat">immatriculation</label>
           <input type="text" id="acft-immat" class="ad-input mt-1" placeholder="ex: F-JUBA" />
         </div>
         <div>
-          <label class="text-xs text-muted">modèle</label>
+          <label class="text-xs text-muted" for="acft-modele">modèle</label>
           <input type="text" id="acft-modele" class="ad-input mt-1" placeholder="ex: MTOsport, Magni M16, Calidus" />
         </div>
         <div>
-          <label class="text-xs text-muted">MTOW (kg)</label>
+          <label class="text-xs text-muted" for="acft-mtow">MTOW (kg)</label>
           <input type="number" id="acft-mtow" class="ad-input mt-1" placeholder="ex: 560" />
         </div>
         <div>
@@ -1649,11 +1649,11 @@
           <p class="text-xs text-muted mt-1" id="acft-vcroisiere-hint">Saisis la valeur dans l'unité active</p>
         </div>
         <div>
-          <label class="text-xs text-muted">consommation (L/h)</label>
+          <label class="text-xs text-muted" for="acft-conso">consommation (L/h)</label>
           <input type="number" step="0.1" id="acft-conso" class="ad-input mt-1" placeholder="ex: 18.5" />
         </div>
         <div>
-          <label class="text-xs text-muted">capacité réservoir (L)</label>
+          <label class="text-xs text-muted" for="acft-reservoir">capacité réservoir (L)</label>
           <input type="number" step="0.1" id="acft-reservoir" class="ad-input mt-1" placeholder="ex: 90" />
         </div>
         <div>
@@ -1667,11 +1667,11 @@
           </select>
         </div>
         <div>
-          <label class="text-xs text-muted">équipement radio</label>
+          <label class="text-xs text-muted" for="acft-radio">équipement radio</label>
           <input type="text" id="acft-radio" class="ad-input mt-1" placeholder="ex: VHF Trig TY91" />
         </div>
         <div class="sm:col-span-2">
-          <label class="text-xs text-muted">équipement transpondeur</label>
+          <label class="text-xs text-muted" for="acft-transpondeur">équipement transpondeur</label>
           <input type="text" id="acft-transpondeur" class="ad-input mt-1" placeholder="ex: Mode S Trig TT22" />
         </div>
       </div>
@@ -1691,20 +1691,20 @@
         </h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-muted">poids à vide (kg)</label>
+            <label class="text-xs text-muted" for="acft-poids-vide">poids à vide (kg)</label>
             <input type="number" step="0.5" id="acft-poids-vide" class="ad-input mt-1" placeholder="ex: 295" />
             <p class="text-xs text-muted mt-1">Poids de la machine sans pilote, passager ni carburant</p>
           </div>
           <div>
-            <label class="text-xs text-muted">poids pilote (kg)</label>
+            <label class="text-xs text-muted" for="acft-poids-pilote">poids pilote (kg)</label>
             <input type="number" step="0.5" id="acft-poids-pilote" class="ad-input mt-1" placeholder="ex: 85" />
           </div>
           <div>
-            <label class="text-xs text-muted">poids passager (kg)</label>
+            <label class="text-xs text-muted" for="acft-poids-pax">poids passager (kg)</label>
             <input type="number" step="0.5" id="acft-poids-pax" class="ad-input mt-1" placeholder="ex: 70 (0 si vol seul)" />
           </div>
           <div>
-            <label class="text-xs text-muted">carburant à bord (L)</label>
+            <label class="text-xs text-muted" for="acft-fuel-litres">carburant à bord (L)</label>
             <input type="number" step="0.5" id="acft-fuel-litres" class="ad-input mt-1" placeholder="ex: 60" />
             <p class="text-xs text-muted mt-1">Le poids est calculé selon le type (0.72 kg/L pour SP/UL91, 0.72 pour 100LL)</p>
           </div>
@@ -5128,7 +5128,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.15';
+const AG_PDF_VERSION = 'v2.16';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8910,14 +8910,14 @@ init();
       made.compte.insertAdjacentHTML('beforeend',
         '<div class="card" style="padding:12px;margin-top:12px;">'
         + '<h3 class="text-sm font-semibold mb-2"><i data-lucide="at-sign" class="ag-ico" style="width:14px;height:14px;"></i> Identifiants</h3>'
-        + '<label style="display:block;font-size:12px;margin-bottom:4px;">Mot de passe actuel</label>'
+        + '<label for="ag-id-cur" style="display:block;font-size:12px;margin-bottom:4px;">Mot de passe actuel</label>'
         + '<input id="ag-id-cur" type="password" autocomplete="current-password" class="ad-input" style="width:100%;margin-bottom:10px;" placeholder="requis pour toute modification" />'
-        + '<label style="display:block;font-size:12px;margin-bottom:4px;">Nouvelle adresse email</label>'
+        + '<label for="ag-id-mail" style="display:block;font-size:12px;margin-bottom:4px;">Nouvelle adresse email</label>'
         + '<div style="display:flex;gap:8px;margin-bottom:10px;">'
         +   '<input id="ag-id-mail" type="email" autocomplete="email" class="ad-input" style="flex:1;" placeholder="nouvelle@adresse.fr" />'
         +   '<button type="button" id="ag-id-mail-btn" class="px-3 py-2 rounded border" style="border-color:var(--border);font-size:12.5px;">Changer</button>'
         + '</div>'
-        + '<label style="display:block;font-size:12px;margin-bottom:4px;">Nouveau mot de passe</label>'
+        + '<label for="ag-id-pwd" style="display:block;font-size:12px;margin-bottom:4px;">Nouveau mot de passe</label>'
         + '<div style="display:flex;gap:8px;">'
         +   '<input id="ag-id-pwd" type="password" autocomplete="new-password" class="ad-input" style="flex:1;" placeholder="8 caracteres minimum" />'
         +   '<button type="button" id="ag-id-pwd-btn" class="px-3 py-2 rounded border" style="border-color:var(--border);font-size:12.5px;">Changer</button>'
@@ -9549,8 +9549,8 @@ init();
       <button id="signup-close" aria-label="Fermer" style="background:transparent;border:none;font-size:24px;line-height:1;cursor:pointer;color:var(--text-2);padding:0 4px;">&times;</button>
     </div>
     <p style="font-size:12px;color:var(--text-2);margin:0 0 12px;">Un compte gratuit est nécessaire pour utiliser le Service. Il synchronise aussi tes données entre ordinateur et iPhone.</p>
-    <input type="email" id="signup-email" class="ad-input w-full mb-2" placeholder="Adresse email" autocomplete="email" />
-    <input type="password" id="signup-password" class="ad-input w-full mb-2" placeholder="Mot de passe (min. 6 caractères)" autocomplete="new-password" />
+    <label for="signup-email" style="display:block;font-size:12px;margin-bottom:4px;color:var(--text-2);">Adresse email</label> <input type="email" id="signup-email" class="ad-input w-full mb-2" placeholder="Adresse email" autocomplete="email" />
+    <label for="signup-password" style="display:block;font-size:12px;margin-bottom:4px;color:var(--text-2);">Mot de passe</label> <input type="password" id="signup-password" class="ad-input w-full mb-2" placeholder="Mot de passe (min. 6 caractères)" autocomplete="new-password" />
     <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:1.45;margin:6px 0 14px;color:var(--text-2);">
       <input type="checkbox" id="signup-consent" style="margin-top:2px;flex:0 0 auto;">
       <span>J'ai lu et j'accepte les <a href="cgu.html" target="_blank" rel="noreferrer" style="color:var(--accent);text-decoration:underline;">CGU</a>, notamment l'avertissement de sécurité, ainsi que la <a href="politique.html" target="_blank" rel="noreferrer" style="color:var(--accent);text-decoration:underline;">Politique de confidentialité</a> et les <a href="mentions.html" target="_blank" rel="noreferrer" style="color:var(--accent);text-decoration:underline;">Mentions légales</a>.</span>

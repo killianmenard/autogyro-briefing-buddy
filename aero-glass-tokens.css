@@ -172,3 +172,19 @@ html[data-theme="light"]{
    ⚠️ Le PDF (html2canvas) NE rend PAS backdrop-filter → le PDF garde son
    style « impression » découplé (withLightTheme), il n'utilise PAS ces classes.
    ============================================================================ */
+
+/* ===================== FOCUS CLAVIER (v2.16) =====================
+   Aucun indicateur de focus n'etait defini : on dependait du defaut
+   navigateur, que le preflight Tailwind neutralise. :where() garde une
+   specificite nulle -> n'ecrase aucun style existant.
+   .map-search-input porte un `outline:none` explicite (specificite 0,1,0),
+   d'ou la regle dediee qui la recouvre.
+   ================================================================= */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible{
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.map-search-input:focus-visible{
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
