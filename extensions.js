@@ -178,7 +178,7 @@
   function buildLexiconHtml() {
     return `
       <p class="text-xs text-muted">Glossaire officiel des sigles aéronautiques (source : SOFIA, DGAC — ${SIGLES.length} sigles).</p>
-      <div style="margin-top:12px;position:sticky;top:0;background:var(--card);padding:8px 0;z-index:5;">
+      <div style="margin-top:12px;position:sticky;top:0;padding:8px 0;z-index:5;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);">
         <input type="search" id="sigles-search" placeholder="Rechercher (ex: NOTAM, QNH, AZBA...)" class="ad-input w-full" style="width:100%;font-size:14px;" autocomplete="off" autocapitalize="characters" />
         <div id="sigles-count" class="text-xs text-muted mt-1">${SIGLES.length} sigles disponibles</div>
       </div>
@@ -462,7 +462,11 @@
         if (i === 0) slotIdx = 0;
         else if (i === max - 1) slotIdx = 4;
         else slotIdx = i;
-        if (slotIdx >= 2 && slotIdx <= 3) {
+        // v2.11.3 — la borne partait de 2 parce que le slot 1 etait toujours
+        // visible. Depuis v2.11 il est masque par defaut : un trajet a 3 etapes
+        // rechargeait la premiere dans un champ invisible, et l'ecran n'en
+        // montrait que deux.
+        if (slotIdx >= 1 && slotIdx <= 3) {
           const slotEl = document.querySelector(`[data-trip-slot="${slotIdx}"]`);
           if (slotEl) slotEl.classList.remove('hidden');
           if (slotIdx > STATE.visibleStops) STATE.visibleStops = slotIdx;

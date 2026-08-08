@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.11.2 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.11.3 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -403,7 +403,14 @@
   @keyframes agShine { from { background-position: 130% 0; } to { background-position: -50% 0; } }
   /* La feuille « mon compte » contient des .card : un balayage a l'interieur
      d'une fenetre modale ferait clignoter le fond de la modale. */
-  #ag-acct .card::after, #ag-acct .card:hover { display: none; transform: none; }
+  /* 🔴 v2.11.3 — CORRECTIF D'UNE BOUCLE QUE J'AI CREEE EN v2.11.
+     La regle groupee « #ag-acct .card::after, #ag-acct .card:hover { display:none } »
+     appliquait display:none A LA CARTE ELLE-MEME au survol. La carte disparait,
+     le pointeur n'est donc plus dessus, elle revient, il est de nouveau dessus :
+     clignotement infini, panneau inutilisable. Les deux selecteurs n'avaient pas
+     besoin des memes proprietes — il fallait deux regles, pas une liste. */
+  #ag-acct .card::after { display: none; }
+  #ag-acct .card:hover { transform: none; box-shadow: none; }
 
   /* ------------------------------------------------------------------
      c) DEPLI/REPLI FLUIDE DES <details>
@@ -5080,7 +5087,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.11.2';
+const AG_PDF_VERSION = 'v2.11.3';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -9062,6 +9069,14 @@ init();
       tickClock();
       // v2.10.2 — via window : la fonction vit dans l'IIFE de basulm.js, l'appel
       // direct echouait silencieusement et les boutons restaient incolores.
+      // 🔴 v2.11.3 — CAUSE DES CHAMPS VIDES. refreshAccountState() (nom de profil,
+      // photo, cle OpenAIP) n'etait appelee que par openAccount(), l'ancienne
+      // ouverture par onglet. Depuis v2.10 la feuille intercepte le clic sur
+      // #account-circle en phase de CAPTURE avec stopPropagation : openAccount()
+      // ne s'executait plus, donc plus personne ne remplissait ces champs. Ils
+      // n'etaient pas « non enregistres » — ils n'etaient jamais relus.
+      try { if (typeof window._refreshAccountState === 'function') window._refreshAccountState(); } catch (_) {}
+      try { if (typeof window._agApplyHeaderAvatar === 'function') window._agApplyHeaderAvatar(); } catch (_) {}
       try { if (typeof window.refreshParamsState === 'function') window.refreshParamsState(); } catch (_) {}
     }
     function close() {
