@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.13 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.13.1 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -5128,7 +5128,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.13';
+const AG_PDF_VERSION = 'v2.13.1';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8974,47 +8974,51 @@ init();
         b.addEventListener('click', function () { show(p.id); });
         nav.appendChild(b);
       });
-      // v2.13 — CONTENU DE LA RUBRIQUE « PROPOSER UNE IDEE ».
+      // v2.13.1 — CONTENU DE LA RUBRIQUE « PROPOSER UNE IDEE ».
       // Le lien vivait dans un bandeau de l'onglet Ressources, au-dessus d'un
       // glossaire de 670 sigles : personne ne va chercher un formulaire de
-      // suggestion en consultant un lexique. Il rejoint le compte, ou l'on va
-      // quand on veut agir sur son usage de l'outil.
+      // suggestion en consultant un lexique. Il rejoint le compte.
       //
-      // Le texte compte autant que le lien : une invite nue (« une idee ? »)
-      // produit des retours inexploitables. En disant ce qui est utile — le
-      // contexte de vol, le terrain, ce qu'on attendait — on recoit des
-      // signalements actionnables plutot que « ca marche pas ».
+      // Ton : on ne demande pas un rapport de bug, on dit qu'on ecoute. Les
+      // consignes de redaction ont ete retirees — elles filtraient les retours
+      // avant meme de les recevoir, ce qui est l'inverse du but quand on a
+      // quatorze inscrits.
       made.idee.insertAdjacentHTML('beforeend',
         '<div class="card" style="padding:14px;">'
-        + '<h3 class="text-sm font-semibold mb-2"><i data-lucide="lightbulb" class="ag-ico" style="width:14px;height:14px;"></i> Proposer une am\u00e9lioration</h3>'
-        + '<p style="font-size:13px;line-height:1.5;margin:0 0 10px;color:var(--muted-foreground,#6b7280);">'
-        +   'Mon Plan de Vol est developpe par un pilote, pour des pilotes. Chaque retour '
-        +   'oriente reellement la suite : les fiches terrain, le vent en altitude et le PDF '
-        +   'de vol local viennent tous d\'une remarque d\'utilisateur.'
+        + '<h3 class="text-sm font-semibold mb-2"><i data-lucide="lightbulb" class="ag-ico" style="width:14px;height:14px;"></i> Votre avis compte</h3>'
+        + '<p style="font-size:13.5px;line-height:1.6;margin:0 0 10px;">'
+        +   'Mon Plan de Vol est fait par un pilote, pour des pilotes. C\'est vous qui volez avec, '
+        +   'donc c\'est vous qui savez ce qui manque.'
         + '</p>'
-        + '<p style="font-size:13px;line-height:1.5;margin:0 0 6px;"><strong>Ce qui aide le plus :</strong></p>'
-        + '<ul style="font-size:13px;line-height:1.5;margin:0 0 12px;padding-left:18px;color:var(--muted-foreground,#6b7280);">'
-        +   '<li>le terrain ou le trajet concerne (LFLQ, LFLQ \u2192 LFLW\u2026) ;</li>'
-        +   '<li>ce que vous attendiez, et ce que vous avez obtenu ;</li>'
-        +   '<li>l\'appareil et le navigateur si c\'est un probleme d\'affichage.</li>'
-        + '</ul>'
-        + '<a href="https://tally.so/r/gDxBJP" target="_blank" rel="noopener" '
-        +   'style="display:inline-block;background:var(--accent,#0792a6);color:var(--accent-ink,#fff);'
-        +   'text-decoration:none;padding:9px 16px;border-radius:9px;font-weight:600;font-size:13.5px;">'
-        +   'Ouvrir le formulaire \u203a</a>'
-        + '<p style="font-size:11.5px;margin:10px 0 0;color:var(--muted-foreground,#6b7280);">'
-        +   'Formulaire externe (Tally), sans compte requis. Pour une reponse directe : '
-        +   '<a href="mailto:contact@monplandevol.fr" style="color:var(--accent,#0792a6);">contact@monplandevol.fr</a>.'
+        + '<p style="font-size:13.5px;line-height:1.6;margin:0 0 14px;">'
+        +   'Une idee, une gene, un detail qui vous fait perdre du temps avant le vol : '
+        +   'ecrivez-le. Il n\'y a pas de mauvaise suggestion — plusieurs fonctions de '
+        +   'l\'application sont nees d\'un simple message, et la votre peut se retrouver '
+        +   'dans une prochaine version.'
+        + '</p>'
+        + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+        +   '<a href="https://tally.so/r/gDxBJP" target="_blank" rel="noopener" '
+        +     'style="display:inline-block;background:var(--accent,#0792a6);color:var(--accent-ink,#fff);'
+        +     'text-decoration:none;padding:9px 16px;border-radius:9px;font-weight:600;font-size:13.5px;">'
+        +     'Remplir le formulaire \u203a</a>'
+        +   '<a href="mailto:contact@monplandevol.fr" '
+        +     'style="display:inline-block;background:transparent;color:var(--accent,#0792a6);'
+        +     'text-decoration:none;padding:9px 16px;border-radius:9px;font-weight:600;font-size:13.5px;'
+        +     'border:1px solid var(--accent-bd,rgba(7,146,166,.3));">'
+        +     'Ecrire un email \u203a</a>'
+        + '</div>'
+        + '<p style="font-size:11.5px;margin:12px 0 0;color:var(--muted-foreground,#6b7280);">'
+        +   'Formulaire externe (Tally), sans compte requis. Les deux arrivent au meme endroit.'
         + '</p>'
         + '</div>'
-        // ⚠️ Un signalement de securite ne doit pas transiter par un formulaire de
-        // suggestions traite au fil de l'eau. On le dit ici, une fois, clairement.
+        // ⚠️ Une donnee de securite fausse ne doit pas attendre dans une pile de
+        // suggestions. Une ligne suffit a l'orienter, sans alourdir le reste.
         + '<div class="card" style="padding:12px;margin-top:10px;border-color:var(--accent-bd,rgba(7,146,166,.3));">'
-        + '<p style="font-size:12.5px;line-height:1.5;margin:0;">'
+        + '<p style="font-size:12.5px;line-height:1.55;margin:0;">'
         +   '<i data-lucide="shield-alert" class="ag-ico" style="width:14px;height:14px;"></i> '
-        +   '<strong>Donnee erronee ou manquante sur une zone, un RTBA ou un terrain ?</strong> '
-        +   'Ecrivez directement a contact@monplandevol.fr plutot que par le formulaire : '
-        +   'ces signalements sont traites en priorite.'
+        +   'Une zone, un RTBA ou un terrain vous semble faux ? Ecrivez directement a '
+        +   '<a href="mailto:contact@monplandevol.fr" style="color:var(--accent,#0792a6);">contact@monplandevol.fr</a> : '
+        +   'c\'est traite en priorite.'
         + '</p></div>');
 
       made.compte.classList.add('on');
