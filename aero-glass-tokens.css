@@ -52,8 +52,8 @@ html[data-theme="dark"]{
   --text:#dae2fd; --text-2:#b9cacb; --text-3:#849495;
   --accent:#00dbe7; --accent-2:#74f5ff; --accent-ink:#002022;
   --accent-soft: rgba(0,219,231,.15); --accent-bd: rgba(0,219,231,.34);
-  --violet:#d1bcff; --violet-soft: rgba(170,120,255,.18);
-  --amber:#ffce6b;  --amber-soft: rgba(255,206,107,.16);
+  --violet:#d1bcff; --violet-soft: rgba(170,120,255,.18); --violet-ink:#1a0b3d;
+  --amber:#ffce6b;  --amber-soft: rgba(255,206,107,.16); --amber-ink:#3a2a00;
   --good:#3fe0c0;  --danger:#ffb4ab;
   --shadow: rgba(0,0,0,.5); --hi: rgba(255,255,255,.15);
   --map-0:#0e1830; --map-1:#15233f;
@@ -67,12 +67,12 @@ html[data-theme="light"]{
   --panel: rgba(255,255,255,.55); --panel-bd: rgba(255,255,255,.85);
   --ag-card:  rgba(255,255,255,.38); --card-bd:  rgba(20,32,60,.11);
   --inlay: rgba(255,255,255,.5);  --inlay-bd: rgba(20,32,60,.06);
-  --text:#16203a; --text-2:#44546d; --text-3:#6c7c8e;
-  --accent:#0792a6; --accent-2:#0aa6bd; --accent-ink:#ffffff;   /* cyan assombri pour contraste sur clair */
-  --accent-soft: rgba(7,146,166,.12); --accent-bd: rgba(7,146,166,.3);
-  --violet:#6d3df0; --violet-soft: rgba(109,61,240,.12);
-  --amber:#a9741a;  --amber-soft: rgba(169,116,26,.14);
-  --good:#0a9a82;  --danger:#c0413a;
+  --text:#16203a; --text-2:#44546d; --text-3:#5D6A7A;
+  --accent:#067484; --accent-2:#087E90; --accent-ink:#ffffff;   /* cyan assombri — AA sur clair (v2.15) */
+  --accent-soft: rgba(6,116,132,.12); --accent-bd: rgba(6,116,132,.3);
+  --violet:#6d3df0; --violet-soft: rgba(109,61,240,.12); --violet-ink:#ffffff;
+  --amber:#8C6016;  --amber-soft: rgba(140,96,22,.14); --amber-ink:#ffffff;
+  --good:#087866;  --danger:#BA3F38;
   --shadow: rgba(40,55,95,.18); --hi: rgba(255,255,255,.9);
   --map-0:#cfd9ec; --map-1:#dccabe;
 }
@@ -122,8 +122,8 @@ html[data-theme="light"]{
 .ag-pastille{ width:26px; height:26px; border-radius:7px; display:grid; place-items:center; flex-shrink:0;
   font-family:var(--font-display); font-weight:800; font-size:13px; }
 .ag-p-d{ background:var(--accent); color:var(--accent-ink); }   /* classe D */
-.ag-p-e{ background:var(--violet); color:#fff; }                /* classe E */
-.ag-p-r{ background:var(--amber); color:#3a2a00; }              /* R / restreint */
+.ag-p-e{ background:var(--violet); color:var(--violet-ink); }   /* classe E */
+.ag-p-r{ background:var(--amber); color:var(--amber-ink); }     /* R / restreint */
 
 /* ===================== BOUTONS ===================== */
 .ag-btn{ padding:11px; border-radius:var(--r-md); cursor:pointer; border:1px solid var(--accent-bd);
