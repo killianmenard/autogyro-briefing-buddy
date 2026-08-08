@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.11.4 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.12 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -334,6 +334,48 @@
     #ag-plane { display: none !important; }
     .ag-plane-on, .ag-plane-on * { cursor: auto !important; }
   }
+
+  /* ===== v2.12 — STYLES DU GUIDE INJECTE =====
+     guide.html porte sa propre feuille de style ; le contenu injecte ici n'en
+     herite pas. On reprend uniquement les regles structurantes, portees par
+     #ag-guide-host pour ne rien deborder sur le reste de l'application. */
+  #ag-guide-host h1 { font-weight: 800; font-size: 24px; line-height: 1.2; margin: 0 0 6px; }
+  #ag-guide-host h2 { font-weight: 700; font-size: 17px; margin: 26px 0 8px; }
+  #ag-guide-host h3 { font-weight: 700; font-size: 14.5px; margin: 16px 0 6px; }
+  #ag-guide-host p  { margin: 10px 0; font-size: 14px; line-height: 1.55; }
+  #ag-guide-host ul { padding-left: 20px; margin: 10px 0; }
+  #ag-guide-host li { margin: 5px 0; font-size: 14px; }
+  #ag-guide-host hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+  #ag-guide-host a  { color: var(--accent, #0792a6); }
+  #ag-guide-host blockquote {
+    margin: 14px 0; padding: 12px 16px;
+    border-left: 3px solid var(--accent-bd, rgba(7,146,166,.3));
+    background: var(--accent-soft, rgba(7,146,166,.10));
+    border-radius: 0 10px 10px 0;
+  }
+  #ag-guide-host .warn {
+    margin: 16px 0; padding: 14px 16px; border-left: 3px solid #B91C1C;
+    background: rgba(185,28,28,.07); border-radius: 0 10px 10px 0;
+  }
+  #ag-guide-host .step {
+    margin: 16px 0; padding: 14px 16px;
+    border: 1px solid var(--border); border-radius: 12px;
+  }
+  #ag-guide-host .step .n {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 999px;
+    background: var(--accent, #0792a6); color: #fff;
+    font-weight: 700; font-size: 13px; margin-right: 8px;
+  }
+  #ag-guide-host .cta {
+    display: inline-block; margin-top: 8px; padding: 10px 16px;
+    background: var(--accent, #0792a6); color: var(--accent-ink, #fff);
+    text-decoration: none; border: none; border-radius: 9px;
+    font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer;
+  }
+  /* Le lien « retour a l'application » et le pied de page de guide.html n'ont
+     aucun sens dans un onglet : on est deja dans l'application. */
+  #ag-guide-host .back, #ag-guide-host footer { display: none; }
 
   /* ===== v2.11 — TRANSFERT DES EFFETS DU SITE VITRINE =====
 
@@ -1689,6 +1731,21 @@
   <!-- ============================================== -->
   <!-- TAB : MON COMPTE (Lot 1 — coquille locale)     -->
   <!-- ============================================== -->
+  <!-- v2.12 — GUIDE EN ONGLET.
+       🔑 LE CONTENU N'EST PAS RECOPIE ICI. Il reste dans guide.html, qui demeure
+       une page autonome (liens partages, referencement, PRECACHE inchange). Cet
+       onglet va le chercher au premier affichage et en injecte le corps.
+       Recopier les 125 lignes aurait cree deux versions du meme texte a maintenir,
+       sur un sujet ou une divergence se paie cher.
+       Hors ligne : guide.html est dans le PRECACHE du service worker, le fetch
+       est donc servi par le cache. Si malgre tout il echoue, le repli affiche un
+       lien vers la page. -->
+  <section id="tab-guide" class="hidden">
+    <div class="card p-4" id="ag-guide-host">
+      <p class="text-sm text-muted">Chargement du guide…</p>
+    </div>
+  </section>
+
   <section id="tab-account" class="hidden">
     <div class="card p-4 space-y-5">
       <h2 class="section-title text-sm">mon compte</h2>
@@ -5071,7 +5128,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.11.4';
+const AG_PDF_VERSION = 'v2.12';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8608,6 +8665,48 @@ init();
   // ⚠️ basulm.js construit l'engrenage de façon asynchrone : si le repère n'existe pas
   // encore, on retente. Sans cela l'entrée retombe en fin de pilule une fois sur deux
   // selon l'ordre d'exécution.
+  // Chargement paresseux du guide. Une seule tentative reussie par session : le
+  // contenu ne change pas en cours d'utilisation.
+  var _agGuideLoaded = false;
+  function _agLoadGuide() {
+    if (_agGuideLoaded) return;
+    var host = document.getElementById('ag-guide-host');
+    if (!host) return;
+    _agGuideLoaded = true;
+    fetch(AG_GUIDE_URL, { cache: 'no-cache' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+      .then(function (html) {
+        // DOMParser plutot qu'une injection directe : on extrait la carte de
+        // contenu et on laisse de cote <head>, <script> et la navigation propre a
+        // la page. innerHTML n'execute pas les <script>, mais le parseur evite
+        // aussi de recopier des styles et des balises qui n'ont pas leur place ici.
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var card = doc.querySelector('.wrap .card') || doc.querySelector('.wrap') || doc.body;
+        if (!card) throw new Error('structure inattendue');
+        host.innerHTML = card.innerHTML;
+      })
+      .catch(function (e) {
+        // Repli honnete : on ne fait pas semblant, on donne l'acces direct.
+        _agGuideLoaded = false;
+        host.innerHTML = '<p class="text-sm">Le guide n\'a pas pu etre charge ici. '
+          + '<a href="' + AG_GUIDE_URL + '" style="color:var(--accent,#0792a6);">Ouvrir le guide dans un nouvel onglet ›</a></p>';
+        console.warn('[guide] chargement impossible :', e);
+      });
+  }
+
+  // Le bouton « (Re)lancer le tutoriel » vient du HTML injecte : delegation, sinon
+  // aucun ecouteur n'existerait pour lui. Dans l'onglet on relance sur place au
+  // lieu de recharger la page avec ?tuto=1, qui viderait le trajet en cours.
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('#ag-guide-host #restart-tuto') : null;
+    if (!b) return;
+    e.preventDefault();
+    try {
+      if (typeof window._agOnboardingRestart === 'function') window._agOnboardingRestart();
+      else window.location.href = AG_GUIDE_URL.replace('guide.html', './?tuto=1');
+    } catch (_) {}
+  });
+
   var _onbMenuTries = 0;
   function _onbEnsureMenuEntry() {
     try {
@@ -8619,11 +8718,21 @@ init();
       }
       var t = document.createElement('span');
       t.className = 'tab-btn ag-menu-guide';
+      // v2.12 — data-tab : le guide devient un onglet comme les autres. La bascule
+      // est prise en charge par extensions.js, qui accroche tout .tab-btn portant
+      // un data-tab, y compris ceux ajoutes apres coup (MutationObserver).
+      // Plus de window.location.href : quitter l'application pour lire le guide
+      // faisait perdre le trajet en cours de saisie.
+      t.setAttribute('data-tab', 'guide');
       t.textContent = 'guide';
       t.title = 'guide et FAQ';
       t.setAttribute('aria-label', 'guide');
       t.style.cursor = 'pointer';
-      t.addEventListener('click', function () { window.location.href = AG_GUIDE_URL; });
+      t.addEventListener('click', function () {
+        document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+        t.classList.add('active');
+        _agLoadGuide();
+      });
       gear.parentNode.insertBefore(t, gear);
     } catch (_) {}
   }
