@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.12 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.13 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -5128,7 +5128,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.12';
+const AG_PDF_VERSION = 'v2.13';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8870,7 +8870,12 @@ init();
         { g: 'application', id: 'theme',      icon: 'sun-moon',    txt: 'th\u00e8me',              match: /th\u00e8me|theme/ },
         { g: 'application', id: 'rayons',     icon: 'circle-dot',  txt: 'rayons de d\u00e9tection', match: /rayon/ },
         { g: 'avance',      id: 'openaip',    icon: 'key-round',   txt: 'cl\u00e9 API OpenAIP',    match: /cl\u00e9 api|openaip/ },
-        { g: 'avance',      id: 'donnees',    icon: 'database',    txt: 'mes donn\u00e9es',        match: /donn\u00e9es|action/ }
+        { g: 'avance',      id: 'donnees',    icon: 'database',    txt: 'mes donn\u00e9es',        match: /donn\u00e9es|action/ },
+        // v2.13 — rubrique SANS bloc source : son contenu est ecrit plus bas.
+        // ⚠️ match volontairement impossible (/$^/). La repartition route chaque
+        // bloc vers la PREMIERE rubrique dont l'expression correspond ; une
+        // expression permissive ici aspirerait des blocs de reglages.
+        { g: 'aide',        id: 'idee',       icon: 'lightbulb',   txt: 'proposer une id\u00e9e', match: /$^/ }
       ];
 
       var made = {};
@@ -8969,6 +8974,49 @@ init();
         b.addEventListener('click', function () { show(p.id); });
         nav.appendChild(b);
       });
+      // v2.13 — CONTENU DE LA RUBRIQUE « PROPOSER UNE IDEE ».
+      // Le lien vivait dans un bandeau de l'onglet Ressources, au-dessus d'un
+      // glossaire de 670 sigles : personne ne va chercher un formulaire de
+      // suggestion en consultant un lexique. Il rejoint le compte, ou l'on va
+      // quand on veut agir sur son usage de l'outil.
+      //
+      // Le texte compte autant que le lien : une invite nue (« une idee ? »)
+      // produit des retours inexploitables. En disant ce qui est utile — le
+      // contexte de vol, le terrain, ce qu'on attendait — on recoit des
+      // signalements actionnables plutot que « ca marche pas ».
+      made.idee.insertAdjacentHTML('beforeend',
+        '<div class="card" style="padding:14px;">'
+        + '<h3 class="text-sm font-semibold mb-2"><i data-lucide="lightbulb" class="ag-ico" style="width:14px;height:14px;"></i> Proposer une am\u00e9lioration</h3>'
+        + '<p style="font-size:13px;line-height:1.5;margin:0 0 10px;color:var(--muted-foreground,#6b7280);">'
+        +   'Mon Plan de Vol est developpe par un pilote, pour des pilotes. Chaque retour '
+        +   'oriente reellement la suite : les fiches terrain, le vent en altitude et le PDF '
+        +   'de vol local viennent tous d\'une remarque d\'utilisateur.'
+        + '</p>'
+        + '<p style="font-size:13px;line-height:1.5;margin:0 0 6px;"><strong>Ce qui aide le plus :</strong></p>'
+        + '<ul style="font-size:13px;line-height:1.5;margin:0 0 12px;padding-left:18px;color:var(--muted-foreground,#6b7280);">'
+        +   '<li>le terrain ou le trajet concerne (LFLQ, LFLQ \u2192 LFLW\u2026) ;</li>'
+        +   '<li>ce que vous attendiez, et ce que vous avez obtenu ;</li>'
+        +   '<li>l\'appareil et le navigateur si c\'est un probleme d\'affichage.</li>'
+        + '</ul>'
+        + '<a href="https://tally.so/r/gDxBJP" target="_blank" rel="noopener" '
+        +   'style="display:inline-block;background:var(--accent,#0792a6);color:var(--accent-ink,#fff);'
+        +   'text-decoration:none;padding:9px 16px;border-radius:9px;font-weight:600;font-size:13.5px;">'
+        +   'Ouvrir le formulaire \u203a</a>'
+        + '<p style="font-size:11.5px;margin:10px 0 0;color:var(--muted-foreground,#6b7280);">'
+        +   'Formulaire externe (Tally), sans compte requis. Pour une reponse directe : '
+        +   '<a href="mailto:contact@monplandevol.fr" style="color:var(--accent,#0792a6);">contact@monplandevol.fr</a>.'
+        + '</p>'
+        + '</div>'
+        // ⚠️ Un signalement de securite ne doit pas transiter par un formulaire de
+        // suggestions traite au fil de l'eau. On le dit ici, une fois, clairement.
+        + '<div class="card" style="padding:12px;margin-top:10px;border-color:var(--accent-bd,rgba(7,146,166,.3));">'
+        + '<p style="font-size:12.5px;line-height:1.5;margin:0;">'
+        +   '<i data-lucide="shield-alert" class="ag-ico" style="width:14px;height:14px;"></i> '
+        +   '<strong>Donnee erronee ou manquante sur une zone, un RTBA ou un terrain ?</strong> '
+        +   'Ecrivez directement a contact@monplandevol.fr plutot que par le formulaire : '
+        +   'ces signalements sont traites en priorite.'
+        + '</p></div>');
+
       made.compte.classList.add('on');
 
       // --- gestionnaires des identifiants -------------------------------------
