@@ -302,26 +302,35 @@
     return `
       <p class="text-xs text-muted mb-3">L'app agrège plusieurs sources officielles et open data, regroupées par catégorie.</p>
 
-      ${cat('🛬 Aérodromes & terrains')}
+      ${cat('<i data-lucide="plane-landing" class="ag-ico" style="width:15px;height:15px;"></i> Aérodromes & terrains')}
       <div class="space-y-2 text-sm">
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">✈️ Aérodromes officiels (447)</h3><p class="text-xs">Source : <strong>DGAC</strong> via PIAF.</p></div>
-        <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🛩 Plateformes ULM (764)</h3><p class="text-xs">Source : <strong>BASULM</strong> — FFPLUM.</p></div>
+        <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="plane" class="ag-ico" style="width:15px;height:15px;"></i> Plateformes ULM (764)</h3><p class="text-xs">Source : <strong>BASULM</strong> — FFPLUM.</p></div>
       </div>
 
-      ${cat('🗺️ Cartes & espaces aériens')}
+      ${cat('<i data-lucide="map" class="ag-ico" style="width:15px;height:15px;"></i> Cartes & espaces aériens')}
       <div class="space-y-2 text-sm">
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="clipboard-list" class="ag-ico" style="width:15px;height:15px;"></i> Cartes VAC / AIP / NOTAM</h3><p class="text-xs">Source : <strong>SIA</strong>.</p></div>
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="shield" class="ag-ico" style="width:15px;height:15px;"></i> Espaces aériens</h3><p class="text-xs">Source : <strong>OpenAIP</strong>.</p></div>
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="map" class="ag-ico" style="width:15px;height:15px;"></i> Carte VFR CartaBossy</h3><p class="text-xs">Carte aéronautique VFR France. <a href="https://www.cartabossy.com/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">cartabossy.com</a></p></div>
       </div>
 
-      ${cat('🌤️ Météo')}
+      ${cat('<i data-lucide="cloud-sun" class="ag-ico" style="width:15px;height:15px;"></i> Météo')}
       <div class="space-y-2 text-sm">
-        <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1">🌤️ Météo aviation</h3><p class="text-xs">METAR/TAF : <strong>aviationweather.gov</strong>. Vent : <strong>open-meteo.com</strong>. Visuel : <strong>metar-taf.com</strong>.</p></div>
+        <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="cloud-sun" class="ag-ico" style="width:15px;height:15px;"></i> METAR / TAF</h3><p class="text-xs">Source : <strong>aviationweather.gov</strong> (NOAA / NWS, domaine public). Visuel : <a href="https://metar-taf.com/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">metar-taf.com</a>.</p></div>
+        <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="wind" class="ag-ico" style="width:15px;height:15px;"></i> Vent en altitude</h3><p class="text-xs">Source : <strong>Météo-France</strong> — modèle AROME, 5 niveaux de 10 à 750 m sol. Données sous <a href="https://www.etalab.gouv.fr/licence-ouverte-open-licence/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">Licence Ouverte 2.0</a>.</p></div>
+        <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="map-pinned" class="ag-ico" style="width:15px;height:15px;"></i> Carte météo France</h3><p class="text-xs">Source : <strong>MET Norway</strong> (Institut météorologique norvégien), 101 villes. Données sous <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">CC BY 4.0</a>.</p></div>
+        <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="cloud-download" class="ag-ico" style="width:15px;height:15px;"></i> TEMSI / WINTEM</h3><p class="text-xs">Cartes officielles consultées sur <strong>Aeroweb</strong> — Météo-France (lien externe, compte requis).</p></div>
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="satellite" class="ag-ico" style="width:15px;height:15px;"></i> Imagerie satellite</h3><p class="text-xs">Source : <strong>NASA EOSDIS GIBS</strong> (MODIS, gratuit). Imagerie quotidienne.</p></div>
       </div>
 
-      ${cat('📚 Documentation')}
+      ${cat('<i data-lucide="map-pin" class="ag-ico" style="width:15px;height:15px;"></i> Services au sol & points d\'intérêt')}
+      <div class="space-y-2 text-sm">
+        <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="utensils" class="ag-ico" style="width:15px;height:15px;"></i> Restaurants, stations, hébergements</h3><p class="text-xs">Source : <strong>OpenStreetMap</strong> via l'API Overpass. © les contributeurs OpenStreetMap, <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noreferrer" class="text-blue-600 hover:underline">ODbL</a>. Distances à vol d'oiseau.</p></div>
+        <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="landmark" class="ag-ico" style="width:15px;height:15px;"></i> Points d'intérêt à survoler</h3><p class="text-xs">Sélection issue d'<strong>OpenStreetMap</strong> et de <strong>Wikipédia</strong> (CC BY-SA), enrichie à la main.</p></div>
+      </div>
+
+      ${cat('<i data-lucide="library" class="ag-ico" style="width:15px;height:15px;"></i> Documentation')}
       <div class="space-y-2 text-sm">
         <div class="muted-bg p-3 rounded"><h3 class="font-semibold text-sm mb-1"><i data-lucide="book-open" class="ag-ico" style="width:15px;height:15px;"></i> Sigles aéronautiques (670)</h3><p class="text-xs">Source : <strong>SOFIA</strong> — DGAC.</p></div>
       </div>
@@ -2268,7 +2277,7 @@
       const footerEl = document.createElement('div');
       footerEl.className = 'v0618-hist-footer-text';
       footerEl.style.cssText = 'padding: 24px 16px 16px; color: var(--muted-foreground); font-size: 0.78rem; line-height: 1.6; text-align: center;'; // B2c (v0.8.28) — token thémé (était #4b5563, illisible en nuit)
-      footerEl.innerHTML = '<p>Aérodromes : <strong>DGAC</strong>. Plateformes ULM : <strong>BASULM / FFPLUM</strong>. Météo : aviationweather.gov, open-meteo.com. Espaces aériens : OpenAIP. Voir l\'onglet <a href="javascript:void(0)" class="v0618-link-sources" style="color: #2563eb; text-decoration: underline;">sources</a> pour le détail.</p><p style="margin-top: 6px;">Données indicatives — le pilote reste seul responsable de la vérification SIA / METAR / TAF / NOTAM / AZBA avant chaque vol.</p><p style="margin-top: 6px;"><a href="mentions.html" target="_blank" rel="noreferrer" style="color: #2563eb; text-decoration: underline;">Mentions légales</a> · <a href="politique.html" target="_blank" rel="noreferrer" style="color: #2563eb; text-decoration: underline;">Politique de confidentialité</a></p>';
+      footerEl.innerHTML = '<p>Aérodromes : <strong>DGAC</strong>. Plateformes ULM : <strong>BASULM / FFPLUM</strong>. Météo : aviationweather.gov, Météo-France (AROME), MET Norway. Espaces aériens : OpenAIP. Services au sol : OpenStreetMap. Voir l\'onglet <a href="javascript:void(0)" class="v0618-link-sources" style="color: #2563eb; text-decoration: underline;">sources</a> pour le détail.</p><p style="margin-top: 6px;">Données indicatives — le pilote reste seul responsable de la vérification SIA / METAR / TAF / NOTAM / AZBA avant chaque vol.</p><p style="margin-top: 6px;"><a href="mentions.html" target="_blank" rel="noreferrer" style="color: #2563eb; text-decoration: underline;">Mentions légales</a> · <a href="politique.html" target="_blank" rel="noreferrer" style="color: #2563eb; text-decoration: underline;">Politique de confidentialité</a></p>';
       tab.appendChild(footerEl);
 
       const link = footerEl.querySelector('.v0618-link-sources');

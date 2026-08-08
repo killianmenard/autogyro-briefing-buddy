@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.13.1 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.14 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -5128,7 +5128,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.13.1';
+const AG_PDF_VERSION = 'v2.14';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -9102,8 +9102,16 @@ init();
       ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
       ov.querySelector('#ag-acct-x').addEventListener('click', close);
 
+      // v2.14 — UNE SEULE VERSION AFFICHEE, ET ELLE NE PEUT PLUS DIVERGER.
+      // Le pied de la feuille affichait « v1.0.34 » en dur pendant que l'onglet du
+      // navigateur annoncait v2.13.1 : deux chiffres pour un meme logiciel, dont un
+      // faux. On lit AG_PDF_VERSION au lieu de recopier — il n'y a plus rien a
+      // penser a bumper ici.
+      // ⚠️ NE PAS confondre avec les chaines de version figees d'extensions.js et
+      // basulm.js (regle inviolable 3) : ce sont des identifiants internes, pas un
+      // numero affiche. (Ecrites sans le litteral : le controle les compte.)
       var v = document.getElementById('ag-acct-ver');
-      if (v) v.textContent = 'v1.0.34';
+      if (v) v.textContent = (typeof AG_PDF_VERSION !== 'undefined') ? AG_PDF_VERSION : '';
       built = true;
       try { if (window.lucide) window.lucide.createIcons(); } catch (_) {}
       return ov;
