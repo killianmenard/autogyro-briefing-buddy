@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="monplandevol.fr" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="description" content="Planification de vol VFR autogire — METAR/TAF, vent, espace aérien, masse" />
-<title>monplandevol.fr v2.11.3 — planification de vol VFR autogire</title>
+<title>monplandevol.fr v2.11.4 — planification de vol VFR autogire</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json" />
 <meta name="robots" content="noindex, nofollow" /><!-- Lot hygiène (v0.8.30) — mandat no-index, app non destinée au référencement -->
@@ -413,19 +413,6 @@
   #ag-acct .card:hover { transform: none; box-shadow: none; }
 
   /* ------------------------------------------------------------------
-     c) DEPLI/REPLI FLUIDE DES <details>
-     <details> bascule instantanement : le contenu apparait d'un coup et la page
-     saute. On anime la hauteur d'un conteneur pose au vol autour du contenu.
-     La classe est portee par le <details> lui-meme pour que le CSS n'ait besoin
-     d'aucune connaissance de la structure interne des cartes, que extensions.js
-     reecrit ~2,5 s apres le rendu. */
-  .ag-det-body { overflow: hidden; }
-  .ag-det-anim > .ag-det-body {
-    transition: height .26s cubic-bezier(.4,0,.2,1), opacity .2s ease;
-  }
-  details > summary { transition: color .15s ease; }
-
-  /* ------------------------------------------------------------------
      d) BOUTONS MAGNETIQUES — PORTEE VOLONTAIREMENT REDUITE
      Sur le site, tous les boutons sont magnetiques : il y en a six, ils sont
      gros, et rater un clic n'a aucune consequence. Ici il y a des dizaines de
@@ -438,10 +425,7 @@
   @media (prefers-reduced-motion: reduce) {
     .card, .card:hover { transition: none; transform: none; }
     .card::after, .card:hover::after { animation: none; }
-    .ag-det-anim > .ag-det-body { transition: none; }
-    /* Le motif ne bouge pas : il n'y a aucune raison de le retirer ici. Seule
-       l'animation de depli est neutralisee. */
-    .native-collapsible-content, .collapsible-content { transition: none !important; }
+    /* Le motif ne bouge pas : il n'y a aucune raison de le retirer ici. */
   }
 
   /* ===== v2.10.7 — ONDE AU CLIC (ripple) =====
@@ -5087,7 +5071,7 @@ function pdfKV(pdf, label, value, y, opts = {}) {
 
 // v2.05.2 — ancre de version UNIQUE du PDF : en-tete ET pied de page la lisent.
 // Le bump ne se fait donc toujours qu'a 3 endroits (<title>, cette constante, sw.js).
-const AG_PDF_VERSION = 'v2.11.3';
+const AG_PDF_VERSION = 'v2.11.4';
 
 // Page break si pas assez de place
 function ensureSpace(pdf, y, needed) {
@@ -8019,78 +8003,14 @@ function init() {
 }
 
 
-// ===== v2.11 — DEPLI/REPLI FLUIDE DES <details> =====
-// <details> bascule d'un coup : le contenu apparait, la page saute, et sur une
-// carte de terrain longue le regard perd sa place. On anime la hauteur.
-//
-// ⚠️ Delegation en phase de CAPTURE et conteneur pose au vol : extensions.js
-// reecrit les cartes ~2,5 s apres le rendu. Tout ecouteur attache a un summary
-// precis disparaitrait a la premiere reecriture.
-(function _agSmoothDetails() {
-  var reduce = false;
-  try { reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) {}
-  if (reduce) return;
-
-  // Enveloppe tout ce qui suit le <summary> dans un conteneur mesurable.
-  function body(det) {
-    var b = det.querySelector(':scope > .ag-det-body');
-    if (b) return b;
-    var sum = det.querySelector(':scope > summary');
-    if (!sum) return null;
-    b = document.createElement('div');
-    b.className = 'ag-det-body';
-    var n = sum.nextSibling;
-    while (n) { var next = n.nextSibling; b.appendChild(n); n = next; }
-    det.appendChild(b);
-    return b;
-  }
-
-  function animate(det, opening) {
-    var b = body(det);
-    if (!b) return false;
-    det.classList.add('ag-det-anim');
-    if (opening) {
-      det.open = true;
-      b.style.height = '0px'; b.style.opacity = '0';
-      // Lecture forcee : sans elle le navigateur regroupe les deux ecritures et
-      // passe directement a la hauteur finale, sans transition.
-      void b.offsetHeight;
-      b.style.height = b.scrollHeight + 'px'; b.style.opacity = '1';
-      clear(det, b, function () { b.style.height = ''; });
-    } else {
-      b.style.height = b.scrollHeight + 'px'; b.style.opacity = '1';
-      void b.offsetHeight;
-      b.style.height = '0px'; b.style.opacity = '0';
-      clear(det, b, function () { det.open = false; b.style.height = ''; b.style.opacity = ''; });
-    }
-    return true;
-  }
-
-  // Un seul point de sortie : la transition, ou un delai de secours si elle ne
-  // se declenche pas (element masque, onglet en arriere-plan). Sans ce filet, un
-  // <details> pourrait rester bloque a hauteur nulle.
-  function clear(det, b, done) {
-    var fired = false;
-    function end(e) {
-      if (e && e.target !== b) return;
-      if (fired) return; fired = true;
-      b.removeEventListener('transitionend', end);
-      det.classList.remove('ag-det-anim');
-      done();
-    }
-    b.addEventListener('transitionend', end);
-    setTimeout(end, 400);
-  }
-
-  document.addEventListener('click', function (e) {
-    var sum = e.target && e.target.closest ? e.target.closest('summary') : null;
-    if (!sum) return;
-    var det = sum.parentElement;
-    if (!det || det.tagName !== 'DETAILS') return;
-    if (det.classList.contains('ag-det-anim')) { e.preventDefault(); return; } // clic pendant l'animation
-    if (animate(det, !det.open)) e.preventDefault();
-  }, true);
-})();
+// v2.11.4 — ANIMATION DES <details> RETIREE.
+// Meme raison que le moteur d'extensions.js : elle re-parente le contenu dans un
+// conteneur mesurable, alors que la couche v062x reconstruit ces blocs et
+// transmute les balises details en divs. Deux codes qui deplacent les memes
+// noeuds. (Balises ecrites en toutes lettres : le controle de div compte les
+// occurrences litterales, un commentaire ne doit pas le fausser.)
+// A reprendre seulement avec un perimetre explicite (Ressources, guide), jamais
+// par delegation globale.
 
 // ===== v2.11 — BOUTONS MAGNETIQUES (appels a l'action seulement) =====
 // Porte volontairement etroite : voir le commentaire CSS. Ressort integre a la
