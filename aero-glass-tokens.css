@@ -188,3 +188,45 @@ html[data-theme="light"]{
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
+
+/* ============ FOND CARTE DE FRANCE — ECRAN DE CONNEXION (v2.17) ============
+   Le SVG #ag-eu est repris tel quel de la vitrine (monplandevol-site). Il est
+   entierement pilote par --accent et --text-3 : il prend donc les couleurs de
+   l'app dans les deux themes, sans adaptation.
+   BUT : le fond de app.monplandevol.fr/connexion doit etre le meme que celui
+   de la vitrine, pour que l'oeil ne voie pas la coupure entre les deux pages.
+   ⚠️ Une transition reelle est IMPOSSIBLE : monplandevol.fr et
+   app.monplandevol.fr sont deux origines distinctes, et l'API View Transitions
+   inter-documents exige la meme origine. On cree la continuite, on ne l'anime pas.
+   =========================================================================== */
+#auth-gate{ overflow-x: hidden; }
+#auth-gate #ag-eu{
+  position: absolute; z-index: 0; pointer-events: none;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(1080px, 150vw); height: auto;
+  -webkit-mask-image: radial-gradient(ellipse 62% 58% at 50% 50%, #000 40%, transparent 76%);
+          mask-image: radial-gradient(ellipse 62% 58% at 50% 50%, #000 40%, transparent 76%);
+}
+#auth-gate #ag-eu .nb path{ fill: var(--text-3); opacity: .15; stroke: var(--text-3); stroke-width: .8; }
+#auth-gate #ag-eu .fr path{ fill: var(--accent); opacity: .24; stroke: var(--accent); stroke-width: 1.6; stroke-linejoin: round; }
+#auth-gate #ag-eu .rt path{ fill: none; stroke: var(--accent); stroke-width: 1.3; stroke-dasharray: 5 6; opacity: .55; }
+#auth-gate #ag-eu .ad circle{ fill: var(--accent); opacity: .70; }
+#auth-gate #ag-eu .fl path{ fill: var(--accent); stroke: none; opacity: .88; }
+
+@media (max-width: 768px){
+  #auth-gate #ag-eu{ width: 190vw; }
+  #auth-gate #ag-eu .fl path{ transform: scale(1.3); }
+}
+/* Meme arbitrage que la vitrine : les routes restent, le trafic s'arrete. */
+@media (prefers-reduced-motion: reduce){
+  #auth-gate #ag-eu .fl{ display: none; }
+}
+
+/* Marque de l'ecran de connexion : SVG avion identique a la vitrine.
+   Remplace l'emoji helicoptere (rendu variable selon l'OS, et mauvais appareil). */
+.ag-gate-mark-wrap{ line-height: 0; }
+.ag-gate-mark{
+  width: 34px; height: 34px;
+  color: var(--accent);
+  display: inline-block; vertical-align: middle;
+}
